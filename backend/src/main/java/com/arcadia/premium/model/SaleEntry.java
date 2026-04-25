@@ -73,6 +73,50 @@ public class SaleEntry {
     @Column(name = "balance_during_execution", precision = 15, scale = 2)
     private BigDecimal balanceDuringExecution;
 
+    // --- Additional Charges (selectable during sale finalization) ---
+
+    @Column(name = "include_club_house")
+    private Boolean includeClubHouse = false;
+
+    @Column(name = "club_house_charges", precision = 12, scale = 2)
+    private BigDecimal clubHouseCharges;
+
+    @Column(name = "include_corpus_fund")
+    private Boolean includeCorpusFund = false;
+
+    @Column(name = "corpus_fund", precision = 12, scale = 2)
+    private BigDecimal corpusFund;
+
+    @Column(name = "include_legal_doc")
+    private Boolean includeLegalDoc = false;
+
+    @Column(name = "legal_doc_charges", precision = 12, scale = 2)
+    private BigDecimal legalDocCharges;
+
+    @Column(name = "include_caution_deposit")
+    private Boolean includeCautionDeposit = false;
+
+    @Column(name = "refundable_caution_deposit", precision = 12, scale = 2)
+    private BigDecimal refundableCautionDeposit;
+
+    @Column(name = "include_advance_maintenance")
+    private Boolean includeAdvanceMaintenance = false;
+
+    @Column(name = "advance_maint_rate_per_sft", precision = 8, scale = 2)
+    private BigDecimal advanceMaintRatePerSft;
+
+    @Column(name = "advance_maint_months")
+    private Integer advanceMaintMonths;
+
+    @Column(name = "advance_maintenance_total", precision = 12, scale = 2)
+    private BigDecimal advanceMaintenanceTotal;
+
+    @Column(name = "total_additional_charges", precision = 15, scale = 2)
+    private BigDecimal totalAdditionalCharges;
+
+    @Column(name = "grand_total", precision = 15, scale = 2)
+    private BigDecimal grandTotal;
+
     @Column(name = "remarks", length = 1000)
     private String remarks;
 
@@ -147,6 +191,40 @@ public class SaleEntry {
 
     public BigDecimal getBalanceDuringExecution() { return balanceDuringExecution; }
     public void setBalanceDuringExecution(BigDecimal balanceDuringExecution) { this.balanceDuringExecution = balanceDuringExecution; }
+
+    public Boolean getIncludeClubHouse() { return includeClubHouse; }
+    public void setIncludeClubHouse(Boolean includeClubHouse) { this.includeClubHouse = includeClubHouse; }
+    public BigDecimal getClubHouseCharges() { return clubHouseCharges; }
+    public void setClubHouseCharges(BigDecimal clubHouseCharges) { this.clubHouseCharges = clubHouseCharges; }
+
+    public Boolean getIncludeCorpusFund() { return includeCorpusFund; }
+    public void setIncludeCorpusFund(Boolean includeCorpusFund) { this.includeCorpusFund = includeCorpusFund; }
+    public BigDecimal getCorpusFund() { return corpusFund; }
+    public void setCorpusFund(BigDecimal corpusFund) { this.corpusFund = corpusFund; }
+
+    public Boolean getIncludeLegalDoc() { return includeLegalDoc; }
+    public void setIncludeLegalDoc(Boolean includeLegalDoc) { this.includeLegalDoc = includeLegalDoc; }
+    public BigDecimal getLegalDocCharges() { return legalDocCharges; }
+    public void setLegalDocCharges(BigDecimal legalDocCharges) { this.legalDocCharges = legalDocCharges; }
+
+    public Boolean getIncludeCautionDeposit() { return includeCautionDeposit; }
+    public void setIncludeCautionDeposit(Boolean includeCautionDeposit) { this.includeCautionDeposit = includeCautionDeposit; }
+    public BigDecimal getRefundableCautionDeposit() { return refundableCautionDeposit; }
+    public void setRefundableCautionDeposit(BigDecimal refundableCautionDeposit) { this.refundableCautionDeposit = refundableCautionDeposit; }
+
+    public Boolean getIncludeAdvanceMaintenance() { return includeAdvanceMaintenance; }
+    public void setIncludeAdvanceMaintenance(Boolean includeAdvanceMaintenance) { this.includeAdvanceMaintenance = includeAdvanceMaintenance; }
+    public BigDecimal getAdvanceMaintRatePerSft() { return advanceMaintRatePerSft; }
+    public void setAdvanceMaintRatePerSft(BigDecimal advanceMaintRatePerSft) { this.advanceMaintRatePerSft = advanceMaintRatePerSft; }
+    public Integer getAdvanceMaintMonths() { return advanceMaintMonths; }
+    public void setAdvanceMaintMonths(Integer advanceMaintMonths) { this.advanceMaintMonths = advanceMaintMonths; }
+    public BigDecimal getAdvanceMaintenanceTotal() { return advanceMaintenanceTotal; }
+    public void setAdvanceMaintenanceTotal(BigDecimal advanceMaintenanceTotal) { this.advanceMaintenanceTotal = advanceMaintenanceTotal; }
+
+    public BigDecimal getTotalAdditionalCharges() { return totalAdditionalCharges; }
+    public void setTotalAdditionalCharges(BigDecimal totalAdditionalCharges) { this.totalAdditionalCharges = totalAdditionalCharges; }
+    public BigDecimal getGrandTotal() { return grandTotal; }
+    public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
 
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }

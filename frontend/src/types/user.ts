@@ -76,6 +76,21 @@ export interface SaleEntry {
   balanceToReceive?: number;
   balancePlanApproved?: number;
   balanceDuringExecution?: number;
+  // Additional charges
+  includeClubHouse?: boolean;
+  clubHouseCharges?: number;
+  includeCorpusFund?: boolean;
+  corpusFund?: number;
+  includeLegalDoc?: boolean;
+  legalDocCharges?: number;
+  includeCautionDeposit?: boolean;
+  refundableCautionDeposit?: number;
+  includeAdvanceMaintenance?: boolean;
+  advanceMaintRatePerSft?: number;
+  advanceMaintMonths?: number;
+  advanceMaintenanceTotal?: number;
+  totalAdditionalCharges?: number;
+  grandTotal?: number;
   remarks?: string;
   createdAt: string;
   updatedAt: string;
@@ -96,6 +111,18 @@ export interface CreateSaleEntryRequest {
   basePricePerSft?: number;
   amenitiesPremiums?: string;
   receivedAmount?: number;
+  // Additional charges
+  includeClubHouse?: boolean;
+  clubHouseCharges?: number;
+  includeCorpusFund?: boolean;
+  corpusFund?: number;
+  includeLegalDoc?: boolean;
+  legalDocCharges?: number;
+  includeCautionDeposit?: boolean;
+  refundableCautionDeposit?: number;
+  includeAdvanceMaintenance?: boolean;
+  advanceMaintRatePerSft?: number;
+  advanceMaintMonths?: number;
   remarks?: string;
 }
 
