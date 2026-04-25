@@ -1,0 +1,50 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { authService } from "./services/authService";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import UsersPage from "./pages/UsersPage";
+import AddUserPage from "./pages/AddUserPage";
+import DeleteUserPage from "./pages/DeleteUserPage";
+import EditUserPage from "./pages/EditUserPage";
+import RolesPage from "./pages/RolesPage";
+import SaleQuotePage from "./pages/SaleQuotePage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+import FinanceSpentPage from "./pages/FinanceSpentPage";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+
+        {/* User Management */}
+        <Route path="users" element={<UsersPage />} />
+        <Route path="users/add" element={<AddUserPage />} />
+        <Route path="users/delete" element={<DeleteUserPage />} />
+        <Route path="users/edit" element={<EditUserPage />} />
+        <Route path="users/change-password" element={<ChangePasswordPage />} />
+        <Route path="roles" element={<RolesPage />} />
+
+        {/* Activities */}
+        <Route path="activities/sale-quote" element={<SaleQuotePage />} />
+        <Route path="activities/finance-spent" element={<FinanceSpentPage />} />
+      </Route>
+    </Routes>
+  );
+}
