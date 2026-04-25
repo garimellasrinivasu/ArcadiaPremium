@@ -21,6 +21,19 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  # Email configuration (Gmail example — update with your SMTP credentials)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:garimella.srinivasu@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password-here}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enabled: true
+
 server:
   port: 8080
 

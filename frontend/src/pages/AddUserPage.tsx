@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Role, CreateUserRequest } from "../types/user";
 import { userService } from "../services/userService";
+import PasswordInput from "../components/PasswordInput";
 
 export default function AddUserPage() {
   const navigate = useNavigate();
@@ -14,7 +15,9 @@ export default function AddUserPage() {
     phone: "",
     roleIds: [],
   });
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -23,6 +26,28 @@ export default function AddUserPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Live validation when confirm password changes
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setConfirmPassword(val);
+    if (val && form.password && val !== form.password) {
+      setPasswordError("Passwords do not match.");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  // Also re-validate when password field changes
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setForm({ ...form, password: val });
+    if (confirmPassword && val !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+    } else {
+      setPasswordError("");
+    }
   };
 
   const toggleRole = (roleId: number) => {
@@ -37,10 +62,16 @@ export default function AddUserPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (form.password !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
     if (form.roleIds.length === 0) {
       setError("Please select at least one role.");
       return;
     }
+
     setSaving(true);
     try {
       await userService.create(form);
@@ -86,8 +117,26 @@ export default function AddUserPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password * (min 8 characters)</label>
-            <input name="password" type="password" value={form.password} onChange={handleChange} required minLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none text-sm" />
+            <PasswordInput
+              value={form.password}
+              onChange={handlePasswordChange}
+              required
+              minLength={8}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              required
+              minLength={8}
+              placeholder="Re-enter password"
+            />
+            {passwordError && (
+              <p className="mt-1.5 text-sm text-red-600">{passwordError}</p>
+            )}
           </div>
 
           <div>
@@ -116,7 +165,7 @@ export default function AddUserPage() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={saving}
+            <button type="submit" disabled={saving || !!passwordError}
               className="px-5 py-2 text-sm font-medium text-white bg-arcadia-600 rounded-lg hover:bg-arcadia-700 transition disabled:opacity-50">
               {saving ? "Creating..." : "Create User"}
             </button>

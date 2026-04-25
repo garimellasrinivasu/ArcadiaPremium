@@ -49,10 +49,16 @@ public class DataSeeder implements CommandLineRunner {
                 Set.of(userRead, userWrite, userDelete, roleRead, roleWrite));
         adminRole = roleRepository.save(adminRole);
 
-        roleRepository.save(new Role(null, "AGENT", "Real estate agent",
+        roleRepository.save(new Role(null, "SALES", "Sales team",
                 Set.of(userRead, roleRead)));
 
-        roleRepository.save(new Role(null, "VIEWER", "Read-only access",
+        roleRepository.save(new Role(null, "ENGINEERING", "Engineering team",
+                Set.of(userRead, roleRead)));
+
+        roleRepository.save(new Role(null, "OPERATIONS", "Operations team",
+                Set.of(userRead, roleRead)));
+
+        roleRepository.save(new Role(null, "ACCOUNTS", "Accounts & Finance team",
                 Set.of(userRead, roleRead)));
 
         // Default admin user
