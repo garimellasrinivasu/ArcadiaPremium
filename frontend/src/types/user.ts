@@ -52,3 +52,54 @@ export interface UpdateUserRequest {
   roleIds?: number[];
   active?: boolean;
 }
+
+// --- Sale Entry types ---
+
+export interface SaleEntry {
+  id: number;
+  serialNo: number;
+  bookingDate: string;
+  project: string;
+  spgPraneeth?: string;
+  tokenNumber?: string;
+  customerName: string;
+  personalCompany?: string;
+  sol?: string;
+  typeOfSale?: string;
+  landExtentSqYards?: number;
+  sbuaSft?: number;
+  facing?: string;
+  basePricePerSft?: number;
+  amenitiesPremiums?: string;
+  totalSalesConsideration?: number;
+  receivedAmount?: number;
+  balanceToReceive?: number;
+  balancePlanApproved?: number;
+  balanceDuringExecution?: number;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSaleEntryRequest {
+  bookingDate: string;
+  project: string;
+  spgPraneeth?: string;
+  tokenNumber?: string;
+  customerName: string;
+  personalCompany?: string;
+  sol?: string;
+  typeOfSale?: string;
+  landExtentSqYards?: number;
+  sbuaSft?: number;
+  facing?: string;
+  basePricePerSft?: number;
+  amenitiesPremiums?: string;
+  receivedAmount?: number;
+  remarks?: string;
+}
+
+export interface UpdatePaymentRequest {
+  receivedAmount: number;
+  remarks?: string;
+}

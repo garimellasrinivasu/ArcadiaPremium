@@ -11,6 +11,7 @@ import RolesPage from "./pages/RolesPage";
 import SaleQuotePage from "./pages/SaleQuotePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import FinanceSpentPage from "./pages/FinanceSpentPage";
+import SaleEntryPage from "./pages/SaleEntryPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="roles" element={<RolesPage />} />
 
         {/* Activities */}
+        <Route path="activities/sale-entry" element={<SaleEntryPage />} />
         <Route path="activities/sale-quote" element={<SaleQuotePage />} />
         <Route path="activities/finance-spent" element={<FinanceSpentPage />} />
       </Route>

@@ -28,6 +28,7 @@ const menuSections: MenuSection[] = [
   {
     label: "Activities",
     items: [
+      { label: "Sale Entry", path: "/activities/sale-entry" },
       { label: "Sale Quote", path: "/activities/sale-quote" },
       { label: "Finance Spent", path: "/activities/finance-spent" },
     ],
