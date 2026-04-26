@@ -6,7 +6,7 @@ import type { User } from "../types/user";
 import PasswordInput from "../components/PasswordInput";
 
 export default function ChangePasswordPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [, setCurrentUser] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserEmail, setSelectedUserEmail] = useState("");
@@ -36,7 +36,7 @@ export default function ChangePasswordPage() {
           setError("Failed to load user list. Please refresh the page.");
         });
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   // When user selection changes
@@ -138,22 +138,20 @@ export default function ChangePasswordPage() {
           <button
             type="button"
             onClick={() => { setMode("admin"); setError(""); setSuccess(""); }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg border transition ${
-              mode === "admin"
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition ${mode === "admin"
                 ? "bg-arcadia-600 text-white border-arcadia-600"
                 : "bg-white text-gray-600 border-gray-300 hover:border-arcadia-400"
-            }`}
+              }`}
           >
             Reset User Password
           </button>
           <button
             type="button"
             onClick={() => { setMode("self"); setError(""); setSuccess(""); }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg border transition ${
-              mode === "self"
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition ${mode === "self"
                 ? "bg-arcadia-600 text-white border-arcadia-600"
                 : "bg-white text-gray-600 border-gray-300 hover:border-arcadia-400"
-            }`}
+              }`}
           >
             Change My Password
           </button>
