@@ -1,14 +1,19 @@
 package com.arcadia.premium.service;
 
+import com.arcadia.premium.dto.AddPaymentRequest;
 import com.arcadia.premium.dto.CreateSaleEntryRequest;
+import com.arcadia.premium.dto.PaymentEntryDto;
 import com.arcadia.premium.dto.SaleEntryDto;
 import com.arcadia.premium.dto.UpdatePaymentRequest;
+import com.arcadia.premium.model.PaymentEntry;
 import com.arcadia.premium.model.SaleEntry;
+import com.arcadia.premium.repository.PaymentEntryRepository;
 import com.arcadia.premium.repository.SaleEntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,9 +29,11 @@ public class SaleEntryService {
     private static final int DEFAULT_MAINT_MONTHS = 24;
 
     private final SaleEntryRepository repository;
+    private final PaymentEntryRepository paymentRepository;
 
-    public SaleEntryService(SaleEntryRepository repository) {
+    public SaleEntryService(SaleEntryRepository repository, PaymentEntryRepository paymentRepository) {
         this.repository = repository;
+        this.paymentRepository = paymentRepository;
     }
 
     public List<SaleEntryDto> getAllSaleEntries() {
@@ -47,6 +54,12 @@ public class SaleEntryService {
                 .collect(Collectors.toList());
     }
 
+    public List<SaleEntryDto> searchByQuery(String query) {
+        return repository.searchByTokenOrCustomerName(query).stream()
+                .map(SaleEntryDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public SaleEntryDto createSaleEntry(CreateSaleEntryRequest request) {
         SaleEntry entry = new SaleEntry();
@@ -56,9 +69,24 @@ public class SaleEntryService {
 
         applyBasicFields(entry, request);
         applyAdditionalCharges(entry, request);
-        calculateTotals(entry, request.getReceivedAmount(), request.getTypeOfSale());
+        calculateTotals(entry, request.getReceivedAmount());
 
-        return SaleEntryDto.fromEntity(repository.save(entry));
+        SaleEntry saved = repository.save(entry);
+
+        // Auto-create a PaymentEntry for the initial advance amount
+        BigDecimal initialAmount = request.getReceivedAmount();
+        if (initialAmount != null && initialAmount.compareTo(BigDecimal.ZERO) > 0) {
+            PaymentEntry payment = new PaymentEntry();
+            payment.setSaleEntry(saved);
+            payment.setAmount(initialAmount);
+            payment.setPaymentDate(request.getBookingDate() != null ? request.getBookingDate() : LocalDate.now());
+            payment.setPaymentMode("Advance");
+            payment.setRemarks("Booking advance");
+            saved.getPayments().add(payment);
+            saved = repository.save(saved);
+        }
+
+        return SaleEntryDto.fromEntity(saved);
     }
 
     @Transactional
@@ -69,8 +97,12 @@ public class SaleEntryService {
         applyBasicFields(entry, request);
         applyAdditionalCharges(entry, request);
 
-        BigDecimal received = request.getReceivedAmount() != null ? request.getReceivedAmount() : entry.getReceivedAmount();
-        calculateTotals(entry, received, entry.getTypeOfSale());
+        // Recalculate received from payment entries
+        BigDecimal totalPaid = paymentRepository.sumBySaleEntryId(id);
+        BigDecimal received = request.getReceivedAmount() != null
+                ? request.getReceivedAmount().add(totalPaid)
+                : totalPaid;
+        calculateTotals(entry, received);
 
         return SaleEntryDto.fromEntity(repository.save(entry));
     }
@@ -84,9 +116,47 @@ public class SaleEntryService {
             entry.setRemarks(request.getRemarks());
         }
 
-        calculateTotals(entry, request.getReceivedAmount(), entry.getTypeOfSale());
+        calculateTotals(entry, request.getReceivedAmount());
 
         return SaleEntryDto.fromEntity(repository.save(entry));
+    }
+
+    /**
+     * Add a new payment entry to a sale and recalculate balances.
+     */
+    @Transactional
+    public SaleEntryDto addPayment(Long saleEntryId, AddPaymentRequest request) {
+        SaleEntry entry = repository.findById(saleEntryId)
+                .orElseThrow(() -> new RuntimeException("Sale entry not found with id: " + saleEntryId));
+
+        PaymentEntry payment = new PaymentEntry();
+        payment.setSaleEntry(entry);
+        payment.setAmount(request.getAmount());
+        payment.setPaymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now());
+        payment.setPaymentMode(request.getPaymentMode());
+        payment.setReferenceNumber(request.getReferenceNumber());
+        payment.setRemarks(request.getRemarks());
+
+        entry.getPayments().add(payment);
+        repository.save(entry);
+
+        // Recalculate received amount from all payments
+        BigDecimal totalPaid = paymentRepository.sumBySaleEntryId(saleEntryId);
+        calculateTotals(entry, totalPaid);
+
+        return SaleEntryDto.fromEntity(repository.save(entry));
+    }
+
+    /**
+     * Get all payment entries for a sale.
+     */
+    public List<PaymentEntryDto> getPayments(Long saleEntryId) {
+        if (!repository.existsById(saleEntryId)) {
+            throw new RuntimeException("Sale entry not found with id: " + saleEntryId);
+        }
+        return paymentRepository.findBySaleEntryIdOrderByPaymentDateAsc(saleEntryId).stream()
+                .map(PaymentEntryDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -103,14 +173,17 @@ public class SaleEntryService {
         if (req.getBookingDate() != null) entry.setBookingDate(req.getBookingDate());
         if (req.getProject() != null) entry.setProject(req.getProject());
         if (req.getSpgPraneeth() != null) entry.setSpgPraneeth(req.getSpgPraneeth());
+        if (req.getSaleInitiation() != null) entry.setSaleInitiation(req.getSaleInitiation());
         if (req.getTokenNumber() != null) entry.setTokenNumber(req.getTokenNumber());
         if (req.getCustomerName() != null) entry.setCustomerName(req.getCustomerName());
         if (req.getPersonalCompany() != null) entry.setPersonalCompany(req.getPersonalCompany());
         if (req.getSol() != null) entry.setSol(req.getSol());
         if (req.getTypeOfSale() != null) entry.setTypeOfSale(req.getTypeOfSale());
         if (req.getLandExtentSqYards() != null) entry.setLandExtentSqYards(req.getLandExtentSqYards());
+        if (req.getSftPerSqYard() != null) entry.setSftPerSqYard(req.getSftPerSqYard());
         if (req.getSbuaSft() != null) entry.setSbuaSft(req.getSbuaSft());
         if (req.getFacing() != null) entry.setFacing(req.getFacing());
+        if (req.getFacingCharges() != null) entry.setFacingCharges(req.getFacingCharges());
         if (req.getBasePricePerSft() != null) entry.setBasePricePerSft(req.getBasePricePerSft());
         if (req.getAmenitiesPremiums() != null) entry.setAmenitiesPremiums(req.getAmenitiesPremiums());
         if (req.getRemarks() != null) entry.setRemarks(req.getRemarks());
@@ -172,20 +245,22 @@ public class SaleEntryService {
         entry.setTotalAdditionalCharges(additionalTotal);
     }
 
-    private void calculateTotals(SaleEntry entry, BigDecimal receivedAmount, String typeOfSale) {
+    private void calculateTotals(SaleEntry entry, BigDecimal receivedAmount) {
         BigDecimal sbua = entry.getSbuaSft() != null ? entry.getSbuaSft() : BigDecimal.ZERO;
         BigDecimal basePrice = entry.getBasePricePerSft() != null ? entry.getBasePricePerSft() : BigDecimal.ZERO;
         BigDecimal saleAmount = sbua.multiply(basePrice);
         entry.setTotalSalesConsideration(saleAmount);
 
         BigDecimal additional = entry.getTotalAdditionalCharges() != null ? entry.getTotalAdditionalCharges() : BigDecimal.ZERO;
-        BigDecimal grandTotal = saleAmount.add(additional);
+        BigDecimal facingCharges = entry.getFacingCharges() != null ? entry.getFacingCharges() : BigDecimal.ZERO;
+        BigDecimal grandTotal = saleAmount.add(additional).add(facingCharges);
         entry.setGrandTotal(grandTotal);
 
         BigDecimal received = receivedAmount != null ? receivedAmount : BigDecimal.ZERO;
         entry.setReceivedAmount(received);
         entry.setBalanceToReceive(grandTotal.subtract(received));
 
+        String typeOfSale = entry.getTypeOfSale();
         if ("OTP".equalsIgnoreCase(typeOfSale)) {
             entry.setBalancePlanApproved(grandTotal.subtract(received));
         } else {

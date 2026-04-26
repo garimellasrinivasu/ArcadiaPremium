@@ -55,20 +55,42 @@ export interface UpdateUserRequest {
 
 // --- Sale Entry types ---
 
+export interface PaymentEntry {
+  id: number;
+  saleEntryId: number;
+  amount: number;
+  paymentDate: string;
+  paymentMode?: string;
+  referenceNumber?: string;
+  remarks?: string;
+  createdAt: string;
+}
+
+export interface AddPaymentRequest {
+  amount: number;
+  paymentDate?: string;
+  paymentMode?: string;
+  referenceNumber?: string;
+  remarks?: string;
+}
+
 export interface SaleEntry {
   id: number;
   serialNo: number;
   bookingDate: string;
   project: string;
   spgPraneeth?: string;
+  saleInitiation?: string;
   tokenNumber?: string;
   customerName: string;
   personalCompany?: string;
   sol?: string;
   typeOfSale?: string;
   landExtentSqYards?: number;
+  sftPerSqYard?: number;
   sbuaSft?: number;
   facing?: string;
+  facingCharges?: number;
   basePricePerSft?: number;
   amenitiesPremiums?: string;
   totalSalesConsideration?: number;
@@ -92,6 +114,7 @@ export interface SaleEntry {
   totalAdditionalCharges?: number;
   grandTotal?: number;
   remarks?: string;
+  payments?: PaymentEntry[];
   createdAt: string;
   updatedAt: string;
 }
@@ -100,14 +123,17 @@ export interface CreateSaleEntryRequest {
   bookingDate: string;
   project: string;
   spgPraneeth?: string;
+  saleInitiation?: string;
   tokenNumber?: string;
   customerName: string;
   personalCompany?: string;
   sol?: string;
   typeOfSale?: string;
   landExtentSqYards?: number;
+  sftPerSqYard?: number;
   sbuaSft?: number;
   facing?: string;
+  facingCharges?: number;
   basePricePerSft?: number;
   amenitiesPremiums?: string;
   receivedAmount?: number;

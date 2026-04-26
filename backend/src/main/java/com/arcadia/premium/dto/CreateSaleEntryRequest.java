@@ -15,6 +15,7 @@ public class CreateSaleEntryRequest {
     private String project;
 
     private String spgPraneeth;
+    private String saleInitiation;
     private String tokenNumber;
 
     @NotBlank(message = "Customer name is required")
@@ -24,8 +25,10 @@ public class CreateSaleEntryRequest {
     private String sol;
     private String typeOfSale;
     private BigDecimal landExtentSqYards;
+    private BigDecimal sftPerSqYard;
     private BigDecimal sbuaSft;
     private String facing;
+    private BigDecimal facingCharges;
     private BigDecimal basePricePerSft;
     private String amenitiesPremiums;
     private BigDecimal receivedAmount;
@@ -52,6 +55,8 @@ public class CreateSaleEntryRequest {
     public void setProject(String project) { this.project = project; }
     public String getSpgPraneeth() { return spgPraneeth; }
     public void setSpgPraneeth(String spgPraneeth) { this.spgPraneeth = spgPraneeth; }
+    public String getSaleInitiation() { return saleInitiation; }
+    public void setSaleInitiation(String saleInitiation) { this.saleInitiation = saleInitiation; }
     public String getTokenNumber() { return tokenNumber; }
     public void setTokenNumber(String tokenNumber) { this.tokenNumber = tokenNumber; }
     public String getCustomerName() { return customerName; }
@@ -64,10 +69,14 @@ public class CreateSaleEntryRequest {
     public void setTypeOfSale(String typeOfSale) { this.typeOfSale = typeOfSale; }
     public BigDecimal getLandExtentSqYards() { return landExtentSqYards; }
     public void setLandExtentSqYards(BigDecimal landExtentSqYards) { this.landExtentSqYards = landExtentSqYards; }
+    public BigDecimal getSftPerSqYard() { return sftPerSqYard; }
+    public void setSftPerSqYard(BigDecimal sftPerSqYard) { this.sftPerSqYard = sftPerSqYard; }
     public BigDecimal getSbuaSft() { return sbuaSft; }
     public void setSbuaSft(BigDecimal sbuaSft) { this.sbuaSft = sbuaSft; }
     public String getFacing() { return facing; }
     public void setFacing(String facing) { this.facing = facing; }
+    public BigDecimal getFacingCharges() { return facingCharges; }
+    public void setFacingCharges(BigDecimal facingCharges) { this.facingCharges = facingCharges; }
     public BigDecimal getBasePricePerSft() { return basePricePerSft; }
     public void setBasePricePerSft(BigDecimal basePricePerSft) { this.basePricePerSft = basePricePerSft; }
     public String getAmenitiesPremiums() { return amenitiesPremiums; }

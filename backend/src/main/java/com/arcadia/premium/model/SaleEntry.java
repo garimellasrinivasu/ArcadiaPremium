@@ -7,6 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "sale_entries")
@@ -28,6 +30,9 @@ public class SaleEntry {
     @Column(name = "spg_praneeth")
     private String spgPraneeth;
 
+    @Column(name = "sale_initiation")
+    private String saleInitiation;
+
     @Column(name = "token_number")
     private String tokenNumber;
 
@@ -46,11 +51,17 @@ public class SaleEntry {
     @Column(name = "land_extent_sqyards", precision = 12, scale = 2)
     private BigDecimal landExtentSqYards;
 
+    @Column(name = "sft_per_sqyard", precision = 8, scale = 2)
+    private BigDecimal sftPerSqYard;
+
     @Column(name = "sbua_sft", precision = 12, scale = 2)
     private BigDecimal sbuaSft;
 
     @Column(name = "facing")
     private String facing;
+
+    @Column(name = "facing_charges", precision = 15, scale = 2)
+    private BigDecimal facingCharges;
 
     @Column(name = "base_price_per_sft", precision = 12, scale = 2)
     private BigDecimal basePricePerSft;
@@ -120,6 +131,9 @@ public class SaleEntry {
     @Column(name = "remarks", length = 1000)
     private String remarks;
 
+    @OneToMany(mappedBy = "saleEntry", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PaymentEntry> payments = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -147,6 +161,9 @@ public class SaleEntry {
     public String getSpgPraneeth() { return spgPraneeth; }
     public void setSpgPraneeth(String spgPraneeth) { this.spgPraneeth = spgPraneeth; }
 
+    public String getSaleInitiation() { return saleInitiation; }
+    public void setSaleInitiation(String saleInitiation) { this.saleInitiation = saleInitiation; }
+
     public String getTokenNumber() { return tokenNumber; }
     public void setTokenNumber(String tokenNumber) { this.tokenNumber = tokenNumber; }
 
@@ -165,11 +182,17 @@ public class SaleEntry {
     public BigDecimal getLandExtentSqYards() { return landExtentSqYards; }
     public void setLandExtentSqYards(BigDecimal landExtentSqYards) { this.landExtentSqYards = landExtentSqYards; }
 
+    public BigDecimal getSftPerSqYard() { return sftPerSqYard; }
+    public void setSftPerSqYard(BigDecimal sftPerSqYard) { this.sftPerSqYard = sftPerSqYard; }
+
     public BigDecimal getSbuaSft() { return sbuaSft; }
     public void setSbuaSft(BigDecimal sbuaSft) { this.sbuaSft = sbuaSft; }
 
     public String getFacing() { return facing; }
     public void setFacing(String facing) { this.facing = facing; }
+
+    public BigDecimal getFacingCharges() { return facingCharges; }
+    public void setFacingCharges(BigDecimal facingCharges) { this.facingCharges = facingCharges; }
 
     public BigDecimal getBasePricePerSft() { return basePricePerSft; }
     public void setBasePricePerSft(BigDecimal basePricePerSft) { this.basePricePerSft = basePricePerSft; }
@@ -234,4 +257,7 @@ public class SaleEntry {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public List<PaymentEntry> getPayments() { return payments; }
+    public void setPayments(List<PaymentEntry> payments) { this.payments = payments; }
 }

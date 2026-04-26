@@ -14,6 +14,11 @@ public interface SaleEntryRepository extends JpaRepository<SaleEntry, Long> {
 
     List<SaleEntry> findByCustomerNameContainingIgnoreCase(String name);
 
+    List<SaleEntry> findByTokenNumberContainingIgnoreCase(String tokenNumber);
+
+    @Query("SELECT s FROM SaleEntry s WHERE LOWER(s.tokenNumber) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.customerName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<SaleEntry> searchByTokenOrCustomerName(@org.springframework.data.repository.query.Param("query") String query);
+
     @Query("SELECT COALESCE(MAX(s.serialNo), 0) FROM SaleEntry s")
     Integer findMaxSerialNo();
 }

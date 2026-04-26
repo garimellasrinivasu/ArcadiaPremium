@@ -5,6 +5,8 @@ import com.arcadia.premium.model.SaleEntry;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class SaleEntryDto {
 
@@ -13,14 +15,17 @@ public class SaleEntryDto {
     private LocalDate bookingDate;
     private String project;
     private String spgPraneeth;
+    private String saleInitiation;
     private String tokenNumber;
     private String customerName;
     private String personalCompany;
     private String sol;
     private String typeOfSale;
     private BigDecimal landExtentSqYards;
+    private BigDecimal sftPerSqYard;
     private BigDecimal sbuaSft;
     private String facing;
+    private BigDecimal facingCharges;
     private BigDecimal basePricePerSft;
     private String amenitiesPremiums;
     private BigDecimal totalSalesConsideration;
@@ -28,7 +33,6 @@ public class SaleEntryDto {
     private BigDecimal balanceToReceive;
     private BigDecimal balancePlanApproved;
     private BigDecimal balanceDuringExecution;
-
     // Additional charges
     private Boolean includeClubHouse;
     private BigDecimal clubHouseCharges;
@@ -44,8 +48,9 @@ public class SaleEntryDto {
     private BigDecimal advanceMaintenanceTotal;
     private BigDecimal totalAdditionalCharges;
     private BigDecimal grandTotal;
-
     private String remarks;
+    // Payments
+    private List<PaymentEntryDto> payments;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -56,14 +61,17 @@ public class SaleEntryDto {
         dto.bookingDate = e.getBookingDate();
         dto.project = e.getProject();
         dto.spgPraneeth = e.getSpgPraneeth();
+        dto.saleInitiation = e.getSaleInitiation();
         dto.tokenNumber = e.getTokenNumber();
         dto.customerName = e.getCustomerName();
         dto.personalCompany = e.getPersonalCompany();
         dto.sol = e.getSol();
         dto.typeOfSale = e.getTypeOfSale();
         dto.landExtentSqYards = e.getLandExtentSqYards();
+        dto.sftPerSqYard = e.getSftPerSqYard();
         dto.sbuaSft = e.getSbuaSft();
         dto.facing = e.getFacing();
+        dto.facingCharges = e.getFacingCharges();
         dto.basePricePerSft = e.getBasePricePerSft();
         dto.amenitiesPremiums = e.getAmenitiesPremiums();
         dto.totalSalesConsideration = e.getTotalSalesConsideration();
@@ -71,7 +79,6 @@ public class SaleEntryDto {
         dto.balanceToReceive = e.getBalanceToReceive();
         dto.balancePlanApproved = e.getBalancePlanApproved();
         dto.balanceDuringExecution = e.getBalanceDuringExecution();
-        // Additional charges
         dto.includeClubHouse = e.getIncludeClubHouse();
         dto.clubHouseCharges = e.getClubHouseCharges();
         dto.includeCorpusFund = e.getIncludeCorpusFund();
@@ -89,6 +96,13 @@ public class SaleEntryDto {
         dto.remarks = e.getRemarks();
         dto.createdAt = e.getCreatedAt();
         dto.updatedAt = e.getUpdatedAt();
+        try {
+            dto.payments = e.getPayments().stream()
+                    .map(PaymentEntryDto::fromEntity)
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            dto.payments = List.of();
+        }
         return dto;
     }
 
@@ -103,6 +117,8 @@ public class SaleEntryDto {
     public void setProject(String project) { this.project = project; }
     public String getSpgPraneeth() { return spgPraneeth; }
     public void setSpgPraneeth(String spgPraneeth) { this.spgPraneeth = spgPraneeth; }
+    public String getSaleInitiation() { return saleInitiation; }
+    public void setSaleInitiation(String saleInitiation) { this.saleInitiation = saleInitiation; }
     public String getTokenNumber() { return tokenNumber; }
     public void setTokenNumber(String tokenNumber) { this.tokenNumber = tokenNumber; }
     public String getCustomerName() { return customerName; }
@@ -115,10 +131,14 @@ public class SaleEntryDto {
     public void setTypeOfSale(String typeOfSale) { this.typeOfSale = typeOfSale; }
     public BigDecimal getLandExtentSqYards() { return landExtentSqYards; }
     public void setLandExtentSqYards(BigDecimal landExtentSqYards) { this.landExtentSqYards = landExtentSqYards; }
+    public BigDecimal getSftPerSqYard() { return sftPerSqYard; }
+    public void setSftPerSqYard(BigDecimal sftPerSqYard) { this.sftPerSqYard = sftPerSqYard; }
     public BigDecimal getSbuaSft() { return sbuaSft; }
     public void setSbuaSft(BigDecimal sbuaSft) { this.sbuaSft = sbuaSft; }
     public String getFacing() { return facing; }
     public void setFacing(String facing) { this.facing = facing; }
+    public BigDecimal getFacingCharges() { return facingCharges; }
+    public void setFacingCharges(BigDecimal facingCharges) { this.facingCharges = facingCharges; }
     public BigDecimal getBasePricePerSft() { return basePricePerSft; }
     public void setBasePricePerSft(BigDecimal basePricePerSft) { this.basePricePerSft = basePricePerSft; }
     public String getAmenitiesPremiums() { return amenitiesPremiums; }
@@ -134,35 +154,37 @@ public class SaleEntryDto {
     public BigDecimal getBalanceDuringExecution() { return balanceDuringExecution; }
     public void setBalanceDuringExecution(BigDecimal balanceDuringExecution) { this.balanceDuringExecution = balanceDuringExecution; }
     public Boolean getIncludeClubHouse() { return includeClubHouse; }
-    public void setIncludeClubHouse(Boolean includeClubHouse) { this.includeClubHouse = includeClubHouse; }
+    public void setIncludeClubHouse(Boolean v) { this.includeClubHouse = v; }
     public BigDecimal getClubHouseCharges() { return clubHouseCharges; }
-    public void setClubHouseCharges(BigDecimal clubHouseCharges) { this.clubHouseCharges = clubHouseCharges; }
+    public void setClubHouseCharges(BigDecimal v) { this.clubHouseCharges = v; }
     public Boolean getIncludeCorpusFund() { return includeCorpusFund; }
-    public void setIncludeCorpusFund(Boolean includeCorpusFund) { this.includeCorpusFund = includeCorpusFund; }
+    public void setIncludeCorpusFund(Boolean v) { this.includeCorpusFund = v; }
     public BigDecimal getCorpusFund() { return corpusFund; }
-    public void setCorpusFund(BigDecimal corpusFund) { this.corpusFund = corpusFund; }
+    public void setCorpusFund(BigDecimal v) { this.corpusFund = v; }
     public Boolean getIncludeLegalDoc() { return includeLegalDoc; }
-    public void setIncludeLegalDoc(Boolean includeLegalDoc) { this.includeLegalDoc = includeLegalDoc; }
+    public void setIncludeLegalDoc(Boolean v) { this.includeLegalDoc = v; }
     public BigDecimal getLegalDocCharges() { return legalDocCharges; }
-    public void setLegalDocCharges(BigDecimal legalDocCharges) { this.legalDocCharges = legalDocCharges; }
+    public void setLegalDocCharges(BigDecimal v) { this.legalDocCharges = v; }
     public Boolean getIncludeCautionDeposit() { return includeCautionDeposit; }
-    public void setIncludeCautionDeposit(Boolean includeCautionDeposit) { this.includeCautionDeposit = includeCautionDeposit; }
+    public void setIncludeCautionDeposit(Boolean v) { this.includeCautionDeposit = v; }
     public BigDecimal getRefundableCautionDeposit() { return refundableCautionDeposit; }
-    public void setRefundableCautionDeposit(BigDecimal refundableCautionDeposit) { this.refundableCautionDeposit = refundableCautionDeposit; }
+    public void setRefundableCautionDeposit(BigDecimal v) { this.refundableCautionDeposit = v; }
     public Boolean getIncludeAdvanceMaintenance() { return includeAdvanceMaintenance; }
-    public void setIncludeAdvanceMaintenance(Boolean includeAdvanceMaintenance) { this.includeAdvanceMaintenance = includeAdvanceMaintenance; }
+    public void setIncludeAdvanceMaintenance(Boolean v) { this.includeAdvanceMaintenance = v; }
     public BigDecimal getAdvanceMaintRatePerSft() { return advanceMaintRatePerSft; }
-    public void setAdvanceMaintRatePerSft(BigDecimal advanceMaintRatePerSft) { this.advanceMaintRatePerSft = advanceMaintRatePerSft; }
+    public void setAdvanceMaintRatePerSft(BigDecimal v) { this.advanceMaintRatePerSft = v; }
     public Integer getAdvanceMaintMonths() { return advanceMaintMonths; }
-    public void setAdvanceMaintMonths(Integer advanceMaintMonths) { this.advanceMaintMonths = advanceMaintMonths; }
+    public void setAdvanceMaintMonths(Integer v) { this.advanceMaintMonths = v; }
     public BigDecimal getAdvanceMaintenanceTotal() { return advanceMaintenanceTotal; }
-    public void setAdvanceMaintenanceTotal(BigDecimal advanceMaintenanceTotal) { this.advanceMaintenanceTotal = advanceMaintenanceTotal; }
+    public void setAdvanceMaintenanceTotal(BigDecimal v) { this.advanceMaintenanceTotal = v; }
     public BigDecimal getTotalAdditionalCharges() { return totalAdditionalCharges; }
-    public void setTotalAdditionalCharges(BigDecimal totalAdditionalCharges) { this.totalAdditionalCharges = totalAdditionalCharges; }
+    public void setTotalAdditionalCharges(BigDecimal v) { this.totalAdditionalCharges = v; }
     public BigDecimal getGrandTotal() { return grandTotal; }
-    public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
+    public void setGrandTotal(BigDecimal v) { this.grandTotal = v; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
+    public List<PaymentEntryDto> getPayments() { return payments; }
+    public void setPayments(List<PaymentEntryDto> payments) { this.payments = payments; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
