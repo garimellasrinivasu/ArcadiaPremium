@@ -3,7 +3,7 @@ spring:
     name: arcadia-premium
 
   datasource:
-    url: jdbc:postgresql://localhost:${DB_PORT:5432}/arcadia_premium
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:arcadia_premium}
     username: ${DB_USER:arcadia}
     password: ${DB_PASS:arcadia123}
     driver-class-name: org.postgresql.Driver
@@ -34,14 +34,32 @@ spring:
           starttls:
             enabled: true
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
 server:
   port: ${PORT:8080}
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   jwt:
-    secret: YXJjYWRpYS1wcmVtaXVtLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9u
+    secret: ${JWT_SECRET:YXJjYWRpYS1wcmVtaXVtLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9u}
     expiration-ms: 86400000       # 24 hours
     refresh-expiration-ms: 604800000  # 7 days
+
+  # Gender detection (Python + OpenCV)
+  detection:
+    python-path: ${PYTHON_PATH:python3}
+    script-dir: ${DETECTION_SCRIPT_DIR:}
+
+  # WhatsApp Business API (optional)
+  whatsapp:
+    enabled: ${WHATSAPP_ENABLED:false}
+    api-url: ${WHATSAPP_API_URL:}
+    api-token: ${WHATSAPP_API_TOKEN:}
 
 logging:
   level:

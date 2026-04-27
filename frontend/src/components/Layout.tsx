@@ -32,6 +32,13 @@ const menuSections: MenuSection[] = [
       { label: "Sale Quote", path: "/activities/sale-quote" },
       { label: "Finance Spent", path: "/activities/finance-spent" },
       { label: "Master Plan", path: "/activities/master-plan" },
+      { label: "Site Attendance", path: "/activities/site-attendance" },
+    ],
+  },
+  {
+    label: "Admin Settings",
+    items: [
+      { label: "Approval Chains", path: "/admin/approval-chains", adminOnly: true },
     ],
   },
 ];

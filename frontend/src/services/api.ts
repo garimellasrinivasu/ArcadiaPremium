@@ -1,7 +1,9 @@
 import axios from "axios";
 
+// In dev: Vite proxy forwards /api → localhost:8080
+// In prod: VITE_API_BASE_URL points to Render backend (e.g. https://arcadia-api.onrender.com/api)
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   headers: { "Content-Type": "application/json" },
 });
 

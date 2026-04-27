@@ -1,0 +1,40 @@
+databases:
+  - name: arcadia-premium-db
+    plan: free
+    databaseName: arcadia_premium
+    user: arcadia
+
+services:
+  - type: web
+    name: arcadia-premium-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: arcadia-premium-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: arcadia-premium-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: arcadia-premium-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: arcadia-premium-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: arcadia-premium-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://arcadia-premium.netlify.app
+      - key: PORT
+        value: 8080
