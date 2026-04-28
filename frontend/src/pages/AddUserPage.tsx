@@ -77,7 +77,18 @@ export default function AddUserPage() {
       await userService.create(form);
       navigate("/users");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      // Extract message from Axios error response (backend returns { message: "..." })
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
+      const status = axiosErr?.response?.status;
+      const serverMsg = axiosErr?.response?.data?.message;
+
+      if (status === 409 || (serverMsg && serverMsg.toLowerCase().includes("already in use"))) {
+        setError("This email is already registered. Please use a different email address.");
+      } else if (serverMsg) {
+        setError(serverMsg);
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to create user");
+      }
     } finally {
       setSaving(false);
     }
