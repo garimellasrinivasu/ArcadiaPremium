@@ -56,8 +56,8 @@ export default function SiteAttendancePage() {
   const [submissionKey, setSubmissionKey] = useState(0);
 
   useEffect(() => {
-    authService.getCurrentUser().then(setCurrentUser).catch(() => {});
-    userService.getAll().then(setUsers).catch(() => {});
+    authService.getCurrentUser().then(setCurrentUser).catch(() => { });
+    userService.getAll().then(setUsers).catch(() => { });
   }, []);
 
   function onSubmitSuccess() {
@@ -75,17 +75,16 @@ export default function SiteAttendancePage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              tab === t
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t
                 ? "bg-arcadia-600 text-white shadow"
                 : "text-gray-600 hover:bg-gray-200"
-            }`}
+              }`}
           >
             {t === "capture"
               ? "Capture Attendance"
               : t === "submissions"
-              ? "My Submissions"
-              : "Pending Approvals"}
+                ? "My Submissions"
+                : "Pending Approvals"}
           </button>
         ))}
       </div>
@@ -177,7 +176,7 @@ function CaptureTab({
   useEffect(() => {
     if (cameraActive && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
   }, [cameraActive]);
 
@@ -438,9 +437,8 @@ function CaptureTab({
                   {myChain.steps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-1">
                       {idx > 0 && <span className="text-gray-300">&rarr;</span>}
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        step.blocking ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                      }`}>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${step.blocking ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                        }`}>
                         {step.approverUserName || displayRole(step.approverRoleName)}
                         <span className="font-normal text-gray-500 ml-1">
                           ({displayRole(step.approverRoleName)})
@@ -513,7 +511,7 @@ function SubmissionsTab() {
     siteAttendanceService
       .getMySubmissions()
       .then(setRecords)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -549,7 +547,7 @@ function ApprovalsTab({ currentUser }: { currentUser: User | null }) {
     siteAttendanceService
       .getPendingApprovals()
       .then(setRecords)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -667,6 +665,7 @@ function AttendanceCard({
   record,
   showApproveActions,
   onActionDone,
+  // @ts-ignore
   currentUser,
 }: {
   record: SiteAttendanceDto;
@@ -694,10 +693,10 @@ function AttendanceCard({
     record.status === "APPROVED"
       ? "bg-green-100 text-green-700"
       : record.status === "REJECTED"
-      ? "bg-red-100 text-red-700"
-      : record.status === "IN_APPROVAL"
-      ? "bg-blue-100 text-blue-700"
-      : "bg-yellow-100 text-yellow-700";
+        ? "bg-red-100 text-red-700"
+        : record.status === "IN_APPROVAL"
+          ? "bg-blue-100 text-blue-700"
+          : "bg-yellow-100 text-yellow-700";
 
   const statusLabel =
     record.status === "IN_APPROVAL"
