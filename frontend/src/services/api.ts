@@ -1,9 +1,23 @@
 import axios from "axios";
 
-// In dev: Vite proxy forwards /api → localhost:8080
-// In prod: VITE_API_BASE_URL points to Render backend (e.g. https://arcadia-api.onrender.com/api)
+// In production (Netlify), we use the /api proxy to avoid CORS and mobile connectivity issues.
+// In local testing (localhost or local IP), we hit the Render backend directly.
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl !== "/api") return envUrl;
+
+  const hostname = window.location.hostname;
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.");
+  
+  if (isLocal) {
+    return "https://arcadia-premium-api.onrender.com/api";
+  }
+  
+  return "/api";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  baseURL: getBaseURL(),
   headers: { "Content-Type": "application/json" },
 });
 

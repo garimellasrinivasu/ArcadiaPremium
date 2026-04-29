@@ -56,13 +56,27 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         
-        // Split and trim origins
+        // Origins from environment variable
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
         
-        config.setAllowedOrigins(origins);
+        // We use patterns to allow localhost and local network IPs (192.168.x.x)
+        // This is safe because it only affects the API access and we still require JWT.
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:[*]",
+            "http://127.0.0.1:[*]",
+            "http://192.168.[*].[*]:[*]",
+            "https://arcadia-premium.netlify.app"
+        ));
+        
+        // Also add any origins from the environment variable
+        for (String origin : origins) {
+            if (!origin.isEmpty()) {
+                config.addAllowedOrigin(origin);
+            }
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
