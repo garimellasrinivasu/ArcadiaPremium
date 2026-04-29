@@ -34,6 +34,13 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // FORCE RESET ADMIN PASSWORD FOR LOCAL TESTING
+        userRepository.findByEmail("admin@arcadiapremium.com").ifPresent(admin -> {
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            userRepository.save(admin);
+            log.info("FORCED RESET: admin@arcadiapremium.com password has been reset to 'admin123'");
+        });
+
         if (roleRepository.count() > 0) {
             log.info("Database already seeded — skipping role/user seeding.");
             seedApprovalChainsIfNeeded();
