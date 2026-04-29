@@ -28,22 +28,26 @@ const MIME_TYPES = {
 
 function proxyRequest(req, res) {
   const targetUrl = new URL(req.url, API_TARGET);
+  
+  // Choose http or https based on the target URL
+  const client = targetUrl.protocol === "https:" ? https : http;
+  const targetPort = targetUrl.port || (targetUrl.protocol === "https:" ? 443 : 80);
 
   const options = {
     hostname: targetUrl.hostname,
-    port: 443,
+    port: targetPort,
     path: targetUrl.pathname + targetUrl.search,
     method: req.method,
     headers: {
       ...req.headers,
-      host: targetUrl.hostname,
+      host: targetUrl.host, // Use host instead of hostname to include port if needed
     },
   };
   // Remove headers that break the proxy
   delete options.headers["origin"];
   delete options.headers["referer"];
 
-  const proxyReq = https.request(options, (proxyRes) => {
+  const proxyReq = client.request(options, (proxyRes) => {
     // Remove CORS headers from backend — not needed since we're same-origin
     const headers = { ...proxyRes.headers };
     delete headers["access-control-allow-origin"];
