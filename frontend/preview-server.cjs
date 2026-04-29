@@ -8,9 +8,10 @@ const fs = require("fs");
 const path = require("path");
 const url = require("url");
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 const DIST = path.join(__dirname, "dist");
-const API_TARGET = "https://arcadia-premium-api.onrender.com";
+// Default to local backend, but allow override via environment variable
+const API_TARGET = process.env.API_TARGET || "http://localhost:8080";
 
 const MIME_TYPES = {
   ".html": "text/html",
