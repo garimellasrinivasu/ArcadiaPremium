@@ -123,6 +123,7 @@ function CollapsibleSection({
 export default function Layout() {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     authService
@@ -130,6 +131,11 @@ export default function Layout() {
       .then(setCurrentUser)
       .catch(() => {});
   }, []);
+
+  // Close sidebar on navigation (mobile only)
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   const displayName = currentUser
     ? `${currentUser.firstName} ${currentUser.lastName}`
@@ -143,13 +149,25 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen">
       {/* ===== TOP HEADER ===== */}
       <header className="px-6 py-5 flex items-center justify-between border-b border-arcadia-200" style={{ background: "linear-gradient(135deg, #e0effe 0%, #f0f7ff 40%, #fdf9ef 100%)" }}>
-        {/* Left — Logo */}
-        <div className="flex-1 flex justify-start">
-          <Link to="/">
+        {/* Left — Toggle & Logo */}
+        <div className="flex-1 flex items-center gap-4">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            aria-label="Toggle Menu"
+          >
+            {isSidebarOpen ? (
+              <span className="text-2xl leading-none">✕</span>
+            ) : (
+              <span className="text-2xl leading-none">☰</span>
+            )}
+          </button>
+          
+          <Link to="/" className="flex items-center">
             <img
               src="/arcadia-logo.png"
               alt="Arcadia Premium"
-              className="h-20 object-contain"
+              className="h-12 lg:h-20 object-contain transition-all"
             />
           </Link>
         </div>
@@ -167,9 +185,29 @@ export default function Layout() {
       </header>
 
       {/* ===== BODY ===== */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative">
+        {/* Mobile Backdrop */}
+        {isSidebarOpen && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* ===== LEFT SIDEBAR ===== */}
-        <aside className="w-64 bg-white border-r border-gray-200 py-4 px-3 flex flex-col justify-between">
+        <aside className={`
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:translate-x-0
+          fixed lg:relative
+          inset-y-0 left-0
+          z-50 lg:z-0
+          w-64 bg-white border-r border-gray-200
+          py-4 px-3
+          flex flex-col justify-between
+          transition-transform duration-300 ease-in-out
+          lg:transition-none
+          shadow-xl lg:shadow-none
+        `}>
           <nav className="space-y-1">
             {menuSections.map((section) => (
               <CollapsibleSection
@@ -193,7 +231,7 @@ export default function Layout() {
         </aside>
 
         {/* ===== MAIN CONTENT ===== */}
-        <main className="flex-1 p-8 bg-gray-50 overflow-auto">
+        <main className="flex-1 p-4 md:p-8 bg-gray-50 overflow-auto">
           <Outlet />
         </main>
       </div>
