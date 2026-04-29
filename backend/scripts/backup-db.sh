@@ -17,7 +17,12 @@ BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_backup_${DATE}.sql"
 # How many days of backups to keep (prevents disk filling up)
 DAYS_TO_KEEP=7
 
-# Ensure backup directory exists
+# Remote Server Configuration (for offsite backups)
+REMOTE_SERVER="192.168.1.69"
+REMOTE_USER="$USER"  # Assuming 'dinakar' is the username on both machines
+REMOTE_DIR="/home/$REMOTE_USER/arcadia_remote_backups"
+
+# Ensure local backup directory exists
 mkdir -p "$BACKUP_DIR"
 
 echo "[$(date)] Starting backup of database '$DB_NAME' to $BACKUP_FILE..."
@@ -41,10 +46,24 @@ if [ $? -eq 0 ]; then
     
     # Compress the backup to save disk space
     gzip "$BACKUP_FILE"
-    echo "[$(date)] Backup compressed to ${BACKUP_FILE}.gz"
+    COMPRESSED_FILE="${BACKUP_FILE}.gz"
+    echo "[$(date)] Backup compressed to $COMPRESSED_FILE"
 
-    # Delete backups older than our retention policy
-    echo "[$(date)] Cleaning up backups older than $DAYS_TO_KEEP days..."
+    # Transfer to remote server (dina-server)
+    echo "[$(date)] Transferring backup to $REMOTE_SERVER..."
+    # 1. Ensure the remote directory exists
+    ssh "$REMOTE_USER@$REMOTE_SERVER" "mkdir -p $REMOTE_DIR"
+    # 2. Securely copy the file over
+    scp "$COMPRESSED_FILE" "$REMOTE_USER@$REMOTE_SERVER:$REMOTE_DIR/"
+    
+    if [ $? -eq 0 ]; then
+        echo "[$(date)] Successfully transferred to $REMOTE_SERVER"
+    else
+        echo "[$(date)] ERROR: Failed to transfer to $REMOTE_SERVER. Check SSH keys!"
+    fi
+
+    # Delete local backups older than our retention policy
+    echo "[$(date)] Cleaning up local backups older than $DAYS_TO_KEEP days..."
     find "$BACKUP_DIR" -type f -name "${DB_NAME}_backup_*.sql.gz" -mtime +$DAYS_TO_KEEP -delete
     echo "[$(date)] Cleanup complete."
 else
