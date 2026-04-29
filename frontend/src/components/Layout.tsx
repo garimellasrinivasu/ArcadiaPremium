@@ -43,6 +43,19 @@ const menuSections: MenuSection[] = [
   },
 ];
 
+function CurrentDate() {
+  return (
+    <span className="text-sm text-gray-600">
+      {new Date().toLocaleDateString("en-IN", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })}
+    </span>
+  );
+}
+
 function CollapsibleSection({
   section,
   currentPath,
@@ -130,11 +143,8 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen">
       {/* ===== TOP HEADER ===== */}
       <header className="px-6 py-5 flex items-center justify-between border-b border-arcadia-200" style={{ background: "linear-gradient(135deg, #e0effe 0%, #f0f7ff 40%, #fdf9ef 100%)" }}>
-        {/* Left spacer */}
-        <div className="w-1/4" />
-
-        {/* Center — Logo */}
-        <div className="flex-1 flex justify-center">
+        {/* Left — Logo */}
+        <div className="flex-1 flex justify-start">
           <Link to="/">
             <img
               src="/arcadia-logo.png"
@@ -144,8 +154,9 @@ export default function Layout() {
           </Link>
         </div>
 
-        {/* Right — Date/Time & User */}
-        <div className="w-1/4 text-right space-y-0.5">
+        {/* Right — Date & User */}
+        <div className="text-right space-y-0.5">
+          <CurrentDate />
           <div className="text-sm text-gray-700">
             Logged In :{" "}
             <span className="font-semibold text-arcadia-700 underline underline-offset-2">
