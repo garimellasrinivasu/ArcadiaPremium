@@ -68,6 +68,8 @@ public class SecurityConfig {
             "http://localhost:[*]",
             "http://127.0.0.1:[*]",
             "http://192.168.[*].[*]:[*]",
+            "http://arcadiapremium.duckdns.org:[*]",
+            "https://arcadiapremium.duckdns.org:[*]",
             "https://arcadia-premium.netlify.app"
         ));
         
