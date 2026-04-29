@@ -22,9 +22,9 @@ export default defineConfig({
     port: 4000,
     proxy: {
       "/api": {
-        target: "https://arcadia-premium-api.onrender.com",
+        target: "http://localhost:8080",
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },
