@@ -43,31 +43,6 @@ const menuSections: MenuSection[] = [
   },
 ];
 
-function CurrentDateTime() {
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <span className="text-sm text-gray-600">
-      {now.toLocaleDateString("en-IN", {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })}{" "}
-      {now.toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })}
-    </span>
-  );
-}
-
 function CollapsibleSection({
   section,
   currentPath,
@@ -171,7 +146,6 @@ export default function Layout() {
 
         {/* Right — Date/Time & User */}
         <div className="w-1/4 text-right space-y-0.5">
-          <CurrentDateTime />
           <div className="text-sm text-gray-700">
             Logged In :{" "}
             <span className="font-semibold text-arcadia-700 underline underline-offset-2">
