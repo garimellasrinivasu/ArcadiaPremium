@@ -22,15 +22,19 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[$(date)] Starting backup of database '$DB_NAME' to $BACKUP_FILE..."
 
-# Check if pg_dump is available natively
-if ! command -v pg_dump &> /dev/null; then
-    echo "[$(date)] ERROR: 'pg_dump' could not be found."
-    echo "Please install it by running: sudo apt update && sudo apt install -y postgresql-client"
+# Find the running postgres docker container
+CONTAINER_ID=$(docker ps -q -f "ancestor=postgres" | head -n 1)
+
+if [ -z "$CONTAINER_ID" ]; then
+    echo "[$(date)] ERROR: Could not find a running Postgres Docker container!"
     exit 1
 fi
 
-# Perform the backup
-pg_dump -U "$DB_USER" -h localhost -p 5432 "$DB_NAME" > "$BACKUP_FILE"
+echo "[$(date)] Found Postgres container: $CONTAINER_ID"
+
+# Perform the backup using the pg_dump inside the docker container
+# This guarantees the pg_dump version exactly matches the database version
+docker exec -e PGPASSWORD="$PGPASSWORD" "$CONTAINER_ID" pg_dump -U "$DB_USER" "$DB_NAME" > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
     echo "[$(date)] Backup completed successfully."
