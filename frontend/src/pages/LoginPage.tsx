@@ -17,8 +17,13 @@ export default function LoginPage() {
     try {
       await authService.login({ email, password });
       navigate("/");
-    } catch {
-      setError("Invalid email or password");
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError("Invalid email or password. Please try again.");
+      } else {
+        setError("Unable to connect to the server. This could be a network issue or a temporary server problem.");
+        console.error("Login error:", err);
+      }
     } finally {
       setLoading(false);
     }
