@@ -108,7 +108,12 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedApprovalChainsIfNeeded() {
-        // Ensure new roles exist for existing databases
+        // Ensure core roles exist for existing databases
+        ensureRole("ADMIN", "Full system administrator");
+        ensureRole("SALES", "Sales team");
+        ensureRole("ENGINEERING", "Engineering team");
+        ensureRole("OPERATIONS", "Operations team");
+        ensureRole("ACCOUNTS", "Accounts & Finance team");
         ensureRole("OFFICE_ASSISTANT", "Office Assistant");
         ensureRole("SUPERVISOR", "Site Supervisor");
         ensureRole("PARTNER", "Partner / Senior Management");
