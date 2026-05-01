@@ -26,6 +26,19 @@ public class CreateSiteAttendanceRequest {
     @Min(0)
     private int femaleCount;
 
+    // Mastri/Helper breakdown
+    @Min(0)
+    private int maleMastriCount;
+
+    @Min(0)
+    private int femaleMastriCount;
+
+    @Min(0)
+    private int maleHelperCount;
+
+    @Min(0)
+    private int femaleHelperCount;
+
     private String remarks;
 
     // Optional: only used for legacy single-approver mode (if no approval chain is configured)
@@ -43,6 +56,14 @@ public class CreateSiteAttendanceRequest {
     public void setMaleCount(int maleCount) { this.maleCount = maleCount; }
     public int getFemaleCount() { return femaleCount; }
     public void setFemaleCount(int femaleCount) { this.femaleCount = femaleCount; }
+    public int getMaleMastriCount() { return maleMastriCount; }
+    public void setMaleMastriCount(int maleMastriCount) { this.maleMastriCount = maleMastriCount; }
+    public int getFemaleMastriCount() { return femaleMastriCount; }
+    public void setFemaleMastriCount(int femaleMastriCount) { this.femaleMastriCount = femaleMastriCount; }
+    public int getMaleHelperCount() { return maleHelperCount; }
+    public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
+    public int getFemaleHelperCount() { return femaleHelperCount; }
+    public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public Long getApproverId() { return approverId; }

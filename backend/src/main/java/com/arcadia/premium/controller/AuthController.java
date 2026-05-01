@@ -12,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.arcadia.premium.model.User;
+
 import java.security.Principal;
 import java.util.Map;
 
@@ -39,9 +41,13 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(auth.getName());
         String refreshToken = jwtUtil.generateRefreshToken(auth.getName());
-        UserDto user = userService.getUserByEmail(auth.getName());
+        UserDto userDto = userService.getUserByEmail(auth.getName());
 
-        return ResponseEntity.ok(new LoginResponse(token, refreshToken, user));
+        // Check if user must change password (temp password login)
+        User rawUser = userService.findRawUserByEmail(auth.getName());
+        boolean mustChange = rawUser.isMustChangePassword();
+
+        return ResponseEntity.ok(new LoginResponse(token, refreshToken, userDto, mustChange));
     }
 
     @GetMapping("/me")
@@ -58,11 +64,37 @@ public class AuthController {
                             principal.getName(), request.getCurrentPassword()));
 
             userService.changePassword(principal.getName(), request.getNewPassword());
+            // Clear the mustChangePassword flag if it was set
+            userService.clearMustChangePassword(principal.getName());
 
             return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Current password is incorrect"));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Email address is required."));
+        }
+        try {
+            String tempPassword = userService.generateTempPassword(email.trim());
+            // Look up user name for the email
+            UserDto user = userService.getUserByEmail(email.trim());
+            String fullName = user.getFirstName() + " " + user.getLastName();
+
+            emailService.sendForgotPasswordEmail(email.trim(), fullName, tempPassword);
+
+            return ResponseEntity.ok(Map.of(
+                "message", "A temporary password has been sent to your email address. Please check your inbox."
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

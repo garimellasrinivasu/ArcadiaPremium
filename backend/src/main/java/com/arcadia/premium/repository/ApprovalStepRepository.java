@@ -17,13 +17,14 @@ public interface ApprovalStepRepository extends JpaRepository<ApprovalStep, Long
     /**
      * Find PENDING approval steps assigned to a specific user
      * where the attendance record is at that step.
+     * Includes APPROVED records where a non-blocking step is still pending.
      */
     @Query("SELECT s FROM ApprovalStep s " +
            "JOIN s.attendance a " +
            "WHERE s.status = 'PENDING' " +
            "AND s.assignedTo.id = :userId " +
            "AND a.currentStepOrder = s.stepOrder " +
-           "AND a.status IN ('PENDING', 'IN_APPROVAL') " +
+           "AND a.status IN ('PENDING', 'IN_APPROVAL', 'APPROVED') " +
            "ORDER BY a.createdAt DESC")
     List<ApprovalStep> findPendingStepsAssignedToUser(@Param("userId") Long userId);
 
@@ -32,6 +33,6 @@ public interface ApprovalStepRepository extends JpaRepository<ApprovalStep, Long
            "WHERE s.status = 'PENDING' " +
            "AND s.assignedTo.id = :userId " +
            "AND a.currentStepOrder = s.stepOrder " +
-           "AND a.status IN ('PENDING', 'IN_APPROVAL')")
+           "AND a.status IN ('PENDING', 'IN_APPROVAL', 'APPROVED')")
     long countPendingAssignedToUser(@Param("userId") Long userId);
 }

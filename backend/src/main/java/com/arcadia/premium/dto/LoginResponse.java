@@ -4,13 +4,15 @@ public class LoginResponse {
     private String token;
     private String refreshToken;
     private UserDto user;
+    private boolean mustChangePassword;
 
     public LoginResponse() {}
 
-    public LoginResponse(String token, String refreshToken, UserDto user) {
+    public LoginResponse(String token, String refreshToken, UserDto user, boolean mustChangePassword) {
         this.token = token;
         this.refreshToken = refreshToken;
         this.user = user;
+        this.mustChangePassword = mustChangePassword;
     }
 
     public String getToken() { return token; }
@@ -19,4 +21,6 @@ public class LoginResponse {
     public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     public UserDto getUser() { return user; }
     public void setUser(UserDto user) { this.user = user; }
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 }

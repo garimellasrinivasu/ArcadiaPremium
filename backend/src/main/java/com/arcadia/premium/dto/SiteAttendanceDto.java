@@ -14,6 +14,10 @@ public class SiteAttendanceDto {
     private int totalWorkers;
     private int maleCount;
     private int femaleCount;
+    private int maleMastriCount;
+    private int femaleMastriCount;
+    private int maleHelperCount;
+    private int femaleHelperCount;
     private String remarks;
     private String status;
     private Long submittedById;
@@ -50,6 +54,14 @@ public class SiteAttendanceDto {
     public void setMaleCount(int maleCount) { this.maleCount = maleCount; }
     public int getFemaleCount() { return femaleCount; }
     public void setFemaleCount(int femaleCount) { this.femaleCount = femaleCount; }
+    public int getMaleMastriCount() { return maleMastriCount; }
+    public void setMaleMastriCount(int maleMastriCount) { this.maleMastriCount = maleMastriCount; }
+    public int getFemaleMastriCount() { return femaleMastriCount; }
+    public void setFemaleMastriCount(int femaleMastriCount) { this.femaleMastriCount = femaleMastriCount; }
+    public int getMaleHelperCount() { return maleHelperCount; }
+    public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
+    public int getFemaleHelperCount() { return femaleHelperCount; }
+    public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }

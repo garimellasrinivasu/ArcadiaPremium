@@ -11,6 +11,11 @@ import {
 } from "../services/approvalChainService";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
+import {
+  attendanceReportService,
+  type AttendanceReportDto,
+} from "../services/attendanceReportService";
+import { projectService, type ProjectDto } from "../services/projectService";
 import type { User } from "../types/user";
 import api from "../services/api";
 
@@ -46,7 +51,14 @@ async function detectPeople(
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 
-type Tab = "capture" | "submissions" | "approvals";
+type Tab = "capture" | "submissions" | "approvals" | "reports";
+
+const TAB_LABELS: Record<Tab, string> = {
+  capture: "Capture Attendance",
+  submissions: "My Submissions",
+  approvals: "Pending Approvals",
+  reports: "Reports",
+};
 
 export default function SiteAttendancePage() {
   const [tab, setTab] = useState<Tab>("capture");
@@ -65,13 +77,22 @@ export default function SiteAttendancePage() {
     setTab("submissions"); // Auto-switch to My Submissions
   }
 
+  // Check if user can see reports (Admin, Partner, or Accounting)
+  const canViewReports = currentUser?.roles.some((r) =>
+    ["ADMIN", "PARTNER", "ACCOUNTING"].includes(r.name)
+  );
+
+  const visibleTabs: Tab[] = canViewReports
+    ? ["capture", "submissions", "approvals", "reports"]
+    : ["capture", "submissions", "approvals"];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-arcadia-800">Site Attendance</h1>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
-        {(["capture", "submissions", "approvals"] as Tab[]).map((t) => (
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
+        {visibleTabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -80,11 +101,7 @@ export default function SiteAttendancePage() {
                 : "text-gray-600 hover:bg-gray-200"
               }`}
           >
-            {t === "capture"
-              ? "Capture Attendance"
-              : t === "submissions"
-                ? "My Submissions"
-                : "Pending Approvals"}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -92,8 +109,9 @@ export default function SiteAttendancePage() {
       {tab === "capture" && (
         <CaptureTab users={users} currentUser={currentUser} onSubmitSuccess={onSubmitSuccess} />
       )}
-      {tab === "submissions" && <SubmissionsTab key={submissionKey} />}
+      {tab === "submissions" && <SubmissionsTab key={submissionKey} currentUser={currentUser} />}
       {tab === "approvals" && <ApprovalsTab currentUser={currentUser} />}
+      {tab === "reports" && <ReportsTab />}
     </div>
   );
 }
@@ -120,11 +138,15 @@ function CaptureTab({
   const [detecting, setDetecting] = useState(false);
 
   const [totalWorkers, setTotalWorkers] = useState(0);
-  const [maleCount, setMaleCount] = useState(0);
-  const [femaleCount, setFemaleCount] = useState(0);
+  const [maleMastri, setMaleMastri] = useState(0);
+  const [femaleMastri, setFemaleMastri] = useState(0);
+  const [maleHelper, setMaleHelper] = useState(0);
+  const [femaleHelper, setFemaleHelper] = useState(0);
   const [detected, setDetected] = useState(false);
+  const [mismatchError, setMismatchError] = useState("");
 
-  const [siteName, setSiteName] = useState("Praneeth Arcadia Premium");
+  const [siteName, setSiteName] = useState("");
+  const [projectList, setProjectList] = useState<ProjectDto[]>([]);
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -159,6 +181,16 @@ function CaptureTab({
       .catch(() => setMyChain(null))
       .finally(() => setChainLoading(false));
   }, [currentUser]);
+
+  // Load active projects for dropdown
+  useEffect(() => {
+    projectService.getActiveProjects().then((projects) => {
+      setProjectList(projects);
+      if (projects.length > 0 && !siteName) {
+        setSiteName(projects[0].name);
+      }
+    }).catch(() => {});
+  }, []);
 
   /* Start camera */
   const startCamera = useCallback(async () => {
@@ -203,8 +235,11 @@ function CaptureTab({
     stopCamera();
     setDetected(false);
     setTotalWorkers(0);
-    setMaleCount(0);
-    setFemaleCount(0);
+    setMaleMastri(0);
+    setFemaleMastri(0);
+    setMaleHelper(0);
+    setFemaleHelper(0);
+    setMismatchError("");
   }, [stopCamera]);
 
   const handleFileUpload = useCallback(
@@ -216,8 +251,11 @@ function CaptureTab({
         setCapturedImage(reader.result as string);
         setDetected(false);
         setTotalWorkers(0);
-        setMaleCount(0);
-        setFemaleCount(0);
+        setMaleMastri(0);
+        setFemaleMastri(0);
+        setMaleHelper(0);
+        setFemaleHelper(0);
+        setMismatchError("");
         stopCamera();
       };
       reader.readAsDataURL(file);
@@ -232,8 +270,6 @@ function CaptureTab({
     try {
       const result = await detectPeople(capturedImage);
       setTotalWorkers(result.total);
-      setMaleCount(result.male);
-      setFemaleCount(result.female);
       setDetected(true);
       if (result.total === 0) {
         setDetectionError("AI found 0 faces. You can enter counts manually.");
@@ -255,8 +291,16 @@ function CaptureTab({
 
   const handleSubmit = useCallback(async () => {
     if (!capturedImage) return alert("Please capture an image first.");
+    if (!siteName) return alert("Please select a project / site name.");
     if (totalWorkers === 0) return alert("Worker count cannot be 0.");
     if (!myChain && approverId === 0) return alert("Please select an approver.");
+
+    const enteredSum = maleMastri + femaleMastri + maleHelper + femaleHelper;
+    if (enteredSum !== totalWorkers) {
+      setMismatchError(`Total mismatch: AI detected ${totalWorkers} workers but your entries add up to ${enteredSum}. Please correct.`);
+      return;
+    }
+    setMismatchError("");
 
     setSubmitting(true);
     try {
@@ -265,8 +309,12 @@ function CaptureTab({
         siteName,
         imageBase64: capturedImage,
         totalWorkers,
-        maleCount,
-        femaleCount,
+        maleMastriCount: maleMastri,
+        femaleMastriCount: femaleMastri,
+        maleHelperCount: maleHelper,
+        femaleHelperCount: femaleHelper,
+        maleCount: maleMastri + maleHelper,
+        femaleCount: femaleMastri + femaleHelper,
         remarks,
       };
       if (!myChain && approverId > 0) {
@@ -277,8 +325,11 @@ function CaptureTab({
       setCapturedImage(null);
       setDetected(false);
       setTotalWorkers(0);
-      setMaleCount(0);
-      setFemaleCount(0);
+      setMaleMastri(0);
+      setFemaleMastri(0);
+      setMaleHelper(0);
+      setFemaleHelper(0);
+      setMismatchError("");
       setRemarks("");
       setTimeout(() => {
         setSuccess(false);
@@ -289,7 +340,7 @@ function CaptureTab({
     } finally {
       setSubmitting(false);
     }
-  }, [capturedImage, approverId, totalWorkers, maleCount, femaleCount, siteName, remarks, myChain, onSubmitSuccess]);
+  }, [capturedImage, approverId, totalWorkers, maleMastri, femaleMastri, maleHelper, femaleHelper, siteName, remarks, myChain, onSubmitSuccess]);
 
   useEffect(() => {
     return () => stopCamera();
@@ -370,48 +421,79 @@ function CaptureTab({
 
       {/* RIGHT — Detection Results & Form */}
       <div className="space-y-4">
-        {/* Detection Results */}
+        {/* Detection Results & Worker Breakdown */}
         <div className="bg-white rounded-xl border border-gray-200">
-          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Worker Detection Results</div>
-          <div className="p-4">
-            {detected && (
-              <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2 mb-4">
-                AI detected the counts below. You can adjust them manually if needed.
-              </p>
-            )}
-            <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Worker Details</div>
+          <div className="p-4 space-y-4">
+            {/* AI-detected total */}
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Total Workers (AI Detected)</label>
+              <input
+                type="number" min={0} value={totalWorkers}
+                onChange={(e) => { setTotalWorkers(Number(e.target.value)); setMismatchError(""); }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-2xl font-bold text-center text-arcadia-800"
+              />
+              {detected && (
+                <p className="text-xs text-blue-600 mt-1">AI detected {totalWorkers} people in the photo. You can adjust if needed.</p>
+              )}
+            </div>
+
+            {/* Mastri / Helper breakdown */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Total Workers</label>
+                <label className="text-xs text-gray-500 block mb-1">Male - Mastri</label>
                 <input
-                  type="number" min={0} value={totalWorkers}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    setTotalWorkers(v);
-                    if (maleCount + femaleCount !== v) {
-                      setMaleCount(Math.round(v * 0.6));
-                      setFemaleCount(v - Math.round(v * 0.6));
-                    }
-                  }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-2xl font-bold text-center text-arcadia-800"
+                  type="number" min={0} value={maleMastri}
+                  onChange={(e) => { setMaleMastri(Number(e.target.value)); setMismatchError(""); }}
+                  className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-blue-700"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Male</label>
+                <label className="text-xs text-gray-500 block mb-1">Female - Mastri</label>
                 <input
-                  type="number" min={0} max={totalWorkers} value={maleCount}
-                  onChange={(e) => { const m = Math.min(Number(e.target.value), totalWorkers); setMaleCount(m); setFemaleCount(totalWorkers - m); }}
-                  className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2.5 text-2xl font-bold text-center text-blue-700"
+                  type="number" min={0} value={femaleMastri}
+                  onChange={(e) => { setFemaleMastri(Number(e.target.value)); setMismatchError(""); }}
+                  className="w-full border border-pink-200 bg-pink-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-pink-700"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Female</label>
+                <label className="text-xs text-gray-500 block mb-1">Male - Helper</label>
                 <input
-                  type="number" min={0} max={totalWorkers} value={femaleCount}
-                  onChange={(e) => { const f = Math.min(Number(e.target.value), totalWorkers); setFemaleCount(f); setMaleCount(totalWorkers - f); }}
-                  className="w-full border border-pink-200 bg-pink-50 rounded-lg px-3 py-2.5 text-2xl font-bold text-center text-pink-700"
+                  type="number" min={0} value={maleHelper}
+                  onChange={(e) => { setMaleHelper(Number(e.target.value)); setMismatchError(""); }}
+                  className="w-full border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-indigo-700"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Female - Helper</label>
+                <input
+                  type="number" min={0} value={femaleHelper}
+                  onChange={(e) => { setFemaleHelper(Number(e.target.value)); setMismatchError(""); }}
+                  className="w-full border border-purple-200 bg-purple-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-purple-700"
                 />
               </div>
             </div>
+
+            {/* Sum vs Total comparison */}
+            {(() => {
+              const sum = maleMastri + femaleMastri + maleHelper + femaleHelper;
+              const match = sum === totalWorkers;
+              if (sum === 0 && totalWorkers === 0) return null;
+              return (
+                <div className={`rounded-lg px-4 py-2.5 text-sm font-medium flex justify-between items-center ${
+                  match ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  <span>Your entries: {sum}</span>
+                  <span>{match ? "Matches AI total" : `AI total: ${totalWorkers} (difference: ${Math.abs(totalWorkers - sum)})`}</span>
+                </div>
+              );
+            })()}
+
+            {mismatchError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                {mismatchError}
+              </div>
+            )}
           </div>
         </div>
 
@@ -420,11 +502,17 @@ function CaptureTab({
           <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Submit for Approval</div>
           <div className="p-4 space-y-4">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Site Name</label>
-              <input
-                type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              />
+              <label className="text-xs text-gray-500 block mb-1">Project / Site Name</label>
+              <select
+                value={siteName}
+                onChange={(e) => setSiteName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500"
+              >
+                <option value="">-- Select Project --</option>
+                {projectList.map((p) => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Approval Chain Info — shown disabled so user sees who it goes to */}
@@ -487,7 +575,7 @@ function CaptureTab({
 
             <button
               onClick={handleSubmit}
-              disabled={submitting || !capturedImage}
+              disabled={submitting || !capturedImage || (totalWorkers > 0 && (maleMastri + femaleMastri + maleHelper + femaleHelper) !== totalWorkers)}
               className="w-full bg-arcadia-600 text-white py-3 rounded-lg font-semibold hover:bg-arcadia-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Submitting..." : "Submit for Approval"}
@@ -503,17 +591,22 @@ function CaptureTab({
 /*  SUBMISSIONS TAB                                                   */
 /* ------------------------------------------------------------------ */
 
-function SubmissionsTab() {
+function SubmissionsTab({ currentUser }: { currentUser: User | null }) {
   const [records, setRecords] = useState<SiteAttendanceDto[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
     siteAttendanceService
       .getMySubmissions()
       .then(setRecords)
       .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (loading) {
     return (
@@ -528,7 +621,7 @@ function SubmissionsTab() {
   return (
     <div className="space-y-3">
       {records.map((r) => (
-        <AttendanceCard key={r.id} record={r} showApproveActions={false} />
+        <AttendanceCard key={r.id} record={r} showApproveActions={false} currentUser={currentUser} onActionDone={loadData} />
       ))}
     </div>
   );
@@ -676,6 +769,9 @@ function AttendanceCard({
   const [showImage, setShowImage] = useState(false);
   const [actionRemarks, setActionRemarks] = useState("");
   const [acting, setActing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isAdmin = currentUser?.roles.some((r) => r.name === "ADMIN") ?? false;
 
   const handleAction = async (action: "APPROVED" | "REJECTED") => {
     setActing(true);
@@ -686,6 +782,19 @@ function AttendanceCard({
       alert(err?.response?.data?.message || err?.message || "Action failed");
     } finally {
       setActing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete this attendance record?\n\nSite: ${record.siteName}\nDate: ${record.attendanceDate}\nSubmitted by: ${record.submittedByName}\n\nThis action cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await siteAttendanceService.deleteRecord(record.id);
+      onActionDone?.();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -715,6 +824,11 @@ function AttendanceCard({
           <div className="text-xs text-gray-500 mt-0.5">
             {record.attendanceDate} &middot; by {record.submittedByName}
           </div>
+          {record.createdAt && (
+            <div className="text-xs text-gray-400 mt-0.5">
+              Captured: {new Date(record.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+            </div>
+          )}
           {record.approvalChainName && (
             <div className="text-xs text-arcadia-600 mt-0.5">Chain: {record.approvalChainName}</div>
           )}
@@ -729,18 +843,26 @@ function AttendanceCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mt-3">
+      <div className="grid grid-cols-5 gap-2 mt-3">
         <div className="bg-gray-50 rounded-lg p-2 text-center">
           <div className="text-xs text-gray-500">Total</div>
-          <div className="text-xl font-bold text-arcadia-800">{record.totalWorkers}</div>
+          <div className="text-lg font-bold text-arcadia-800">{record.totalWorkers}</div>
         </div>
         <div className="bg-blue-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-blue-500">Male</div>
-          <div className="text-xl font-bold text-blue-700">{record.maleCount}</div>
+          <div className="text-xs text-blue-500">M-Mastri</div>
+          <div className="text-lg font-bold text-blue-700">{record.maleMastriCount}</div>
         </div>
         <div className="bg-pink-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-pink-500">Female</div>
-          <div className="text-xl font-bold text-pink-700">{record.femaleCount}</div>
+          <div className="text-xs text-pink-500">F-Mastri</div>
+          <div className="text-lg font-bold text-pink-700">{record.femaleMastriCount}</div>
+        </div>
+        <div className="bg-indigo-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-indigo-500">M-Helper</div>
+          <div className="text-lg font-bold text-indigo-700">{record.maleHelperCount}</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-purple-500">F-Helper</div>
+          <div className="text-lg font-bold text-purple-700">{record.femaleHelperCount}</div>
         </div>
       </div>
 
@@ -784,10 +906,19 @@ function AttendanceCard({
           </div>
         ))}
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex gap-2 items-center">
         <button onClick={() => setShowImage(!showImage)} className="text-xs text-arcadia-600 underline">
           {showImage ? "Hide Photo" : "View Photo"}
         </button>
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="ml-auto text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition disabled:opacity-50"
+          >
+            {deleting ? "Deleting..." : "Delete Record"}
+          </button>
+        )}
       </div>
 
       {showImage && record.imageBase64 && (
@@ -821,6 +952,451 @@ function AttendanceCard({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  REPORTS TAB                                                       */
+/* ------------------------------------------------------------------ */
+
+type ReportView = "site" | "date" | "detail";
+
+function ReportsTab() {
+  const today = new Date().toISOString().split("T")[0];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+
+  const [fromDate, setFromDate] = useState(thirtyDaysAgo);
+  const [toDate, setToDate] = useState(today);
+  const [siteName, setSiteName] = useState("");
+  const [siteNames, setSiteNames] = useState<string[]>([]);
+  const [report, setReport] = useState<AttendanceReportDto | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [view, setView] = useState<ReportView>("site");
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    attendanceReportService.getSiteNames().then(setSiteNames).catch(() => {});
+  }, []);
+
+  async function fetchReport() {
+    if (!fromDate || !toDate) {
+      setError("Please select both From and To dates");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      const data = await attendanceReportService.getReport(fromDate, toDate, siteName || undefined);
+      setReport(data);
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || "Failed to load report");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleExport(format: "excel" | "pdf") {
+    if (!fromDate || !toDate) return;
+    try {
+      setExporting(true);
+      if (format === "excel") {
+        await attendanceReportService.downloadExcel(fromDate, toDate, siteName || undefined);
+      } else {
+        await attendanceReportService.downloadPdf(fromDate, toDate, siteName || undefined);
+      }
+    } catch (e: any) {
+      setError("Export failed: " + (e.message || "Unknown error"));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">From Date</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">To Date</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Site (optional)</label>
+            <select
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500"
+            >
+              <option value="">All Sites</option>
+              {siteNames.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={fetchReport}
+              disabled={loading}
+              className="flex-1 bg-arcadia-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
+            >
+              {loading ? "Loading..." : "Search"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+          <button onClick={() => setError("")} className="float-right text-red-500 hover:text-red-700">&times;</button>
+        </div>
+      )}
+
+      {report && (
+        <>
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <SummaryCard label="Total Records" value={report.totalRecords} color="blue" />
+            <SummaryCard label="Total Workers" value={report.totalWorkers} color="green" />
+            <SummaryCard label="M-Mastri" value={report.totalMaleMastri} color="indigo" />
+            <SummaryCard label="F-Mastri" value={report.totalFemaleMastri} color="pink" />
+            <SummaryCard label="M-Helper" value={report.totalMaleHelper} color="indigo" />
+            <SummaryCard label="F-Helper" value={report.totalFemaleHelper} color="pink" />
+          </div>
+
+          {/* View toggles + Export */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              {(["site", "date", "detail"] as ReportView[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                    view === v ? "bg-white shadow text-arcadia-700" : "text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  {v === "site" ? "Site Summary" : v === "date" ? "Date Summary" : "Detail Records"}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleExport("excel")}
+                disabled={exporting}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50"
+              >
+                <span>&#128196;</span> Excel
+              </button>
+              <button
+                onClick={() => handleExport("pdf")}
+                disabled={exporting}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition disabled:opacity-50"
+              >
+                <span>&#128196;</span> PDF
+              </button>
+            </div>
+          </div>
+
+          {/* Tables */}
+          {view === "site" && <SiteSummaryTable report={report} />}
+          {view === "date" && <DateSummaryTable report={report} />}
+          {view === "detail" && <DetailRecordsTable report={report} />}
+        </>
+      )}
+
+      {!report && !loading && (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <div className="text-4xl text-gray-300 mb-3">&#128202;</div>
+          <p className="text-gray-500">Select a date range and click "Search" to view reports.</p>
+          <p className="text-sm text-gray-400 mt-1">Only approved attendance records are included in reports.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
+  const colorMap: Record<string, string> = {
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
+    green: "bg-green-50 text-green-700 border-green-200",
+    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    pink: "bg-pink-50 text-pink-700 border-pink-200",
+  };
+  return (
+    <div className={`rounded-xl border p-4 ${colorMap[color] || colorMap.blue}`}>
+      <p className="text-xs font-medium opacity-75">{label}</p>
+      <p className="text-2xl font-bold mt-1">{value.toLocaleString()}</p>
+    </div>
+  );
+}
+
+function SiteSummaryTable({ report }: { report: AttendanceReportDto }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Site Name</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">Records</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">Total</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Mastri</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Mastri</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Helper</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Helper</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.siteSummaries.map((s, i) => (
+              <tr key={i} className="border-b hover:bg-gray-50">
+                <td className="px-3 py-3 font-medium">{s.siteName}</td>
+                <td className="px-3 py-3 text-right">{s.totalRecords}</td>
+                <td className="px-3 py-3 text-right font-semibold">{s.totalWorkers}</td>
+                <td className="px-3 py-3 text-right">{s.totalMaleMastri}</td>
+                <td className="px-3 py-3 text-right">{s.totalFemaleMastri}</td>
+                <td className="px-3 py-3 text-right">{s.totalMaleHelper}</td>
+                <td className="px-3 py-3 text-right">{s.totalFemaleHelper}</td>
+                <td className="px-3 py-3 text-right">{s.totalDays}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-yellow-50 font-bold border-t-2 border-gray-300">
+            <tr>
+              <td className="px-3 py-3">TOTAL</td>
+              <td className="px-3 py-3 text-right">{report.totalRecords}</td>
+              <td className="px-3 py-3 text-right">{report.totalWorkers}</td>
+              <td className="px-3 py-3 text-right">{report.totalMaleMastri}</td>
+              <td className="px-3 py-3 text-right">{report.totalFemaleMastri}</td>
+              <td className="px-3 py-3 text-right">{report.totalMaleHelper}</td>
+              <td className="px-3 py-3 text-right">{report.totalFemaleHelper}</td>
+              <td className="px-3 py-3 text-right">{report.totalDays}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {report.siteSummaries.length === 0 && (
+        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+      )}
+    </div>
+  );
+}
+
+function DateSummaryTable({ report }: { report: AttendanceReportDto }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">Sites</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">Records</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">Total Workers</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">M-Mastri</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">F-Mastri</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">M-Helper</th>
+              <th className="text-right px-4 py-3 font-semibold text-gray-700">F-Helper</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.dateSummaries.map((d, i) => (
+              <tr key={i} className="border-b hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium">
+                  {new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", {
+                    day: "2-digit", month: "short", year: "numeric"
+                  })}
+                </td>
+                <td className="px-4 py-3 text-right">{d.siteCount}</td>
+                <td className="px-4 py-3 text-right">{d.totalRecords}</td>
+                <td className="px-4 py-3 text-right font-semibold">{d.totalWorkers}</td>
+                <td className="px-4 py-3 text-right">{d.totalMaleMastri}</td>
+                <td className="px-4 py-3 text-right">{d.totalFemaleMastri}</td>
+                <td className="px-4 py-3 text-right">{d.totalMaleHelper}</td>
+                <td className="px-4 py-3 text-right">{d.totalFemaleHelper}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-yellow-50 font-bold border-t-2 border-gray-300">
+            <tr>
+              <td className="px-4 py-3">TOTAL</td>
+              <td className="px-4 py-3 text-right">-</td>
+              <td className="px-4 py-3 text-right">{report.totalRecords}</td>
+              <td className="px-4 py-3 text-right">{report.totalWorkers}</td>
+              <td className="px-4 py-3 text-right">{report.totalMaleMastri}</td>
+              <td className="px-4 py-3 text-right">{report.totalFemaleMastri}</td>
+              <td className="px-4 py-3 text-right">{report.totalMaleHelper}</td>
+              <td className="px-4 py-3 text-right">{report.totalFemaleHelper}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {report.dateSummaries.length === 0 && (
+        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+      )}
+    </div>
+  );
+}
+
+function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
+  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [modalTitle, setModalTitle] = useState("");
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="text-center px-3 py-3 font-semibold text-gray-700">Photo</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Date</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Captured At</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Site</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Submitted By</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">Total</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Mastri</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Mastri</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Helper</th>
+              <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Helper</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Remarks</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Approved By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.records.map((r, i) => (
+              <tr key={i} className="border-b hover:bg-gray-50">
+                <td className="px-3 py-2 text-center">
+                  {r.imageBase64 ? (
+                    <button
+                      onClick={() => {
+                        setModalImage(r.imageBase64);
+                        setModalTitle(`${r.siteName} - ${new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`);
+                      }}
+                      className="inline-block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-arcadia-400 transition cursor-pointer shadow-sm hover:shadow-md"
+                      title="Click to enlarge"
+                    >
+                      <img
+                        src={r.imageBase64}
+                        alt="Site attendance"
+                        className="w-14 h-14 object-cover"
+                      />
+                    </button>
+                  ) : (
+                    <span className="text-gray-300 text-xl" title="No photo">&#128247;</span>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 whitespace-nowrap">
+                  {new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", {
+                    day: "2-digit", month: "short", year: "numeric"
+                  })}
+                </td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
+                  {r.capturedAt ? new Date(r.capturedAt).toLocaleString("en-IN", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
+                  }) : "-"}
+                </td>
+                <td className="px-3 py-2.5">{r.siteName}</td>
+                <td className="px-3 py-2.5">{r.submittedByName}</td>
+                <td className="px-3 py-2.5 text-right font-semibold">{r.totalWorkers}</td>
+                <td className="px-3 py-2.5 text-right">{r.maleMastriCount}</td>
+                <td className="px-3 py-2.5 text-right">{r.femaleMastriCount}</td>
+                <td className="px-3 py-2.5 text-right">{r.maleHelperCount}</td>
+                <td className="px-3 py-2.5 text-right">{r.femaleHelperCount}</td>
+                <td className="px-3 py-2.5 text-gray-500 max-w-[200px] truncate">{r.remarks || "-"}</td>
+                <td className="px-3 py-2.5">{r.approverName || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {report.records.length === 0 && (
+        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+      )}
+      {report.records.length > 0 && (
+        <div className="border-t px-4 py-2 bg-gray-50 text-xs text-gray-500">
+          Showing {report.records.length} record{report.records.length !== 1 ? "s" : ""}
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {modalImage && (
+        <ImageModal
+          imageSrc={modalImage}
+          title={modalTitle}
+          onClose={() => setModalImage(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  IMAGE MODAL (full-size view)                                      */
+/* ------------------------------------------------------------------ */
+
+function ImageModal({
+  imageSrc,
+  title,
+  onClose,
+}: {
+  imageSrc: string;
+  title: string;
+  onClose: () => void;
+}) {
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
+          <h3 className="text-sm font-semibold text-gray-700 truncate">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none px-2 transition"
+            title="Close"
+          >
+            &times;
+          </button>
+        </div>
+        {/* Image */}
+        <div className="p-4 flex items-center justify-center bg-gray-100">
+          <img
+            src={imageSrc}
+            alt={title}
+            className="max-w-full max-h-[75vh] object-contain rounded-lg"
+          />
+        </div>
+      </div>
     </div>
   );
 }

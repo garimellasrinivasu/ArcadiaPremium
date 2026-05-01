@@ -7,6 +7,7 @@ interface MenuItem {
   label: string;
   path: string;
   adminOnly?: boolean;
+  requiredRoles?: string[]; // if set, user must have at least one of these roles
 }
 
 interface MenuSection {
@@ -36,8 +37,15 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
+    label: "Reports",
+    items: [
+      { label: "Attendance Reports", path: "/reports/attendance", requiredRoles: ["ADMIN", "PARTNER", "ACCOUNTING"] },
+    ],
+  },
+  {
     label: "Admin Settings",
     items: [
+      { label: "Projects", path: "/admin/projects", adminOnly: true },
       { label: "Approval Chains", path: "/admin/approval-chains", adminOnly: true },
     ],
   },
@@ -60,14 +68,20 @@ function CollapsibleSection({
   section,
   currentPath,
   isAdmin,
+  userRoles,
 }: {
   section: MenuSection;
   currentPath: string;
   isAdmin: boolean;
+  userRoles: string[];
 }) {
-  const visibleItems = section.items.filter(
-    (item) => !item.adminOnly || isAdmin
-  );
+  const visibleItems = section.items.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.requiredRoles && item.requiredRoles.length > 0) {
+      return item.requiredRoles.some((r) => userRoles.includes(r));
+    }
+    return true;
+  });
 
   // Don't render the section at all if no items are visible
   if (visibleItems.length === 0) return null;
@@ -145,6 +159,10 @@ export default function Layout() {
     ? currentUser.roles.some((r) => r.name === "ADMIN")
     : false;
 
+  const userRoles = currentUser
+    ? currentUser.roles.map((r) => r.name)
+    : [];
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* ===== TOP HEADER ===== */}
@@ -215,6 +233,7 @@ export default function Layout() {
                 section={section}
                 currentPath={location.pathname}
                 isAdmin={isAdmin}
+                userRoles={userRoles}
               />
             ))}
           </nav>

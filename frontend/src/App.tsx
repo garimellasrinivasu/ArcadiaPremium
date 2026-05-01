@@ -15,9 +15,15 @@ import SaleEntryPage from "./pages/SaleEntryPage";
 import MasterPlanPage from "./pages/MasterPlanPage";
 import SiteAttendancePage from "./pages/SiteAttendancePage";
 import ApprovalChainAdminPage from "./pages/ApprovalChainAdminPage";
+import AttendanceReportsPage from "./pages/AttendanceReportsPage";
+import ProjectManagementPage from "./pages/ProjectManagementPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  // Block access if user must change their temporary password first
+  if (authService.mustChangePassword()) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -52,6 +58,8 @@ export default function App() {
         <Route path="activities/master-plan" element={<MasterPlanPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
+        <Route path="admin/projects" element={<ProjectManagementPage />} />
+        <Route path="reports/attendance" element={<AttendanceReportsPage />} />
       </Route>
     </Routes>
   );

@@ -30,11 +30,25 @@ public class SiteAttendance {
     @Column(nullable = false)
     private int totalWorkers;
 
+    // Legacy fields kept for backward compatibility with old records
     @Column(nullable = false)
     private int maleCount;
 
     @Column(nullable = false)
     private int femaleCount;
+
+    // New Mastri/Helper breakdown fields
+    @Column(columnDefinition = "integer default 0")
+    private int maleMastriCount;
+
+    @Column(columnDefinition = "integer default 0")
+    private int femaleMastriCount;
+
+    @Column(columnDefinition = "integer default 0")
+    private int maleHelperCount;
+
+    @Column(columnDefinition = "integer default 0")
+    private int femaleHelperCount;
 
     private String remarks;
 
@@ -92,6 +106,14 @@ public class SiteAttendance {
     public void setMaleCount(int maleCount) { this.maleCount = maleCount; }
     public int getFemaleCount() { return femaleCount; }
     public void setFemaleCount(int femaleCount) { this.femaleCount = femaleCount; }
+    public int getMaleMastriCount() { return maleMastriCount; }
+    public void setMaleMastriCount(int maleMastriCount) { this.maleMastriCount = maleMastriCount; }
+    public int getFemaleMastriCount() { return femaleMastriCount; }
+    public void setFemaleMastriCount(int femaleMastriCount) { this.femaleMastriCount = femaleMastriCount; }
+    public int getMaleHelperCount() { return maleHelperCount; }
+    public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
+    public int getFemaleHelperCount() { return femaleHelperCount; }
+    public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }

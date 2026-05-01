@@ -21,6 +21,29 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    public void sendForgotPasswordEmail(String toEmail, String userName, String tempPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(toEmail);
+        message.setSubject("ArcadiaPremium – Temporary Password");
+        message.setText(
+            "Dear " + userName + ",\n\n" +
+            "We received a request to reset your password.\n\n" +
+            "Your temporary password is: " + tempPassword + "\n\n" +
+            "Please login with this temporary password. You will be required to set a new password immediately after login.\n\n" +
+            "If you did not request this, please contact your administrator.\n\n" +
+            "Regards,\n" +
+            "ArcadiaPremium"
+        );
+        try {
+            mailSender.send(message);
+            log.info("Forgot-password email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send forgot-password email to {}: {}", toEmail, e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
+        }
+    }
+
     public void sendPasswordResetEmail(String toEmail, String userName, String newPassword) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);

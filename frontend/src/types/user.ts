@@ -33,6 +33,7 @@ export interface LoginResponse {
   token: string;
   refreshToken: string;
   user: User;
+  mustChangePassword: boolean;
 }
 
 export interface CreateUserRequest {

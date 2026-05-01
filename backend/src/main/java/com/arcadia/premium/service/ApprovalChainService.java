@@ -7,6 +7,7 @@ import com.arcadia.premium.model.ApprovalChain;
 import com.arcadia.premium.model.ApprovalChainStep;
 import com.arcadia.premium.model.User;
 import com.arcadia.premium.repository.ApprovalChainRepository;
+import com.arcadia.premium.repository.SiteAttendanceRepository;
 import com.arcadia.premium.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,13 @@ public class ApprovalChainService {
 
     private final ApprovalChainRepository chainRepo;
     private final UserRepository userRepo;
+    private final SiteAttendanceRepository attendanceRepo;
 
-    public ApprovalChainService(ApprovalChainRepository chainRepo, UserRepository userRepo) {
+    public ApprovalChainService(ApprovalChainRepository chainRepo, UserRepository userRepo,
+                                SiteAttendanceRepository attendanceRepo) {
         this.chainRepo = chainRepo;
         this.userRepo = userRepo;
+        this.attendanceRepo = attendanceRepo;
     }
 
     public List<ApprovalChainDto> getAll() {
@@ -109,6 +113,11 @@ public class ApprovalChainService {
 
     @Transactional
     public void delete(Long id) {
+        long usageCount = attendanceRepo.countByApprovalChainId(id);
+        if (usageCount > 0) {
+            throw new RuntimeException("Cannot delete this approval chain — it is used by "
+                    + usageCount + " attendance record(s). Remove or reassign those records first.");
+        }
         chainRepo.deleteById(id);
         log.info("Deleted approval chain id={}", id);
     }

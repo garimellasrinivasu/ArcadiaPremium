@@ -21,6 +21,10 @@ export interface SiteAttendanceDto {
   totalWorkers: number;
   maleCount: number;
   femaleCount: number;
+  maleMastriCount: number;
+  femaleMastriCount: number;
+  maleHelperCount: number;
+  femaleHelperCount: number;
   remarks: string;
   status: string;
   submittedById: number;
@@ -45,6 +49,10 @@ export interface CreateSiteAttendanceRequest {
   totalWorkers: number;
   maleCount: number;
   femaleCount: number;
+  maleMastriCount: number;
+  femaleMastriCount: number;
+  maleHelperCount: number;
+  femaleHelperCount: number;
   remarks: string;
   approverId?: number;
 }
@@ -72,4 +80,7 @@ export const siteAttendanceService = {
 
   getAll: () =>
     api.get<SiteAttendanceDto[]>("/site-attendance").then((r) => r.data),
+
+  deleteRecord: (id: number) =>
+    api.delete(`/site-attendance/${id}`).then((r) => r.data),
 };

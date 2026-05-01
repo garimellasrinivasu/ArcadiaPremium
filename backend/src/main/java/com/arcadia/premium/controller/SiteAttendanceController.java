@@ -6,6 +6,7 @@ import com.arcadia.premium.dto.SiteAttendanceDto;
 import com.arcadia.premium.service.SiteAttendanceService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,5 +57,12 @@ public class SiteAttendanceController {
     @GetMapping
     public ResponseEntity<List<SiteAttendanceDto>> getAll() {
         return ResponseEntity.ok(service.getAll());
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
+        service.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Record deleted successfully"));
     }
 }

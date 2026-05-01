@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -41,4 +42,27 @@ public interface SiteAttendanceRepository extends JpaRepository<SiteAttendance, 
            "AND a.currentStepOrder = s.stepOrder " +
            "AND a.status IN ('PENDING', 'IN_APPROVAL')")
     long countPendingByApproverRole(@Param("roleName") String roleName);
+
+    long countByApprovalChainId(Long approvalChainId);
+
+    // ---- Report queries (approved records only) ----
+
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status = 'APPROVED' " +
+           "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
+           "ORDER BY a.attendanceDate DESC, a.siteName ASC")
+    List<SiteAttendance> findApprovedBetweenDates(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status = 'APPROVED' " +
+           "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
+           "AND LOWER(a.siteName) = LOWER(:siteName) " +
+           "ORDER BY a.attendanceDate DESC")
+    List<SiteAttendance> findApprovedBetweenDatesAndSite(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("siteName") String siteName);
+
+    @Query("SELECT DISTINCT a.siteName FROM SiteAttendance a WHERE a.status = 'APPROVED' ORDER BY a.siteName")
+    List<String> findDistinctApprovedSiteNames();
 }

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { saleService } from "../services/saleService";
+import { projectService } from "../services/projectService";
 import type { SaleEntry, CreateSaleEntryRequest, PaymentEntry, AddPaymentRequest } from "../types/user";
-
-const PROJECTS = ["Praneeth Arcadia Premium", "Redfern Square"];
 const SALE_INITIATION_OPTIONS = ["SPG", "Praneeth", "SPG-Praneeth"];
 const TYPE_OPTIONS = ["OTP", "General", "OTP-General"];
 const PERSONAL_COMPANY = ["Personal", "Company"];
@@ -97,6 +96,14 @@ export default function SaleEntryPage() {
   const [viewEntry, setViewEntry] = useState<SaleEntry | null>(null);
   const [sbuaMultiplier, setSbuaMultiplier] = useState(DEFAULT_SBUA_MULTIPLIER);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [projectNames, setProjectNames] = useState<string[]>([]);
+
+  // Load projects from API
+  useEffect(() => {
+    projectService.getActiveProjects()
+      .then((projects) => setProjectNames(projects.map((p) => p.name)))
+      .catch(() => {});
+  }, []);
 
   // Pre-fill form from URL query params (from Master Plan page)
   useEffect(() => {
@@ -116,7 +123,7 @@ export default function SaleEntryPage() {
         prefilled.facing = facing;
         prefilled.facingCharges = FACING_CHARGES[facing] ?? 0;
       }
-      prefilled.project = "Praneeth Arcadia Premium";
+      prefilled.project = projectNames.length > 0 ? projectNames[0] : "";
       setForm(prefilled);
       setShowForm(true);
       setEditId(null);
@@ -367,7 +374,7 @@ export default function SaleEntryPage() {
                 <select value={form.project} onChange={(e) => handleFieldChange("project", e.target.value)} required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-arcadia-500 outline-none bg-white">
                   <option value="">-- Select Project --</option>
-                  {PROJECTS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  {projectNames.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>

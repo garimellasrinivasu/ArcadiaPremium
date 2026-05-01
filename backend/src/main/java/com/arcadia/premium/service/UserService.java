@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -106,5 +107,53 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    /**
+     * Generates a random temporary password, saves it hashed, and marks the user
+     * as needing to change their password on next login.
+     */
+    @Transactional
+    public String generateTempPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+        if (!user.isActive()) {
+            throw new RuntimeException("This account is deactivated. Please contact your administrator.");
+        }
+
+        String tempPassword = generateRandomPassword(8);
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        user.setMustChangePassword(true);
+        userRepository.save(user);
+        return tempPassword;
+    }
+
+    /**
+     * Clears the mustChangePassword flag after user sets a new password.
+     */
+    @Transactional
+    public void clearMustChangePassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+    }
+
+    /**
+     * Returns the raw User entity (for checking mustChangePassword flag in login).
+     */
+    public User findRawUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+    }
+
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

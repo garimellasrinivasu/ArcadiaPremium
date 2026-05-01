@@ -50,13 +50,29 @@ public class SiteAttendanceService {
         User submitter = userRepo.findByEmail(submitterEmail)
                 .orElseThrow(() -> new RuntimeException("Submitter not found"));
 
+        // Validate: sum of mastri/helper must equal totalWorkers
+        int enteredSum = req.getMaleMastriCount() + req.getFemaleMastriCount()
+                       + req.getMaleHelperCount() + req.getFemaleHelperCount();
+        if (enteredSum != req.getTotalWorkers()) {
+            throw new RuntimeException("Worker count mismatch: M-Mastri(" + req.getMaleMastriCount()
+                + ") + F-Mastri(" + req.getFemaleMastriCount()
+                + ") + M-Helper(" + req.getMaleHelperCount()
+                + ") + F-Helper(" + req.getFemaleHelperCount()
+                + ") = " + enteredSum + ", but Total Workers = " + req.getTotalWorkers());
+        }
+
         SiteAttendance a = new SiteAttendance();
         a.setAttendanceDate(req.getAttendanceDate());
         a.setSiteName(req.getSiteName());
         a.setImageBase64(req.getImageBase64());
         a.setTotalWorkers(req.getTotalWorkers());
-        a.setMaleCount(req.getMaleCount());
-        a.setFemaleCount(req.getFemaleCount());
+        a.setMaleMastriCount(req.getMaleMastriCount());
+        a.setFemaleMastriCount(req.getFemaleMastriCount());
+        a.setMaleHelperCount(req.getMaleHelperCount());
+        a.setFemaleHelperCount(req.getFemaleHelperCount());
+        // Auto-compute legacy male/female totals
+        a.setMaleCount(req.getMaleMastriCount() + req.getMaleHelperCount());
+        a.setFemaleCount(req.getFemaleMastriCount() + req.getFemaleHelperCount());
         a.setRemarks(req.getRemarks());
         a.setSubmittedBy(submitter);
 
@@ -146,8 +162,15 @@ public class SiteAttendanceService {
         SiteAttendance a = attendanceRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Attendance record not found: " + id));
 
-        if ("APPROVED".equals(a.getStatus()) || "REJECTED".equals(a.getStatus())) {
-            throw new RuntimeException("Record is already " + a.getStatus());
+        if ("REJECTED".equals(a.getStatus())) {
+            throw new RuntimeException("Record is already REJECTED");
+        }
+        // Allow acting on APPROVED records if there are still pending non-blocking steps
+        if ("APPROVED".equals(a.getStatus())) {
+            boolean hasPendingStep = a.getCurrentStepOrder() <= a.getTotalSteps();
+            if (!hasPendingStep) {
+                throw new RuntimeException("Record is already fully approved");
+            }
         }
 
         User approver = userRepo.findByEmail(approverEmail)
@@ -192,29 +215,45 @@ public class SiteAttendanceService {
         approvalStepRepo.save(step);
 
         if ("REJECTED".equals(action)) {
-            a.setStatus("REJECTED");
-            a.setApproverRemarks(remarks);
-            a.setApprovedAt(LocalDateTime.now());
-            a = attendanceRepo.save(a);
-            log.info("Attendance #{} REJECTED at step {} by {}", a.getId(), currentStep, approver.getEmail());
+            // If this is a non-blocking step on an already-approved record,
+            // just record the rejection but don't change the overall status
+            if ("APPROVED".equals(a.getStatus())) {
+                a.setCurrentStepOrder(a.getTotalSteps() + 1); // mark as processed
+                a = attendanceRepo.save(a);
+                log.info("Attendance #{} non-blocking step {} REJECTED by {} (record stays APPROVED)",
+                        a.getId(), currentStep, approver.getEmail());
+            } else {
+                a.setStatus("REJECTED");
+                a.setApproverRemarks(remarks);
+                a.setApprovedAt(LocalDateTime.now());
+                a = attendanceRepo.save(a);
+                log.info("Attendance #{} REJECTED at step {} by {}", a.getId(), currentStep, approver.getEmail());
+            }
 
         } else if ("APPROVED".equals(action)) {
-            // Find the next blocking step
             List<ApprovalChainStep> chainSteps = a.getApprovalChain().getSteps();
-            ApprovalChainStep nextBlockingStep = null;
-            int nextStepOrder = currentStep + 1;
 
+            // Find the next blocking step after the current one
+            ApprovalChainStep nextBlockingStep = null;
+            for (ApprovalChainStep cs : chainSteps) {
+                if (cs.getStepOrder() > currentStep && cs.isBlocking()) {
+                    nextBlockingStep = cs;
+                    break;
+                }
+            }
+
+            // Find the next step of ANY kind (blocking or non-blocking)
+            ApprovalChainStep nextAnyStep = null;
             for (ApprovalChainStep cs : chainSteps) {
                 if (cs.getStepOrder() > currentStep) {
-                    if (cs.isBlocking()) {
-                        nextBlockingStep = cs;
-                        nextStepOrder = cs.getStepOrder();
-                        break;
-                    }
+                    nextAnyStep = cs;
+                    break;
                 }
             }
 
             if (nextBlockingStep != null) {
+                // There are more blocking steps — advance to the next blocking one
+                int nextStepOrder = nextBlockingStep.getStepOrder();
                 a.setCurrentStepOrder(nextStepOrder);
                 a.setStatus("IN_APPROVAL");
                 if (nextBlockingStep.getApproverUser() != null) {
@@ -243,8 +282,31 @@ public class SiteAttendanceService {
                                 }
                             });
                 }
+
+            } else if (nextAnyStep != null) {
+                // No more blocking steps, but non-blocking steps remain (e.g. Accounting)
+                // Mark as APPROVED (for reports) but advance to the non-blocking step
+                a.setStatus("APPROVED");
+                a.setApprovedAt(LocalDateTime.now());
+                a.setApproverRemarks(remarks);
+                a.setCurrentStepOrder(nextAnyStep.getStepOrder());
+                if (nextAnyStep.getApproverUser() != null) {
+                    a.setApprover(nextAnyStep.getApproverUser());
+                }
+                a = attendanceRepo.save(a);
+                log.info("Attendance #{} APPROVED (all blocking steps done). " +
+                                "Non-blocking step {} ({}) still pending for record-keeping.",
+                        a.getId(), nextAnyStep.getStepOrder(), nextAnyStep.getApproverRoleName());
+
+                // Notify the non-blocking step's approver
+                User nextApprover = nextAnyStep.getApproverUser();
+                if (nextApprover != null) {
+                    String submitterName = a.getSubmittedBy().getFirstName() + " " + a.getSubmittedBy().getLastName();
+                    notificationService.notifyApprover(nextApprover, submitterName, a);
+                }
+
             } else {
-                // All blocking steps done
+                // No more steps at all — fully done
                 a.setStatus("APPROVED");
                 a.setApprovedAt(LocalDateTime.now());
                 a.setApproverRemarks(remarks);
@@ -314,13 +376,32 @@ public class SiteAttendanceService {
             }
         }
 
-        // Admin can see all pending
+        // Admin can see all pending — but skip records where the admin
+        // already approved their own step and is NOT the current step's approver
         boolean isAdmin = user.getRoles().stream().anyMatch(r -> "ADMIN".equals(r.getName()));
         if (isAdmin) {
             List<SiteAttendance> allPending = attendanceRepo.findAllByOrderByCreatedAtDesc();
             for (SiteAttendance sa : allPending) {
                 if (("PENDING".equals(sa.getStatus()) || "IN_APPROVAL".equals(sa.getStatus()))
                         && results.stream().noneMatch(r -> r.getId().equals(sa.getId()))) {
+                    // Check if this admin already acted on their step in this record
+                    // and is NOT the currently assigned approver
+                    if (sa.getApprovalChain() != null) {
+                        List<ApprovalStep> saSteps = approvalStepRepo
+                                .findByAttendanceIdOrderByStepOrderAsc(sa.getId());
+                        boolean alreadyActed = saSteps.stream()
+                                .anyMatch(s -> s.getAssignedTo() != null
+                                        && s.getAssignedTo().getId().equals(user.getId())
+                                        && !"PENDING".equals(s.getStatus()));
+                        boolean isCurrentApprover = saSteps.stream()
+                                .anyMatch(s -> s.getStepOrder() == sa.getCurrentStepOrder()
+                                        && s.getAssignedTo() != null
+                                        && s.getAssignedTo().getId().equals(user.getId())
+                                        && "PENDING".equals(s.getStatus()));
+                        if (alreadyActed && !isCurrentApprover) {
+                            continue; // skip — admin already did their part
+                        }
+                    }
                     results.add(sa);
                 }
             }
@@ -344,6 +425,19 @@ public class SiteAttendanceService {
     public List<SiteAttendanceDto> getAll() {
         return attendanceRepo.findAllByOrderByCreatedAtDesc()
                 .stream().map(this::toDto).toList();
+    }
+
+    /**
+     * Delete an attendance record (admin only).
+     * Cascading deletes approval steps via orphanRemoval.
+     */
+    @Transactional
+    public void deleteById(Long id) {
+        SiteAttendance attendance = attendanceRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found with id: " + id));
+        attendanceRepo.delete(attendance);
+        log.info("Deleted attendance record id={}, site={}, date={}", id,
+                attendance.getSiteName(), attendance.getAttendanceDate());
     }
 
     /**
@@ -438,6 +532,10 @@ public class SiteAttendanceService {
         d.setTotalWorkers(a.getTotalWorkers());
         d.setMaleCount(a.getMaleCount());
         d.setFemaleCount(a.getFemaleCount());
+        d.setMaleMastriCount(a.getMaleMastriCount());
+        d.setFemaleMastriCount(a.getFemaleMastriCount());
+        d.setMaleHelperCount(a.getMaleHelperCount());
+        d.setFemaleHelperCount(a.getFemaleHelperCount());
         d.setRemarks(a.getRemarks());
         d.setStatus(a.getStatus());
         d.setSubmittedById(a.getSubmittedBy().getId());

@@ -19,16 +19,19 @@ public class DataSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final ApprovalChainRepository approvalChainRepository;
+    private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(UserRepository userRepository, RoleRepository roleRepository,
                       PermissionRepository permissionRepository,
                       ApprovalChainRepository approvalChainRepository,
+                      ProjectRepository projectRepository,
                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.approvalChainRepository = approvalChainRepository;
+        this.projectRepository = projectRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -110,6 +113,17 @@ public class DataSeeder implements CommandLineRunner {
         ensureRole("SUPERVISOR", "Site Supervisor");
         ensureRole("PARTNER", "Partner / Senior Management");
         ensureRole("ACCOUNTING", "Accounting / Finance Recording");
+
+        // Seed default projects if none exist
+        seedProjectsIfNeeded();
+    }
+
+    private void seedProjectsIfNeeded() {
+        if (projectRepository.count() == 0) {
+            projectRepository.save(new Project("Praneeth Arcadia Premium", "Premium villa project"));
+            projectRepository.save(new Project("Praneeth Redfern Square", "Redfern Square project"));
+            log.info("Seeded default projects: Praneeth Arcadia Premium, Praneeth Redfern Square");
+        }
     }
 
     private void ensureRole(String name, String description) {

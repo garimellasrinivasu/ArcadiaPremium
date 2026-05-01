@@ -13,6 +13,7 @@ public class UserDto {
     private String email;
     private String phone;
     private boolean active;
+    private boolean mustChangePassword;
     private List<RoleDto> roles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -25,6 +26,7 @@ public class UserDto {
         dto.email = user.getEmail();
         dto.phone = user.getPhone();
         dto.active = user.isActive();
+        dto.mustChangePassword = user.isMustChangePassword();
         dto.createdAt = user.getCreatedAt();
         dto.updatedAt = user.getUpdatedAt();
         dto.roles = user.getRoles().stream()
@@ -45,6 +47,8 @@ public class UserDto {
     public void setPhone(String phone) { this.phone = phone; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
     public List<RoleDto> getRoles() { return roles; }
     public void setRoles(List<RoleDto> roles) { this.roles = roles; }
     public LocalDateTime getCreatedAt() { return createdAt; }
