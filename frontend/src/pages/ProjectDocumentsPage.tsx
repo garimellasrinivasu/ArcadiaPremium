@@ -278,7 +278,7 @@ function FileViewerModal({
         {allDocs.length > 1 && (
           <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 overflow-x-auto always-scroll">
             <div className="flex gap-2 items-center justify-center min-w-min">
-              {allDocs.map((d, i) => (
+              {allDocs.map((d) => (
                 <button key={d.id} onClick={() => onNavigate(d)}
                   className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition text-center min-w-[60px] ${
                     d.id === doc.id
