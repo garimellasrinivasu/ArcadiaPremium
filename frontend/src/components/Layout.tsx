@@ -34,6 +34,7 @@ const menuSections: MenuSection[] = [
       { label: "Finance Spent", path: "/activities/finance-spent" },
       { label: "Master Plan", path: "/activities/master-plan" },
       { label: "Site Attendance", path: "/activities/site-attendance" },
+      { label: "Project Documents", path: "/activities/documents" },
     ],
   },
   {

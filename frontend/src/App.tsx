@@ -17,6 +17,7 @@ import SiteAttendancePage from "./pages/SiteAttendancePage";
 import ApprovalChainAdminPage from "./pages/ApprovalChainAdminPage";
 import AttendanceReportsPage from "./pages/AttendanceReportsPage";
 import ProjectManagementPage from "./pages/ProjectManagementPage";
+import ProjectDocumentsPage from "./pages/ProjectDocumentsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="activities/finance-spent" element={<FinanceSpentPage />} />
         <Route path="activities/master-plan" element={<MasterPlanPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
+        <Route path="activities/documents" element={<ProjectDocumentsPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
