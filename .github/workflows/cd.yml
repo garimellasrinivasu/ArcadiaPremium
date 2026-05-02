@@ -1,6 +1,7 @@
 name: Continuous Delivery
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Java CI with Maven and Docker", "Frontend CI and Docker"]
     types: [completed]
