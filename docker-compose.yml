@@ -13,7 +13,7 @@ services:
       - arcadia-network
 
   backend:
-    image: ghcr.io/${{ github.repository }}-backend:main
+    image: ghcr.io/manideep-desham/arcadiapremium-backend:main
     container_name: backend
     restart: always
     depends_on:
@@ -26,7 +26,7 @@ services:
       - arcadia-network
 
   frontend:
-    image: ghcr.io/${{ github.repository }}-frontend:main
+    image: ghcr.io/manideep-desham/arcadiapremium-frontend:main
     container_name: frontend
     restart: always
     ports:
