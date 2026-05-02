@@ -6,14 +6,6 @@ on:
     workflows: ["Java CI with Maven and Docker", "Frontend CI and Docker"]
     types: [completed]
 
-name: Continuous Delivery
-
-on:
-  workflow_run:
-    workflows: ["Java CI with Maven and Docker", "Frontend CI and Docker"]
-    types: [completed]
-    branches: ["**"]
-
 
 
 jobs:
@@ -35,7 +27,7 @@ jobs:
           source: "docker-compose.yml"
           # Path on your Linux machine
           target: "~/arcadia-app"
-          
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
