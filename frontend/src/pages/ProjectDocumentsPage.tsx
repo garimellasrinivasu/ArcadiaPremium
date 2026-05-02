@@ -452,7 +452,7 @@ export default function ProjectDocumentsPage() {
             >
               Upload
             </button>
-          ) : (
+          ) : uploadProgress < 100 ? (
             <div className="space-y-2">
               {/* Progress bar */}
               <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
@@ -471,7 +471,7 @@ export default function ProjectDocumentsPage() {
               {/* Size info and cancel */}
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-600">
-                  {formatFileSize(uploadLoaded)} / {formatFileSize(uploadTotal)}{" "}
+                  Uploading: {formatFileSize(uploadLoaded)} / {formatFileSize(uploadTotal)}{" "}
                   <span className="text-gray-400">({uploadProgress}%)</span>
                 </p>
                 <button
@@ -480,6 +480,23 @@ export default function ProjectDocumentsPage() {
                 >
                   Cancel Upload
                 </button>
+              </div>
+            </div>
+          ) : (
+            /* Server processing phase — file fully sent, waiting for DB save */
+            <div className="space-y-2">
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div className="bg-green-500 h-4 rounded-full w-full flex items-center justify-center animate-pulse">
+                  <span className="text-[10px] font-semibold text-white leading-none">
+                    Processing...
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-arcadia-600" />
+                <p className="text-xs text-gray-600">
+                  File uploaded ({formatFileSize(uploadTotal)}). Saving to server, please wait...
+                </p>
               </div>
             </div>
           )}
