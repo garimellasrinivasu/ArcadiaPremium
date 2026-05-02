@@ -19,7 +19,10 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
+        cache-dependency-path: 'backend/pom.xml'
+        
+    - name: Build with Maven'
+      working-directory: ./backend
       run: mvn -B package --file backend/pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
