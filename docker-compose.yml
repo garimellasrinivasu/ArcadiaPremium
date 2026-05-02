@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: arcadia-db
+    restart: always
+    environment:
+      POSTGRES_DB: arcadia
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - arcadia-network
+
+  backend:
+    image: ghcr.io/${{ github.repository }}-backend:main
+    container_name: backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/arcadia
+      - SPRING_DATASOURCE_USERNAME=dev_user
+      - SPRING_DATASOURCE_PASSWORD=dev_password
+    networks:
+      - arcadia-network
+
+  frontend:
+    image: ghcr.io/${{ github.repository }}-frontend:main
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - arcadia-network
+
+networks:
+  arcadia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
