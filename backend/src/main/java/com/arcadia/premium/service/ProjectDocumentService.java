@@ -32,7 +32,7 @@ public class ProjectDocumentService {
         this.repository = repository;
     }
 
-    @Transactional
+    @Transactional(timeout = 300) // 5 minutes for large file uploads
     public ProjectDocumentDto upload(String projectName, String customFileName,
                                       MultipartFile file, String uploadedByEmail) throws IOException {
         // Validate file

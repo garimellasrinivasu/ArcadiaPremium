@@ -16,6 +16,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        jdbc:
+          batch_size: 1
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   jackson:
     serialization:
@@ -42,9 +45,16 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
+      file-size-threshold: 1MB
 
 server:
   port: ${PORT:8080}
+  tomcat:
+    connection-timeout: 300000
+    max-swallow-size: 100MB
+  servlet:
+    session:
+      timeout: 30m
 
 app:
   cors:
