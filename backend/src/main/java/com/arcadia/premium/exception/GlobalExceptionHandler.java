@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import java.time.LocalDateTime;
@@ -33,6 +34,16 @@ public class GlobalExceptionHandler {
         }
 
         return buildResponse(status, message);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        return buildResponse(HttpStatus.PAYLOAD_TOO_LARGE, "File size exceeds maximum upload limit (100 MB).");
+    }
+
+    @ExceptionHandler(OutOfMemoryError.class)
+    public ResponseEntity<Map<String, Object>> handleOom(OutOfMemoryError ex) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Server ran out of memory processing the file. Please try a smaller file.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

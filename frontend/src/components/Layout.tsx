@@ -34,6 +34,7 @@ const menuSections: MenuSection[] = [
       { label: "Finance Spent", path: "/activities/finance-spent" },
       { label: "Master Plan", path: "/activities/master-plan" },
       { label: "Site Attendance", path: "/activities/site-attendance" },
+      { label: "Project Documents", path: "/activities/documents" },
     ],
   },
   {
@@ -166,9 +167,9 @@ export default function Layout() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ===== TOP HEADER ===== */}
-      <header className="px-6 py-5 flex items-center justify-between border-b border-arcadia-200" style={{ background: "linear-gradient(135deg, #e0effe 0%, #f0f7ff 40%, #fdf9ef 100%)" }}>
-        {/* Left — Toggle & Logo */}
-        <div className="flex-1 flex items-center gap-4">
+      <header className="px-4 lg:px-6 py-5 flex items-center border-b border-arcadia-200" style={{ background: "linear-gradient(135deg, #e0effe 0%, #f0f7ff 40%, #fdf9ef 100%)" }}>
+        {/* Left — Hamburger (mobile only) */}
+        <div className="flex-1 flex items-center">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -180,8 +181,11 @@ export default function Layout() {
               <span className="text-2xl leading-none">☰</span>
             )}
           </button>
-          
-          <Link to="/" className="flex items-center">
+        </div>
+
+        {/* Center — Logo */}
+        <div className="flex-shrink-0">
+          <Link to="/" className="flex items-center justify-center">
             <img
               src="/arcadia-logo.png"
               alt="Arcadia Premium"
@@ -191,7 +195,7 @@ export default function Layout() {
         </div>
 
         {/* Right — Date & User */}
-        <div className="text-right space-y-0.5">
+        <div className="flex-1 text-right space-y-0.5">
           <CurrentDate />
           <div className="text-sm text-gray-700">
             Logged In :{" "}
