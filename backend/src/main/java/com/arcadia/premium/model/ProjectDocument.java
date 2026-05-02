@@ -36,6 +36,11 @@ public class ProjectDocument {
     @Column(nullable = false, columnDefinition = "bytea")
     private byte[] fileData;
 
+    /** Folder this document belongs to (null = project root) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private DocumentFolder folder;
+
     /** Email of the user who uploaded */
     @Column(nullable = false)
     private String uploadedBy;
@@ -67,6 +72,11 @@ public class ProjectDocument {
 
     public byte[] getFileData() { return fileData; }
     public void setFileData(byte[] fileData) { this.fileData = fileData; }
+
+    public DocumentFolder getFolder() { return folder; }
+    public void setFolder(DocumentFolder folder) { this.folder = folder; }
+
+    public Long getFolderId() { return folder != null ? folder.getId() : null; }
 
     public String getUploadedBy() { return uploadedBy; }
     public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }

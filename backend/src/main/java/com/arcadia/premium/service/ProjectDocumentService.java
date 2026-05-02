@@ -1,7 +1,9 @@
 package com.arcadia.premium.service;
 
 import com.arcadia.premium.dto.ProjectDocumentDto;
+import com.arcadia.premium.model.DocumentFolder;
 import com.arcadia.premium.model.ProjectDocument;
+import com.arcadia.premium.repository.DocumentFolderRepository;
 import com.arcadia.premium.repository.ProjectDocumentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,14 +29,18 @@ public class ProjectDocumentService {
     private static final long MAX_SIZE = 100L * 1024 * 1024; // 100 MB
 
     private final ProjectDocumentRepository repository;
+    private final DocumentFolderRepository folderRepository;
 
-    public ProjectDocumentService(ProjectDocumentRepository repository) {
+    public ProjectDocumentService(ProjectDocumentRepository repository,
+                                   DocumentFolderRepository folderRepository) {
         this.repository = repository;
+        this.folderRepository = folderRepository;
     }
 
     @Transactional(timeout = 300) // 5 minutes for large file uploads
     public ProjectDocumentDto upload(String projectName, String customFileName,
-                                      MultipartFile file, String uploadedByEmail) throws IOException {
+                                      MultipartFile file, String uploadedByEmail,
+                                      Long folderId) throws IOException {
         // Validate file
         if (file.isEmpty()) {
             throw new RuntimeException("File is empty.");
@@ -52,6 +58,13 @@ public class ProjectDocumentService {
                 ? customFileName.trim()
                 : originalName;
 
+        // Resolve folder
+        DocumentFolder folder = null;
+        if (folderId != null) {
+            folder = folderRepository.findById(folderId)
+                    .orElseThrow(() -> new RuntimeException("Folder not found."));
+        }
+
         ProjectDocument doc = new ProjectDocument();
         doc.setProjectName(projectName);
         doc.setFileName(displayName);
@@ -59,12 +72,40 @@ public class ProjectDocumentService {
         doc.setContentType(contentType);
         doc.setFileSize(file.getSize());
         doc.setFileData(file.getBytes());
+        doc.setFolder(folder);
         doc.setUploadedBy(uploadedByEmail);
 
         return ProjectDocumentDto.fromEntity(repository.save(doc));
     }
 
-    /** Admin sees all documents; regular users see only their own uploads */
+    /** List documents in a specific folder (or root if folderId is null).
+     *  Admin sees all; regular users see only their own uploads. */
+    public List<ProjectDocumentDto> listByProjectAndFolder(String projectName, Long folderId,
+                                                            String userEmail, boolean isAdmin) {
+        List<ProjectDocument> docs;
+        if (folderId == null) {
+            // Root level
+            if (isAdmin) {
+                docs = repository.findByProjectNameAndFolderIsNullOrderByCreatedAtDesc(projectName);
+            } else {
+                docs = repository.findByProjectNameAndFolderIsNullAndUploadedByOrderByCreatedAtDesc(
+                        projectName, userEmail);
+            }
+        } else {
+            // Inside a folder
+            if (isAdmin) {
+                docs = repository.findByProjectNameAndFolder_IdOrderByCreatedAtDesc(projectName, folderId);
+            } else {
+                docs = repository.findByProjectNameAndFolder_IdAndUploadedByOrderByCreatedAtDesc(
+                        projectName, folderId, userEmail);
+            }
+        }
+        return docs.stream()
+                .map(ProjectDocumentDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /** Legacy method — list all documents for a project (no folder filter) */
     public List<ProjectDocumentDto> listByProject(String projectName, String userEmail, boolean isAdmin) {
         List<ProjectDocument> docs;
         if (isAdmin) {

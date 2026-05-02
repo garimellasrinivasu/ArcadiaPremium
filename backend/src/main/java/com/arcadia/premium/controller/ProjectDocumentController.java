@@ -34,15 +34,16 @@ public class ProjectDocumentController {
         this.service = service;
     }
 
-    /** Upload a document for a project */
+    /** Upload a document for a project (optionally into a folder) */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> upload(
             @RequestParam("projectName") String projectName,
             @RequestParam(value = "fileName", required = false) String fileName,
+            @RequestParam(value = "folderId", required = false) Long folderId,
             @RequestParam("file") MultipartFile file,
             Principal principal) {
         try {
-            ProjectDocumentDto dto = service.upload(projectName, fileName, file, principal.getName());
+            ProjectDocumentDto dto = service.upload(projectName, fileName, file, principal.getName(), folderId);
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -50,13 +51,16 @@ public class ProjectDocumentController {
         }
     }
 
-    /** List documents for a project. Admins see all; others see only their own. */
+    /** List documents for a project in a specific folder (or root if folderId absent).
+     *  Admins see all; others see only their own. */
     @GetMapping
     public ResponseEntity<List<ProjectDocumentDto>> listByProject(
             @RequestParam("projectName") String projectName,
+            @RequestParam(value = "folderId", required = false) Long folderId,
             Principal principal) {
         boolean isAdmin = isCurrentUserAdmin();
-        return ResponseEntity.ok(service.listByProject(projectName, principal.getName(), isAdmin));
+        return ResponseEntity.ok(
+            service.listByProjectAndFolder(projectName, folderId, principal.getName(), isAdmin));
     }
 
     private boolean isCurrentUserAdmin() {

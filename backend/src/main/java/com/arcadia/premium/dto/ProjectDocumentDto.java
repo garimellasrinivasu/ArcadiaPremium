@@ -12,6 +12,7 @@ public class ProjectDocumentDto {
     private String originalFileName;
     private String contentType;
     private long fileSize;
+    private Long folderId;
     private String uploadedBy;
     private LocalDateTime createdAt;
 
@@ -23,6 +24,7 @@ public class ProjectDocumentDto {
         dto.originalFileName = doc.getOriginalFileName();
         dto.contentType = doc.getContentType();
         dto.fileSize = doc.getFileSize();
+        dto.folderId = doc.getFolderId();
         dto.uploadedBy = doc.getUploadedBy();
         dto.createdAt = doc.getCreatedAt();
         return dto;
@@ -40,6 +42,8 @@ public class ProjectDocumentDto {
     public void setContentType(String contentType) { this.contentType = contentType; }
     public long getFileSize() { return fileSize; }
     public void setFileSize(long fileSize) { this.fileSize = fileSize; }
+    public Long getFolderId() { return folderId; }
+    public void setFolderId(Long folderId) { this.folderId = folderId; }
     public String getUploadedBy() { return uploadedBy; }
     public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }

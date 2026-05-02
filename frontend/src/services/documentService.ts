@@ -7,6 +7,7 @@ export interface DocumentDto {
   originalFileName: string;
   contentType: string;
   fileSize: number;
+  folderId: number | null;
   uploadedBy: string;
   createdAt: string;
 }
@@ -25,13 +26,17 @@ export const documentService = {
     projectName: string,
     file: File,
     onProgress: (loaded: number, total: number) => void,
-    customFileName?: string
+    customFileName?: string,
+    folderId?: number | null
   ): UploadHandle {
     const formData = new FormData();
     formData.append("projectName", projectName);
     formData.append("file", file);
     if (customFileName && customFileName.trim()) {
       formData.append("fileName", customFileName.trim());
+    }
+    if (folderId != null) {
+      formData.append("folderId", folderId.toString());
     }
 
     const xhr = new XMLHttpRequest();
@@ -73,11 +78,16 @@ export const documentService = {
     return { promise, abort: () => xhr.abort() };
   },
 
-  /** List documents for a project */
-  async listByProject(projectName: string): Promise<DocumentDto[]> {
-    const { data } = await api.get<DocumentDto[]>("/documents", {
-      params: { projectName },
-    });
+  /** List documents for a project in a specific folder (null = root) */
+  async listByProject(
+    projectName: string,
+    folderId?: number | null
+  ): Promise<DocumentDto[]> {
+    const params: Record<string, string | number> = { projectName };
+    if (folderId != null) {
+      params.folderId = folderId;
+    }
+    const { data } = await api.get<DocumentDto[]>("/documents", { params });
     return data;
   },
 
