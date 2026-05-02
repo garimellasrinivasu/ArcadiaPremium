@@ -7,3 +7,24 @@
     @apply min-h-screen;
   }
 }
+
+/* Always show scrollbars when content overflows */
+.always-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.always-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.always-scroll::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 4px;
+}
+.always-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+.always-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 #f1f1f1;
+}

@@ -128,6 +128,22 @@ public class ProjectDocumentController {
         }
     }
 
+    /** Bulk delete documents (admin only) */
+    @DeleteMapping("/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> bulkDelete(@RequestBody Map<String, List<Long>> request) {
+        try {
+            List<Long> ids = request.get("ids");
+            if (ids == null || ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No document IDs provided."));
+            }
+            int count = service.deleteMultiple(ids);
+            return ResponseEntity.ok(Map.of("message", count + " document(s) deleted successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     private ResponseEntity<byte[]> buildFileResponse(ProjectDocument doc) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(doc.getContentType()));

@@ -22,6 +22,8 @@ public class ProjectDocumentService {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
         "application/vnd.ms-powerpoint", // .ppt
         "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+        "application/vnd.ms-excel", // .xls
         "image/png",
         "image/jpeg"
     );
@@ -50,7 +52,7 @@ public class ProjectDocumentService {
         }
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_TYPES.contains(contentType)) {
-            throw new RuntimeException("File type not allowed. Accepted: PDF, DOCX, PPT, PPTX, PNG, JPEG.");
+            throw new RuntimeException("File type not allowed. Accepted: PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG.");
         }
 
         String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unnamed";
@@ -129,5 +131,18 @@ public class ProjectDocumentService {
             throw new RuntimeException("Document not found with id: " + id);
         }
         repository.deleteById(id);
+    }
+
+    /** Bulk delete multiple documents */
+    @Transactional
+    public int deleteMultiple(List<Long> ids) {
+        int count = 0;
+        for (Long id : ids) {
+            if (repository.existsById(id)) {
+                repository.deleteById(id);
+                count++;
+            }
+        }
+        return count;
     }
 }

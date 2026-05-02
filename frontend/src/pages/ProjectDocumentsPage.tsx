@@ -17,6 +17,7 @@ function fileIcon(contentType: string): string {
   if (contentType.startsWith("image/")) return "\u{1F5BC}";
   if (contentType.includes("wordprocessingml")) return "\u{1F4DD}";
   if (contentType.includes("presentation") || contentType.includes("powerpoint")) return "\u{1F4CA}";
+  if (contentType.includes("spreadsheetml") || contentType.includes("ms-excel")) return "\u{1F4CA}";
   return "\u{1F4CE}";
 }
 
@@ -93,8 +94,18 @@ function FolderTreeNode({
   );
 }
 
-/* ─── File Viewer Modal ─── */
-function FileViewerModal({ doc, onClose }: { doc: DocumentDto; onClose: () => void }) {
+/* ─── File Viewer Modal (with prev/next navigation) ─── */
+function FileViewerModal({
+  doc,
+  allDocs,
+  onClose,
+  onNavigate,
+}: {
+  doc: DocumentDto;
+  allDocs: DocumentDto[];
+  onClose: () => void;
+  onNavigate: (doc: DocumentDto) => void;
+}) {
   const token = sessionStorage.getItem("token") || "";
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,10 +115,39 @@ function FileViewerModal({ doc, onClose }: { doc: DocumentDto; onClose: () => vo
   const isPdf = doc.contentType === "application/pdf";
   const isDocx = doc.contentType.includes("wordprocessingml");
   const isPpt = doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint");
-  const isOfficeDoc = isDocx || isPpt;
+  const isXlsx = doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel");
+  const isOfficeDoc = isDocx || isPpt || isXlsx;
+
+  // Navigation: find current index and prev/next docs
+  const currentIndex = allDocs.findIndex((d) => d.id === doc.id);
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < allDocs.length - 1;
+
+  function goPrev() {
+    if (hasPrev) onNavigate(allDocs[currentIndex - 1]);
+  }
+  function goNext() {
+    if (hasNext) onNavigate(allDocs[currentIndex + 1]);
+  }
+
+  // Keyboard navigation: left/right arrows, Escape to close
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "Escape") { e.preventDefault(); onClose(); }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, allDocs.length]);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError("");
+    // Revoke previous URL
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); setObjectUrl(null); }
     async function loadFile() {
       try {
         const res = await fetch(documentService.getViewUrl(doc.id), {
@@ -140,17 +180,58 @@ function FileViewerModal({ doc, onClose }: { doc: DocumentDto; onClose: () => vo
 
   useEffect(() => {
     return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [objectUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      {/* Previous arrow */}
+      {hasPrev && (
+        <button onClick={goPrev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition text-xl font-bold"
+          title="Previous file (Left arrow)">
+          &#8249;
+        </button>
+      )}
+
+      {/* Next arrow */}
+      {hasNext && (
+        <button onClick={goNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition text-xl font-bold"
+          title="Next file (Right arrow)">
+          &#8250;
+        </button>
+      )}
+
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-gray-800 truncate">{doc.fileName}</h3>
-            <p className="text-xs text-gray-400">{formatFileSize(doc.fileSize)} &middot; {doc.originalFileName}</p>
+            <p className="text-xs text-gray-400">
+              {formatFileSize(doc.fileSize)} &middot; {doc.originalFileName}
+              {allDocs.length > 1 && (
+                <span className="ml-2 text-gray-500 font-medium">
+                  ({currentIndex + 1} of {allDocs.length})
+                </span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+            {/* Prev / Next buttons in header */}
+            {allDocs.length > 1 && (
+              <div className="flex items-center gap-1 mr-2">
+                <button onClick={goPrev} disabled={!hasPrev}
+                  className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Previous">
+                  Prev
+                </button>
+                <button onClick={goNext} disabled={!hasNext}
+                  className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next">
+                  Next
+                </button>
+              </div>
+            )}
             {objectUrl && (
               <a href={objectUrl} download={doc.originalFileName}
                 className="px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
@@ -183,7 +264,7 @@ function FileViewerModal({ doc, onClose }: { doc: DocumentDto; onClose: () => vo
               <p className="text-gray-700 font-medium">File downloaded successfully!</p>
               <p className="text-gray-500 text-sm">
                 "{doc.originalFileName}" has been downloaded.<br />
-                Open it with {isPpt ? "PowerPoint" : "Word"} on your device.
+                Open it with {isPpt ? "PowerPoint" : isXlsx ? "Excel" : "Word"} on your device.
               </p>
               <a href={objectUrl} download={doc.originalFileName}
                 className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
@@ -192,6 +273,29 @@ function FileViewerModal({ doc, onClose }: { doc: DocumentDto; onClose: () => vo
             </div>
           )}
         </div>
+
+        {/* Thumbnail strip for quick navigation */}
+        {allDocs.length > 1 && (
+          <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 overflow-x-auto always-scroll">
+            <div className="flex gap-2 items-center justify-center min-w-min">
+              {allDocs.map((d, i) => (
+                <button key={d.id} onClick={() => onNavigate(d)}
+                  className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition text-center min-w-[60px] ${
+                    d.id === doc.id
+                      ? "bg-arcadia-100 border border-arcadia-300 shadow-sm"
+                      : "hover:bg-gray-100 border border-transparent"
+                  }`}>
+                  <span className="text-lg">{fileIcon(d.contentType)}</span>
+                  <span className={`text-[9px] leading-tight truncate max-w-[56px] ${
+                    d.id === doc.id ? "text-arcadia-700 font-semibold" : "text-gray-500"
+                  }`}>
+                    {d.fileName.length > 8 ? d.fileName.slice(0, 8) + "..." : d.fileName}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -237,6 +341,9 @@ export default function ProjectDocumentsPage() {
   const cancelledRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Bulk selection
+  const [selectedDocIds, setSelectedDocIds] = useState<Set<number>>(new Set());
+
   // Viewer
   const [viewingDoc, setViewingDoc] = useState<DocumentDto | null>(null);
 
@@ -270,6 +377,7 @@ export default function ProjectDocumentsPage() {
     try {
       const docs = await documentService.listByProject(proj, folderId);
       setDocuments(docs);
+      setSelectedDocIds(new Set());
     } catch {
       setError("Failed to load documents.");
     } finally {
@@ -321,6 +429,7 @@ export default function ProjectDocumentsPage() {
     setCurrentFolderId(folderId);
     setUploadMsg("");
     setUploadError("");
+    setSelectedDocIds(new Set());
   }
 
   function handleFolderSelect(folderId: number) {
@@ -397,6 +506,8 @@ export default function ProjectDocumentsPage() {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
     "image/png",
     "image/jpeg",
   ];
@@ -504,6 +615,36 @@ export default function ProjectDocumentsPage() {
     }
   }
 
+  /* ─── Bulk delete documents ─── */
+  function toggleDocSelection(docId: number) {
+    setSelectedDocIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId);
+      else next.add(docId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedDocIds.size === documents.length) {
+      setSelectedDocIds(new Set());
+    } else {
+      setSelectedDocIds(new Set(documents.map((d) => d.id)));
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedDocIds.size === 0) return;
+    if (!confirm(`Delete ${selectedDocIds.size} selected document(s)?\n\nThis cannot be undone.`)) return;
+    try {
+      await documentService.bulkDelete(Array.from(selectedDocIds));
+      setSelectedDocIds(new Set());
+      await loadDocuments(selectedProject, currentFolderId);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Bulk delete failed.");
+    }
+  }
+
   /* ─── Find sub-folders at current level (for display in documents list) ─── */
   function getSubFolders(): FolderDto[] {
     if (currentFolderId == null) return folderTree;
@@ -587,7 +728,7 @@ export default function ProjectDocumentsPage() {
               </div>
             )}
 
-            <div className="p-2 max-h-96 overflow-y-auto">
+            <div className="p-2 max-h-96 overflow-y-auto always-scroll">
               {/* Root item */}
               <div
                 className={`flex items-center gap-1 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition
@@ -695,12 +836,12 @@ export default function ProjectDocumentsPage() {
 
               <div>
                 <input ref={fileInputRef} type="file" multiple
-                  accept=".pdf,.docx,.ppt,.pptx,.png,.jpg,.jpeg"
+                  accept=".pdf,.docx,.ppt,.pptx,.xlsx,.xls,.png,.jpg,.jpeg"
                   onChange={handleFileChange} disabled={uploading}
                   className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-arcadia-50 file:text-arcadia-700 hover:file:bg-arcadia-100 cursor-pointer disabled:opacity-50"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  PDF, DOCX, PPT, PPTX, PNG, JPEG (max 100 MB each). Select multiple files.
+                  PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG (max 100 MB each). Select multiple files.
                 </p>
               </div>
 
@@ -788,10 +929,16 @@ export default function ProjectDocumentsPage() {
 
             {/* ── Documents List ── */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-700">
                   Documents {currentFolderId ? "" : `in "${selectedProject}" (Root)`}
                 </h2>
+                {isAdmin && selectedDocIds.size > 0 && (
+                  <button onClick={handleBulkDelete}
+                    className="text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg transition">
+                    Delete Selected ({selectedDocIds.size})
+                  </button>
+                )}
               </div>
 
               {loadingDocs ? (
@@ -810,56 +957,75 @@ export default function ProjectDocumentsPage() {
                   <p className="text-gray-400 text-sm">No documents in this folder.</p>
                 </div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">File Name</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700 hidden md:table-cell">Type</th>
-                      <th className="text-right px-4 py-3 font-semibold text-gray-700">Size</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700 hidden lg:table-cell">Uploaded By</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700 hidden lg:table-cell">Date</th>
-                      <th className="text-center px-4 py-3 font-semibold text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {documents.map((doc, i) => (
-                      <tr key={doc.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => setViewingDoc(doc)}>
-                        <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{fileIcon(doc.contentType)}</span>
-                            <div className="min-w-0">
-                              <p className="font-medium text-arcadia-700 truncate">{doc.fileName}</p>
-                              {doc.fileName !== doc.originalFileName && (
-                                <p className="text-xs text-gray-400 truncate">{doc.originalFileName}</p>
+                <div className="overflow-auto max-h-[60vh] always-scroll">
+                  <table className="w-full text-sm min-w-[700px]">
+                    <thead className="bg-gray-50 border-b sticky top-0 z-10">
+                      <tr>
+                        {isAdmin && (
+                          <th className="px-4 py-3 whitespace-nowrap w-10">
+                            <input type="checkbox"
+                              checked={documents.length > 0 && selectedDocIds.size === documents.length}
+                              onChange={toggleSelectAll}
+                              className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
+                          </th>
+                        )}
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">#</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">File Name</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Type</th>
+                        <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Size</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Uploaded By</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                        <th className="text-center px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documents.map((doc, i) => (
+                        <tr key={doc.id} className={`border-b hover:bg-gray-50 cursor-pointer ${selectedDocIds.has(doc.id) ? "bg-arcadia-50" : ""}`} onClick={() => setViewingDoc(doc)}>
+                          {isAdmin && (
+                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                              <input type="checkbox"
+                                checked={selectedDocIds.has(doc.id)}
+                                onChange={() => toggleDocSelection(doc.id)}
+                                className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
+                            </td>
+                          )}
+                          <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{fileIcon(doc.contentType)}</span>
+                              <div className="min-w-0">
+                                <p className="font-medium text-arcadia-700 truncate max-w-[200px]">{doc.fileName}</p>
+                                {doc.fileName !== doc.originalFileName && (
+                                  <p className="text-xs text-gray-400 truncate max-w-[200px]">{doc.originalFileName}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                            {doc.contentType === "application/pdf" ? "PDF"
+                              : doc.contentType.includes("wordprocessingml") ? "DOCX"
+                              : doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint") ? "PPT"
+                              : doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel") ? "XLSX"
+                              : doc.contentType === "image/png" ? "PNG" : "JPEG"}
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{formatFileSize(doc.fileSize)}</td>
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{doc.uploadedBy}</td>
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(doc.createdAt)}</td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
+                              <button onClick={() => setViewingDoc(doc)}
+                                className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
+                              {isAdmin && (
+                                <button onClick={() => handleDelete(doc)}
+                                  className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
                               )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
-                          {doc.contentType === "application/pdf" ? "PDF"
-                            : doc.contentType.includes("wordprocessingml") ? "DOCX"
-                            : doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint") ? "PPT"
-                            : doc.contentType === "image/png" ? "PNG" : "JPEG"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-500">{formatFileSize(doc.fileSize)}</td>
-                        <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{doc.uploadedBy}</td>
-                        <td className="px-4 py-3 text-gray-500 hidden lg:table-cell whitespace-nowrap">{formatDate(doc.createdAt)}</td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={() => setViewingDoc(doc)}
-                              className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
-                            {isAdmin && (
-                              <button onClick={() => handleDelete(doc)}
-                                className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>
@@ -867,7 +1033,14 @@ export default function ProjectDocumentsPage() {
       )}
 
       {/* ── File Viewer Modal ── */}
-      {viewingDoc && <FileViewerModal doc={viewingDoc} onClose={() => setViewingDoc(null)} />}
+      {viewingDoc && (
+        <FileViewerModal
+          doc={viewingDoc}
+          allDocs={documents}
+          onClose={() => setViewingDoc(null)}
+          onNavigate={(d) => setViewingDoc(d)}
+        />
+      )}
     </div>
   );
 }
