@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { projectService, type ProjectDto } from "../services/projectService";
-import { documentService, type DocumentDto } from "../services/documentService";
+import { documentService, type DocumentDto, type UploadHandle } from "../services/documentService";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
 
@@ -195,6 +195,10 @@ export default function ProjectDocumentsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0); // 0-100
+  const [uploadLoaded, setUploadLoaded] = useState(0);
+  const [uploadTotal, setUploadTotal] = useState(0);
+  const uploadHandleRef = useRef<UploadHandle | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Viewer
@@ -283,8 +287,24 @@ export default function ProjectDocumentsPage() {
     setUploading(true);
     setUploadError("");
     setUploadMsg("");
+    setUploadProgress(0);
+    setUploadLoaded(0);
+    setUploadTotal(selectedFile.size);
+
+    const handle = documentService.uploadWithProgress(
+      selectedProject,
+      selectedFile,
+      (loaded, total) => {
+        setUploadLoaded(loaded);
+        setUploadTotal(total);
+        setUploadProgress(Math.round((loaded / total) * 100));
+      },
+      customFileName
+    );
+    uploadHandleRef.current = handle;
+
     try {
-      await documentService.upload(selectedProject, selectedFile, customFileName);
+      await handle.promise;
       setUploadMsg(
         `"${customFileName || selectedFile.name}" uploaded successfully (${formatFileSize(selectedFile.size)})`
       );
@@ -293,11 +313,22 @@ export default function ProjectDocumentsPage() {
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadDocuments(selectedProject);
     } catch (err: any) {
-      setUploadError(
-        err.response?.data?.error || "Upload failed. Please try again."
-      );
+      if (err.message === "Upload cancelled") {
+        setUploadError("Upload cancelled.");
+      } else {
+        setUploadError(err.message || "Upload failed. Please try again.");
+      }
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      uploadHandleRef.current = null;
+    }
+  }
+
+  /* ─── Cancel Upload ─── */
+  function handleCancelUpload() {
+    if (uploadHandleRef.current) {
+      uploadHandleRef.current.abort();
     }
   }
 
@@ -412,13 +443,46 @@ export default function ProjectDocumentsPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleUpload}
-            disabled={uploading || !selectedFile}
-            className="bg-arcadia-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
-          >
-            {uploading ? "Uploading..." : "Upload"}
-          </button>
+          {/* Upload button OR progress bar */}
+          {!uploading ? (
+            <button
+              onClick={handleUpload}
+              disabled={!selectedFile}
+              className="bg-arcadia-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
+            >
+              Upload
+            </button>
+          ) : (
+            <div className="space-y-2">
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div
+                  className="bg-arcadia-600 h-4 rounded-full transition-all duration-300 flex items-center justify-center"
+                  style={{ width: `${uploadProgress}%` }}
+                >
+                  {uploadProgress > 10 && (
+                    <span className="text-[10px] font-semibold text-white leading-none">
+                      {uploadProgress}%
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Size info and cancel */}
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-600">
+                  {formatFileSize(uploadLoaded)} / {formatFileSize(uploadTotal)}{" "}
+                  <span className="text-gray-400">({uploadProgress}%)</span>
+                </p>
+                <button
+                  onClick={handleCancelUpload}
+                  className="px-4 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition"
+                >
+                  Cancel Upload
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -11,23 +11,66 @@ export interface DocumentDto {
   createdAt: string;
 }
 
+export interface UploadHandle {
+  promise: Promise<DocumentDto>;
+  abort: () => void;
+}
+
 export const documentService = {
-  /** Upload a document for a project */
-  async upload(
+  /**
+   * Upload a document with progress tracking and cancellation.
+   * Returns an UploadHandle with a promise and an abort() function.
+   */
+  uploadWithProgress(
     projectName: string,
     file: File,
+    onProgress: (loaded: number, total: number) => void,
     customFileName?: string
-  ): Promise<DocumentDto> {
+  ): UploadHandle {
     const formData = new FormData();
     formData.append("projectName", projectName);
     formData.append("file", file);
     if (customFileName && customFileName.trim()) {
       formData.append("fileName", customFileName.trim());
     }
-    const { data } = await api.post<DocumentDto>("/documents", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+
+    const xhr = new XMLHttpRequest();
+    const token = sessionStorage.getItem("token") || "";
+
+    const promise = new Promise<DocumentDto>((resolve, reject) => {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          onProgress(e.loaded, e.total);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch {
+            reject(new Error("Invalid server response"));
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.error || `Upload failed (${xhr.status})`));
+          } catch {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+      xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+
+      const base = api.defaults.baseURL || "/api";
+      xhr.open("POST", `${base}/documents`);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.send(formData);
     });
-    return data;
+
+    return { promise, abort: () => xhr.abort() };
   },
 
   /** List documents for a project */
