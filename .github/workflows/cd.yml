@@ -4,7 +4,6 @@ on:
   workflow_run:
     workflows: ["Java CI with Maven and Docker", "Frontend CI and Docker"]
     types: [completed]
-    branches: ["**"] # This will trigger regardless of which branch was built
 
 
 jobs:
