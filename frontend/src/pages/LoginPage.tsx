@@ -117,7 +117,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-arcadia-900">ArcadiaPremium</h1>
           <p className="text-gray-500 mt-2">
-            {view === "login" && "Sign in to your account"}
+            {view === "login" && "Sign in to your account..!"}
             {view === "forgot" && "Reset your password"}
             {view === "force-change" && "Set a new password"}
           </p>
