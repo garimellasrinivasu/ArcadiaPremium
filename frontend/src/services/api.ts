@@ -15,19 +15,27 @@ api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    // Log if token is missing but we're trying to make an authenticated request
+    if (!config.url?.includes("/auth/login")) {
+      console.warn("Auth token missing for request:", config.url);
+    }
   }
   return config;
 });
 
-// Handle 401 → redirect to login
+// Handle 401/403 -> redirect to login or show error
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      sessionStorage.removeItem("token");
-      // Only redirect if we aren't already on the login page
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.error("Auth error:", error.response.status, error.config.url);
+      // Only clear and redirect if it's a 401 (Unauthorized)
+      if (error.response.status === 401) {
+        sessionStorage.removeItem("token");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);
@@ -35,3 +43,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

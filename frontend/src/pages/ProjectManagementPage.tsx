@@ -201,6 +201,7 @@ export default function ProjectManagementPage() {
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Project Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date Added</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Description</th>
                 <th className="text-center px-4 py-3 font-semibold text-gray-700">Status</th>
                 <th className="text-center px-4 py-3 font-semibold text-gray-700">Actions</th>
@@ -211,7 +212,15 @@ export default function ProjectManagementPage() {
                 <tr key={p.id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    {new Date(p.createdAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{p.description || "-"}</td>
+
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => handleToggleActive(p)}

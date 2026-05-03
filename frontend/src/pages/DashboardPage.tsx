@@ -1,4 +1,29 @@
+import { useState, useEffect } from "react";
+import api from "../services/api";
+
 export default function DashboardPage() {
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [roleCount, setRoleCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [usersRes, rolesRes] = await Promise.all([
+          api.get("/users"),
+          api.get("/roles"),
+        ]);
+        setUserCount(usersRes.data.length);
+        setRoleCount(rolesRes.data.length);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
@@ -6,15 +31,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <p className="text-sm text-gray-500">Total Users</p>
-          <p className="text-3xl font-bold text-arcadia-700 mt-1">—</p>
+          <p className="text-3xl font-bold text-arcadia-700 mt-1">
+            {loading ? "..." : userCount ?? "—"}
+          </p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <p className="text-sm text-gray-500">Active Roles</p>
-          <p className="text-3xl font-bold text-arcadia-700 mt-1">—</p>
+          <p className="text-3xl font-bold text-arcadia-700 mt-1">
+            {loading ? "..." : roleCount ?? "—"}
+          </p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <p className="text-sm text-gray-500">Permissions</p>
-          <p className="text-3xl font-bold text-arcadia-700 mt-1">—</p>
+          <p className="text-3xl font-bold text-arcadia-700 mt-1">
+            {loading ? "..." : "8"} 
+          </p>
         </div>
       </div>
 
@@ -28,3 +59,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

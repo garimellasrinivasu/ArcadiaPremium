@@ -208,13 +208,9 @@ export default function Layout() {
 
       {/* ===== BODY ===== */}
       <div className="flex flex-1 relative">
-        {/* Mobile Backdrop */}
-        {isSidebarOpen && (
-          <div 
-            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
+
+        {/* Sidebar and Main Content Container */}
+
 
         {/* ===== LEFT SIDEBAR ===== */}
         <aside className={`
