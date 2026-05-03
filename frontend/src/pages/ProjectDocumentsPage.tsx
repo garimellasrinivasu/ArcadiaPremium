@@ -350,11 +350,37 @@ export default function ProjectDocumentsPage() {
   // Current user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<DocumentDto[]>([]);
+  const [searching, setSearching] = useState(false);
+
 
   useEffect(() => {
     projectService.getActiveProjects().then(setProjects).catch(() => setError("Failed to load projects."));
     authService.getCurrentUser().then(setCurrentUser).catch(() => {});
   }, []);
+
+  // Debounced Search
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const results = await documentService.search(q);
+        setSearchResults(results);
+      } catch (err) {
+        console.error("Search failed:", err);
+      } finally {
+        setSearching(false);
+      }
+    }, 400); // 400ms debounce
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
 
   const isAdmin = currentUser ? currentUser.roles.some((r) => r.name === "ADMIN") : false;
 
@@ -667,7 +693,88 @@ export default function ProjectDocumentsPage() {
     <div className="max-w-6xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-arcadia-800">Project Documents</h1>
 
+      {/* ── Global Search Bar ── */}
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+          <span className="text-gray-400 group-focus-within:text-arcadia-600 transition-colors text-lg">
+            🔍
+          </span>
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search documents by name across all projects..."
+          className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-arcadia-500/10 focus:border-arcadia-500 outline-none transition-all text-sm placeholder:text-gray-400"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            &times;
+          </button>
+        )}
+
+        {/* Search Results Dropdown/Overlay */}
+        {searchQuery.trim().length >= 2 && (
+          <div className="absolute z-[60] w-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[400px] flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                {searching ? "Searching..." : `Results for "${searchQuery}"`}
+              </span>
+              <span className="text-[10px] text-gray-400">
+                {searchResults.length} {searchResults.length === 1 ? "document" : "documents"} found
+              </span>
+            </div>
+            <div className="overflow-y-auto py-1">
+              {searching && searchResults.length === 0 && (
+                <div className="px-5 py-8 text-center text-gray-500">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600 mx-auto mb-2" />
+                  Searching files...
+                </div>
+              )}
+              {!searching && searchResults.length === 0 && (
+                <div className="px-5 py-8 text-center text-gray-400 italic text-sm">
+                  No documents matching your search.
+                </div>
+              )}
+              {searchResults.map((doc) => (
+                <div
+                  key={doc.id}
+                  onClick={() => {
+                    setViewingDoc(doc);
+                    setSearchQuery("");
+                  }}
+                  className="px-4 py-3 hover:bg-arcadia-50 cursor-pointer flex items-center gap-3 transition group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl group-hover:bg-white group-hover:shadow-sm transition">
+                    {fileIcon(doc.contentType)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-gray-800 truncate group-hover:text-arcadia-700">
+                      {doc.fileName}
+                    </div>
+                    <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                      <span className="font-medium text-arcadia-600">{doc.projectName}</span>
+                      <span className="text-gray-300">|</span>
+                      <span>{formatFileSize(doc.fileSize)}</span>
+                      <span className="text-gray-300">|</span>
+                      <span>{formatDate(doc.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition pr-2">
+                    <span className="text-arcadia-600 text-xs font-semibold">View &rsaquo;</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {error && (
+
         <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
           {error}
           <button onClick={() => setError("")} className="float-right text-red-500 hover:text-red-700">&times;</button>

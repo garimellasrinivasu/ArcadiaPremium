@@ -27,4 +27,10 @@ public interface ProjectDocumentRepository extends JpaRepository<ProjectDocument
     long countByFolder_Id(Long folderId);
 
     long countByProjectName(String projectName);
+    
+    /** Search documents across all projects */
+    List<ProjectDocument> findByFileNameContainingIgnoreCaseOrderByCreatedAtDesc(String query);
+
+    List<ProjectDocument> findByFileNameContainingIgnoreCaseAndUploadedByOrderByCreatedAtDesc(String query, String uploadedBy);
 }
+

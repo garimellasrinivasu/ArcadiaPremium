@@ -114,8 +114,11 @@ export const documentService = {
     await api.delete(`/documents/${id}`);
   },
 
-  /** Bulk delete multiple documents (admin only) */
-  async bulkDelete(ids: number[]): Promise<void> {
-    await api.delete("/documents/bulk", { data: { ids } });
-  },
+  /** Bulk delete documents */
+  bulkDelete: (ids: number[]) =>
+    api.delete("/documents/bulk", { data: { ids } }).then((r) => r.data),
+
+  /** Search documents across all projects by partial filename */
+  search: (query: string) =>
+    api.get<DocumentDto[]>("/documents/search", { params: { q: query } }).then((r) => r.data),
 };

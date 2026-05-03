@@ -144,7 +144,19 @@ public class ProjectDocumentController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<ProjectDocumentDto>> search(
+            @RequestParam("q") String query,
+            Principal principal) {
+        if (query == null || query.trim().length() < 2) {
+            return ResponseEntity.ok(List.of());
+        }
+        boolean isAdmin = isCurrentUserAdmin();
+        return ResponseEntity.ok(service.searchDocuments(query.trim(), principal.getName(), isAdmin));
+    }
+
     private ResponseEntity<byte[]> buildFileResponse(ProjectDocument doc) {
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(doc.getContentType()));
         headers.setContentLength(doc.getFileSize());

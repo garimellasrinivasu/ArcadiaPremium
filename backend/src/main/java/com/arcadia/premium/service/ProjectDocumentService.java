@@ -145,4 +145,18 @@ public class ProjectDocumentService {
         }
         return count;
     }
+
+    /** Search documents across all projects with security filtering */
+    public List<ProjectDocumentDto> searchDocuments(String query, String userEmail, boolean isAdmin) {
+        List<ProjectDocument> docs;
+        if (isAdmin) {
+            docs = repository.findByFileNameContainingIgnoreCaseOrderByCreatedAtDesc(query);
+        } else {
+            docs = repository.findByFileNameContainingIgnoreCaseAndUploadedByOrderByCreatedAtDesc(query, userEmail);
+        }
+        return docs.stream()
+                .map(ProjectDocumentDto::fromEntity)
+                .collect(Collectors.toList());
+    }
 }
+
