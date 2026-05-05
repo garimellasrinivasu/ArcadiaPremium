@@ -21,10 +21,15 @@ export default function CapitolFundPage() {
   const DEFAULT_SFT_PRICE = 7000;
   const DEFAULT_INTEREST_RATE = 1.50;
 
+  // Customer details
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerAddress, setCustomerAddress] = useState<string>("");
+  const [customerMobile, setCustomerMobile] = useState<string>("");
+
   // Calculator inputs
   const [inputAmount, setInputAmount] = useState<string>("");
   const [interestRate, setInterestRate] = useState<string>(DEFAULT_INTEREST_RATE.toString());
-  const [interestType, setInterestType] = useState<"compound" | "simple">("compound");
+  const [interestType, setInterestType] = useState<"compound" | "simple">("simple");
   const [compoundFrequency, setCompoundFrequency] = useState<"monthly" | "quarterly" | "halfyearly">("monthly");
   const [periodMonths, setPeriodMonths] = useState<string>("12");
   const [sftPrice, setSftPrice] = useState<string>(DEFAULT_SFT_PRICE.toString());
@@ -110,166 +115,87 @@ export default function CapitolFundPage() {
   /* ─── Print ─── */
   function handlePrint() {
     if (!calculations || !printRef.current) return;
-    const printContent = printRef.current.innerHTML;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+    const docTitle = `Arcadiapremium_${customerName ? customerName.replace(/\s+/g, "") : "Customer"}_CapitalCalculations`;
 
-    printWindow.document.write(`<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>Capital Fund - Investment Summary</title>
-<style>
-  @page { size: A4 portrait; margin: 8mm 10mm; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    font-size: 9pt;
-    color: #111;
-    line-height: 1.4;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .print-page { padding: 0; }
+    // Inject print-only styles
+    let styleEl = document.getElementById("capitol-print-styles");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "capitol-print-styles";
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+      @media print {
+        /* Hide everything except the print content */
+        body > *:not(#capitol-print-overlay) { display: none !important; }
+        #capitol-print-overlay { display: block !important; }
 
-  /* Header */
-  .p-header {
-    text-align: center;
-    padding: 3mm 0 4mm;
-    border-bottom: 1pt double #c9a961;
-    margin-bottom: 4mm;
-  }
-  .p-logo { max-width: 55mm; height: auto; margin: 0 auto 1mm; display: block; }
-  .p-developer { font-size: 7pt; letter-spacing: 2pt; color: #a68845; text-transform: uppercase; font-weight: 700; }
-  .p-tagline { font-family: Georgia, serif; font-style: italic; font-size: 7.5pt; color: #6b7280; margin-top: 0.5mm; }
+        @page { size: A4 portrait; margin: 6mm 8mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 7pt; color: #111; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-page { padding: 0; }
+        .p-header { text-align: center; padding: 1.5mm 0 2mm; border-bottom: 1pt double #c9a961; margin-bottom: 2mm; }
+        .p-logo { max-width: 40mm; height: auto; margin: 0 auto 0.5mm; display: block; }
+        .p-developer { font-size: 6pt; letter-spacing: 2pt; color: #a68845; text-transform: uppercase; font-weight: 700; }
+        .p-tagline { font-family: Georgia, serif; font-style: italic; font-size: 6pt; color: #6b7280; margin-top: 0.3mm; }
+        .p-title { text-align: center; margin: 1.5mm 0; }
+        .p-title .label { display: inline-block; background: #0a2540; color: #fff; padding: 1pt 10pt; font-size: 8pt; font-weight: 700; letter-spacing: 1.5pt; text-transform: uppercase; }
+        .p-title .date { font-size: 6pt; color: #6b7280; margin-top: 1mm; }
+        .p-info { background: #fdf9ef; border-left: 2pt solid #c9a961; padding: 1.5mm 2.5mm; margin: 2mm 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1mm 3mm; }
+        .p-info .cell .k { text-transform: uppercase; font-size: 5pt; color: #6b7280; letter-spacing: 0.5pt; font-weight: 700; }
+        .p-info .cell .v { color: #0a2540; font-size: 7pt; font-weight: 700; margin-top: 0.2mm; }
+        .p-section { margin-top: 2mm; margin-bottom: 0.5mm; padding: 0.8mm 2.5mm; background: linear-gradient(to right, #0a2540, #133963); color: #fff; font-size: 6pt; font-weight: 700; letter-spacing: 1.5pt; text-transform: uppercase; }
+        .p-sft-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2mm; margin: 2mm 0; }
+        .p-sft-box { border: 0.5pt solid #e3e7ef; padding: 1.5mm 2mm; text-align: center; border-radius: 1mm; }
+        .p-sft-box.highlight { background: #0a2540; color: #fff; border-color: #0a2540; }
+        .p-sft-box .lbl { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.5pt; font-weight: 700; color: #6b7280; }
+        .p-sft-box.highlight .lbl { color: #c9a961; }
+        .p-sft-box .val { font-size: 9pt; font-weight: 800; margin-top: 0.3mm; }
+        .p-sft-box.highlight .val { color: #c9a961; }
+        .p-sft-box .sub { font-size: 5pt; color: #999; margin-top: 0.2mm; }
+        .p-sft-box.highlight .sub { color: #94a3b8; }
+        .p-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5mm; margin: 2mm 0; }
+        .p-card { border: 0.5pt solid #e3e7ef; padding: 1.5mm; text-align: center; border-radius: 1mm; }
+        .p-card .lbl { font-size: 5pt; text-transform: uppercase; letter-spacing: 0.4pt; font-weight: 700; color: #6b7280; }
+        .p-card .val { font-size: 8pt; font-weight: 800; color: #0a2540; margin-top: 0.2mm; }
+        .p-card.total { background: #0a2540; border-color: #0a2540; }
+        .p-card.total .lbl { color: #c9a961; }
+        .p-card.total .val { color: #c9a961; }
+        .p-table { width: 100%; border-collapse: collapse; margin-top: 0.5mm; }
+        .p-table th { background: #f4f6fa; font-size: 5.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3pt; padding: 0.8mm 1.5mm; border-bottom: 0.5pt solid #0a2540; color: #0a2540; }
+        .p-table td { padding: 0.5mm 1.5mm; font-size: 6pt; border-bottom: 0.2pt solid #e3e7ef; }
+        .p-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+        .p-table th.r { text-align: right; }
+        .p-table th.c { text-align: center; }
+        .p-table td.c { text-align: center; }
+        .p-table tr.compound { background: #f0fdf4; }
+        .p-table tr.compound td { font-weight: 600; }
+        .p-table tfoot td { font-weight: 800; font-size: 6.5pt; border-top: 0.75pt solid #0a2540; background: #fdf9ef; padding: 0.8mm 1.5mm; }
+        .p-footer { margin-top: 2mm; border-top: 0.5pt solid #c9a961; padding-top: 1mm; text-align: center; font-size: 5.5pt; color: #6b7280; }
+        .p-footer strong { color: #0a2540; }
+      }
+    `;
 
-  /* Title */
-  .p-title {
-    text-align: center;
-    margin: 3mm 0;
-  }
-  .p-title .label {
-    display: inline-block;
-    background: #0a2540;
-    color: #fff;
-    padding: 1.5pt 14pt;
-    font-size: 10pt;
-    font-weight: 700;
-    letter-spacing: 2pt;
-    text-transform: uppercase;
-  }
-  .p-title .date { font-size: 7.5pt; color: #6b7280; margin-top: 1.5mm; }
+    // Create overlay with print content
+    let overlay = document.getElementById("capitol-print-overlay");
+    if (overlay) overlay.remove();
+    overlay = document.createElement("div");
+    overlay.id = "capitol-print-overlay";
+    overlay.style.display = "none";
+    overlay.innerHTML = printRef.current.innerHTML;
+    document.body.appendChild(overlay);
 
-  /* Info grid */
-  .p-info {
-    background: #fdf9ef;
-    border-left: 2.5pt solid #c9a961;
-    padding: 2mm 3mm;
-    margin: 3mm 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5mm 4mm;
-  }
-  .p-info .cell .k { text-transform: uppercase; font-size: 6pt; color: #6b7280; letter-spacing: 0.6pt; font-weight: 700; }
-  .p-info .cell .v { color: #0a2540; font-size: 9pt; font-weight: 700; margin-top: 0.3mm; }
+    // Change title for PDF filename
+    const originalTitle = document.title;
+    document.title = docTitle;
 
-  /* Section header */
-  .p-section {
-    margin-top: 3mm;
-    margin-bottom: 1mm;
-    padding: 1mm 3mm;
-    background: linear-gradient(to right, #0a2540, #133963);
-    color: #fff;
-    font-size: 7.5pt;
-    font-weight: 700;
-    letter-spacing: 1.5pt;
-    text-transform: uppercase;
-  }
-
-  /* SFT row */
-  .p-sft-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 3mm;
-    margin: 3mm 0;
-  }
-  .p-sft-box {
-    border: 0.5pt solid #e3e7ef;
-    padding: 2mm 3mm;
-    text-align: center;
-    border-radius: 1mm;
-  }
-  .p-sft-box.highlight { background: #0a2540; color: #fff; border-color: #0a2540; }
-  .p-sft-box .lbl { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.5pt; font-weight: 700; color: #6b7280; }
-  .p-sft-box.highlight .lbl { color: #c9a961; }
-  .p-sft-box .val { font-size: 12pt; font-weight: 800; margin-top: 0.5mm; }
-  .p-sft-box.highlight .val { color: #c9a961; }
-  .p-sft-box .sub { font-size: 6pt; color: #999; margin-top: 0.3mm; }
-  .p-sft-box.highlight .sub { color: #94a3b8; }
-
-  /* Summary cards */
-  .p-summary {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2mm;
-    margin: 3mm 0;
-  }
-  .p-card { border: 0.5pt solid #e3e7ef; padding: 2mm; text-align: center; border-radius: 1mm; }
-  .p-card .lbl { font-size: 6pt; text-transform: uppercase; letter-spacing: 0.4pt; font-weight: 700; color: #6b7280; }
-  .p-card .val { font-size: 10pt; font-weight: 800; color: #0a2540; margin-top: 0.3mm; }
-  .p-card.total { background: #0a2540; border-color: #0a2540; }
-  .p-card.total .lbl { color: #c9a961; }
-  .p-card.total .val { color: #c9a961; }
-
-  /* Table */
-  .p-table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
-  .p-table th {
-    background: #f4f6fa;
-    font-size: 7pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4pt;
-    padding: 1.2mm 2mm;
-    border-bottom: 0.5pt solid #0a2540;
-    color: #0a2540;
-  }
-  .p-table td {
-    padding: 0.8mm 2mm;
-    font-size: 7.5pt;
-    border-bottom: 0.2pt solid #e3e7ef;
-  }
-  .p-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
-  .p-table th.r { text-align: right; }
-  .p-table th.c { text-align: center; }
-  .p-table td.c { text-align: center; }
-  .p-table tr.compound { background: #f0fdf4; }
-  .p-table tr.compound td { font-weight: 600; }
-  .p-table tfoot td {
-    font-weight: 800;
-    font-size: 8pt;
-    border-top: 0.75pt solid #0a2540;
-    background: #fdf9ef;
-    padding: 1.2mm 2mm;
-  }
-
-  /* Footer */
-  .p-footer {
-    margin-top: 4mm;
-    border-top: 0.5pt solid #c9a961;
-    padding-top: 2mm;
-    text-align: center;
-    font-size: 6.5pt;
-    color: #6b7280;
-  }
-  .p-footer strong { color: #0a2540; }
-</style>
-</head><body>${printContent}</body></html>`);
-
-    printWindow.document.close();
-    printWindow.focus();
+    // Trigger print
     setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 400);
+      window.print();
+      // Restore after print
+      document.title = originalTitle;
+      overlay?.remove();
+    }, 200);
   }
 
   const todayStr = new Date().toLocaleDateString("en-IN", {
@@ -291,6 +217,34 @@ export default function CapitolFundPage() {
             Print / Save as PDF
           </button>
         )}
+      </div>
+
+      {/* ── Customer Details ── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-800">Customer Details</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+            <input type="text" value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Enter customer name"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input type="text" value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+              placeholder="Enter address"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+            <input type="tel" value={customerMobile}
+              onChange={(e) => setCustomerMobile(e.target.value)}
+              placeholder="Enter mobile number"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
+          </div>
+        </div>
       </div>
 
       {/* ── Calculator Inputs ── */}
@@ -492,6 +446,24 @@ export default function CapitolFundPage() {
               <div className="label">Capital Fund - Investment Summary</div>
               <div className="date">Generated on {todayStr}</div>
             </div>
+
+            {/* Customer Info */}
+            {(customerName || customerAddress || customerMobile) && (
+              <div className="p-info" style={{ gridTemplateColumns: "1fr 1.5fr 1fr" }}>
+                <div className="cell">
+                  <div className="k">Customer Name</div>
+                  <div className="v">{customerName || "—"}</div>
+                </div>
+                <div className="cell">
+                  <div className="k">Address</div>
+                  <div className="v">{customerAddress || "—"}</div>
+                </div>
+                <div className="cell">
+                  <div className="k">Mobile Number</div>
+                  <div className="v">{customerMobile || "—"}</div>
+                </div>
+              </div>
+            )}
 
             {/* Investment Info */}
             <div className="p-info">
