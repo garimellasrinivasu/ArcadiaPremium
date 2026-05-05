@@ -18,6 +18,7 @@ import ApprovalChainAdminPage from "./pages/ApprovalChainAdminPage";
 import AttendanceReportsPage from "./pages/AttendanceReportsPage";
 import ProjectManagementPage from "./pages/ProjectManagementPage";
 import ProjectDocumentsPage from "./pages/ProjectDocumentsPage";
+import CapitolFundPage from "./pages/CapitolFundPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="activities/documents" element={<ProjectDocumentsPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
+        <Route path="admin/capitol-fund" element={<CapitolFundPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
       </Route>
     </Routes>
