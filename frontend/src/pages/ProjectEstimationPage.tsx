@@ -150,9 +150,6 @@ function evalFormulaChain(
   }
 }
 
-function evalFormula(formula: string, cells: Record<string, any>): number {
-  return evalFormulaChain(formula, cells, []);
-}
 
 /* ═══════════════════════════════════════════
    MAIN PAGE COMPONENT
@@ -523,7 +520,6 @@ export default function ProjectEstimationPage() {
             {activeTab && activeTab.tabType === "ASSUMPTIONS" && (
               <DataTableView
                 tab={activeTab}
-                tabs={tabs}
                 editingRows={editingRows}
                 onStartEdit={startEdit}
                 onUpdateCell={updateEditCell}
@@ -539,7 +535,6 @@ export default function ProjectEstimationPage() {
                 activeTab.tabType === "CUSTOM") && (
                 <DataTableView
                   tab={activeTab}
-                  tabs={tabs}
                   editingRows={editingRows}
                   onStartEdit={startEdit}
                   onUpdateCell={updateEditCell}
@@ -721,7 +716,6 @@ function CoverView({ tab }: { tab: EstimationTab }) {
    ═══════════════════════════════════════════ */
 function DataTableView({
   tab,
-  tabs,
   editingRows,
   onStartEdit,
   onUpdateCell,
@@ -732,7 +726,6 @@ function DataTableView({
   saving,
 }: {
   tab: EstimationTab;
-  tabs: EstimationTab[];
   editingRows: Record<number, Record<string, any>>;
   onStartEdit: (id: number, cells: Record<string, any>) => void;
   onUpdateCell: (id: number, key: string, val: any) => void;
@@ -1044,7 +1037,7 @@ function DataTableView({
                     {isEditing ? (
                       <div className="flex justify-center gap-1">
                         <button
-                          onClick={() => saveRow(row)}
+                          onClick={() => onSaveRow(row)}
                           disabled={saving}
                           className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                         >
@@ -1096,7 +1089,6 @@ function SummaryView({
   tab: EstimationTab;
   tabs: EstimationTab[];
 }) {
-  const cols = parseCols(tab);
   const meta = parseMeta(tab);
   const rows = tab.rows;
   const totalVillas = meta.totalVillas || 245;
@@ -1160,7 +1152,6 @@ function SummaryView({
   }
 
   // Subtotal (excl land & GST)
-  const subtotalRow = rows.find((r) => r.rowType === "SUBTOTAL");
   const landRow = rows.find(
     (r) => r.rowType === "DATA" && parseCells(r).costHead?.includes("Land Cost")
   );
