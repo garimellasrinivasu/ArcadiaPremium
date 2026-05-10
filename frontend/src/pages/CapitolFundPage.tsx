@@ -304,19 +304,19 @@ export default function CapitolFundPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current SFT Price (Rs)</label>
-            <input type="number" min="0" step="100" value={sftPrice}
-              onChange={(e) => setSftPrice(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
-            <p className="text-[10px] text-gray-400 mt-0.5">Base price: Rs 7,000</p>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Calculation Period (Months)</label>
             <input type="number" min="1" max="360" step="1" value={periodMonths}
               onChange={(e) => setPeriodMonths(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
             <p className="text-[10px] text-gray-400 mt-0.5">{periodLabel}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current SFT Price (Rs)</label>
+            <input type="number" min="0" step="100" value={sftPrice}
+              onChange={(e) => setSftPrice(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500" />
+            <p className="text-[10px] text-gray-400 mt-0.5">Base price: Rs 7,000</p>
           </div>
         </div>
       </div>
