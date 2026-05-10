@@ -6,7 +6,7 @@
 # SPA routing — all routes serve index.html
 [[redirects]]
   from = "/api/*"
-  to = "http://arcadiapremium.duckdns.org:8081/api/:splat"
+  to = "http://arcadiapremium.duckdns.org:3001/api/:splat"
   status = 200
   force = true
 
