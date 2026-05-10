@@ -48,6 +48,8 @@ const menuSections: MenuSection[] = [
     items: [
       { label: "Projects", path: "/admin/projects", adminOnly: true },
       { label: "Approval Chains", path: "/admin/approval-chains", adminOnly: true },
+      { label: "Capital Fund", path: "/admin/capitol-fund", requiredRoles: ["ADMIN", "PARTNER"] },
+      { label: "Project Estimation", path: "/admin/project-estimation", requiredRoles: ["ADMIN", "PARTNER"] },
     ],
   },
 ];
