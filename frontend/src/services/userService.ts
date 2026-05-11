@@ -1,5 +1,5 @@
 import api from "./api";
-import type { User, CreateUserRequest, UpdateUserRequest, Role } from "../types/user";
+import type { User, CreateUserRequest, UpdateUserRequest, Role, Permission } from "../types/user";
 
 export const userService = {
   async getAll(): Promise<User[]> {
@@ -29,5 +29,24 @@ export const userService = {
   async getAllRoles(): Promise<Role[]> {
     const { data } = await api.get<Role[]>("/roles");
     return data;
+  },
+
+  async getAllPermissions(): Promise<Permission[]> {
+    const { data } = await api.get<Permission[]>("/roles/permissions");
+    return data;
+  },
+
+  async createRole(name: string, description: string, permissionIds: number[]): Promise<Role> {
+    const { data } = await api.post<Role>("/roles", { name, description, permissionIds });
+    return data;
+  },
+
+  async updateRole(id: number, name: string, description: string, permissionIds: number[]): Promise<Role> {
+    const { data } = await api.put<Role>(`/roles/${id}`, { name, description, permissionIds });
+    return data;
+  },
+
+  async deleteRole(id: number): Promise<void> {
+    await api.delete(`/roles/${id}`);
   },
 };

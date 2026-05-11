@@ -23,6 +23,7 @@ const menuSections: MenuSection[] = [
       { label: "Delete User", path: "/users/delete", adminOnly: true },
       { label: "Edit User", path: "/users/edit", adminOnly: true },
       { label: "User Management Summary", path: "/users", adminOnly: true },
+      { label: "Roles & Permissions", path: "/roles", requiredRoles: ["ADMIN", "PARTNER"] },
       { label: "Change Password", path: "/users/change-password" },
     ],
   },

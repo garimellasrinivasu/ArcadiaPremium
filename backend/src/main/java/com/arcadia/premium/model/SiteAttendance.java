@@ -23,7 +23,6 @@ public class SiteAttendance {
     @Column(nullable = false)
     private String siteName;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String imageBase64;
 
