@@ -36,6 +36,7 @@ const menuSections: MenuSection[] = [
       { label: "Master Plan", path: "/activities/master-plan" },
       { label: "Site Attendance", path: "/activities/site-attendance" },
       { label: "Project Documents", path: "/activities/documents" },
+      { label: "Partner Investment", path: "/activities/partner-investment", requiredRoles: ["ADMIN", "PARTNER"] },
     ],
   },
   {

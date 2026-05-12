@@ -119,12 +119,21 @@ function ComboBox({
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div
-        onClick={() => setOpen(!open)}
-        className="w-full px-3 py-2 border rounded-lg text-sm cursor-pointer bg-white flex items-center justify-between"
-      >
-        <span className={value ? "text-gray-800" : "text-gray-400"}>{value || placeholder || `Select ${label}`}</span>
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      <div className="flex gap-2">
+        <div
+          onClick={() => setOpen(!open)}
+          className="flex-1 px-3 py-2 border rounded-lg text-sm cursor-pointer bg-white flex items-center justify-between"
+        >
+          <span className={value ? "text-gray-800" : "text-gray-400"}>{value || placeholder || `Select ${label}`}</span>
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setIsCustom(true); onChange(""); }}
+          className="px-3 py-2 text-xs border border-arcadia-300 rounded-lg text-arcadia-600 hover:bg-arcadia-50 whitespace-nowrap font-medium"
+        >
+          + Add New
+        </button>
       </div>
 
       {open && (
@@ -151,11 +160,14 @@ function ComboBox({
                 {opt}
               </div>
             ))}
-            {filtered.length === 0 && (
+            {filtered.length === 0 && options.length > 0 && (
               <div className="px-3 py-2 text-sm text-gray-400">No matches</div>
             )}
+            {options.length === 0 && (
+              <div className="px-3 py-2 text-sm text-gray-400">No options yet. Click "+ Add New" to enter a value.</div>
+            )}
           </div>
-          {/* Add New */}
+          {/* Add New inside dropdown too */}
           <div
             onClick={() => { setIsCustom(true); setOpen(false); setSearch(""); onChange(""); }}
             className="px-3 py-2 text-sm border-t cursor-pointer hover:bg-blue-50 text-arcadia-600 font-medium"
