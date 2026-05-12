@@ -114,12 +114,17 @@ function FileViewerModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [xlsxHtml, setXlsxHtml] = useState<string>("");
+  const [xlsxSheets, setXlsxSheets] = useState<string[]>([]);
+  const [xlsxActiveSheet, setXlsxActiveSheet] = useState(0);
+  const [xlsxAllHtml, setXlsxAllHtml] = useState<Record<string, string>>({});
+
   const isImage = doc.contentType.startsWith("image/");
   const isPdf = doc.contentType === "application/pdf";
   const isDocx = doc.contentType.includes("wordprocessingml");
   const isPpt = doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint");
   const isXlsx = doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel");
-  const isOfficeDoc = isDocx || isPpt || isXlsx;
+  const isOfficeDoc = isDocx || isPpt; // XLSX is now rendered inline, not downloaded
 
   // Navigation: find current index and prev/next docs
   const currentIndex = allDocs.findIndex((d) => d.id === doc.id);
@@ -218,61 +223,101 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id]);
 
+  // Parse XLSX files into HTML tables using SheetJS (loaded from CDN)
+  useEffect(() => {
+    if (!isXlsx || !objectUrl) return;
+    setXlsxHtml("");
+    setXlsxSheets([]);
+    setXlsxAllHtml({});
+    setXlsxActiveSheet(0);
+
+    async function parseXlsx() {
+      try {
+        // Dynamically load SheetJS from CDN if not already loaded
+        if (!(window as any).XLSX) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load SheetJS"));
+            document.head.appendChild(script);
+          });
+        }
+        const XLSX = (window as any).XLSX;
+        const resp = await fetch(objectUrl!);
+        const arrayBuffer = await resp.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const sheets = workbook.SheetNames as string[];
+        setXlsxSheets(sheets);
+        const allHtml: Record<string, string> = {};
+        sheets.forEach((name: string) => {
+          allHtml[name] = XLSX.utils.sheet_to_html(workbook.Sheets[name], { id: "xlsx-table" });
+        });
+        setXlsxAllHtml(allHtml);
+        if (sheets.length > 0) setXlsxHtml(allHtml[sheets[0]]);
+      } catch (e: any) {
+        console.error("XLSX parse error:", e);
+        setXlsxHtml(`<p style="color:red;padding:20px;">Failed to render spreadsheet: ${e.message}</p>`);
+      }
+    }
+    parseXlsx();
+  }, [objectUrl, isXlsx]);
+
   // Don't revoke on unmount — cache keeps URLs alive for re-use
   // Cache is cleared naturally when user navigates away from the page
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      {/* Previous arrow */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+      {/* Previous arrow — hidden on mobile (use header buttons) */}
       {hasPrev && (
         <button onClick={goPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition text-xl font-bold"
+          className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 items-center justify-center shadow-lg transition text-xl font-bold"
           title="Previous file (Left arrow)">
           &#8249;
         </button>
       )}
 
-      {/* Next arrow */}
+      {/* Next arrow — hidden on mobile */}
       {hasNext && (
         <button onClick={goNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition text-xl font-bold"
+          className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-[60] bg-white/90 hover:bg-white text-gray-700 hover:text-arcadia-700 rounded-full w-11 h-11 items-center justify-center shadow-lg transition text-xl font-bold"
           title="Next file (Right arrow)">
           &#8250;
         </button>
       )}
 
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-gray-800 truncate">{doc.fileName}</h3>
-            <p className="text-xs text-gray-400">
-              {formatFileSize(doc.fileSize)} &middot; {doc.originalFileName}
+      <div className="bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3 border-b border-gray-200 bg-gray-50">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{doc.fileName}</h3>
+            <p className="text-[10px] sm:text-xs text-gray-400 truncate">
+              {formatFileSize(doc.fileSize)}
               {allDocs.length > 1 && (
-                <span className="ml-2 text-gray-500 font-medium">
+                <span className="ml-1 sm:ml-2 text-gray-500 font-medium">
                   ({currentIndex + 1} of {allDocs.length})
                 </span>
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4 flex-shrink-0">
             {/* Prev / Next buttons in header */}
             {allDocs.length > 1 && (
-              <div className="flex items-center gap-1 mr-2">
+              <div className="flex items-center gap-1 mr-1 sm:mr-2">
                 <button onClick={goPrev} disabled={!hasPrev}
-                  className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-1 text-[10px] sm:text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Previous">
-                  Prev
+                  &#8249;
                 </button>
                 <button onClick={goNext} disabled={!hasNext}
-                  className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="px-2 py-1 text-[10px] sm:text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Next">
-                  Next
+                  &#8250;
                 </button>
               </div>
             )}
             {objectUrl && (
               <a href={objectUrl} download={doc.originalFileName}
-                className="px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
+                className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
                 Download
               </a>
             )}
@@ -282,19 +327,19 @@ function FileViewerModal({
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
+        <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-2 sm:p-4">
           {loading && (
-            <div className="flex items-center gap-2 text-gray-500">
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
               Loading file...
             </div>
           )}
           {error && <p className="text-red-500 text-sm">{error}</p>}
           {!loading && !error && isPdf && objectUrl && (
-            <iframe src={objectUrl} title={doc.fileName} className="w-full h-full min-h-[70vh] rounded-lg border" />
+            <iframe src={objectUrl} title={doc.fileName} className="w-full h-full min-h-[50vh] sm:min-h-[70vh] rounded-lg border" />
           )}
           {!loading && !error && isImage && objectUrl && (
-            <img src={objectUrl} alt={doc.fileName} className="max-w-full max-h-[75vh] object-contain rounded-lg shadow" />
+            <img src={objectUrl} alt={doc.fileName} className="max-w-full max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg shadow" />
           )}
           {!loading && !error && isOfficeDoc && objectUrl && (
             <div className="text-center space-y-4 py-12">
@@ -302,7 +347,7 @@ function FileViewerModal({
               <p className="text-gray-700 font-medium">File downloaded successfully!</p>
               <p className="text-gray-500 text-sm">
                 "{doc.originalFileName}" has been downloaded.<br />
-                Open it with {isPpt ? "PowerPoint" : isXlsx ? "Excel" : "Word"} on your device.
+                Open it with {isPpt ? "PowerPoint" : "Word"} on your device.
               </p>
               <a href={objectUrl} download={doc.originalFileName}
                 className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
@@ -310,11 +355,49 @@ function FileViewerModal({
               </a>
             </div>
           )}
+          {!loading && !error && isXlsx && objectUrl && (
+            <div className="w-full h-full flex flex-col min-h-[70vh]">
+              {/* Sheet tabs */}
+              {xlsxSheets.length > 1 && (
+                <div className="flex gap-1 px-3 py-2 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
+                  {xlsxSheets.map((name, i) => (
+                    <button key={name} onClick={() => { setXlsxActiveSheet(i); setXlsxHtml(xlsxAllHtml[name] || ""); }}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition ${
+                        i === xlsxActiveSheet
+                          ? "bg-arcadia-100 text-arcadia-700 border border-arcadia-300"
+                          : "text-gray-600 hover:bg-gray-100 border border-transparent"
+                      }`}>
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Spreadsheet HTML table */}
+              <div className="flex-1 overflow-auto bg-white rounded-lg"
+                dangerouslySetInnerHTML={{ __html: xlsxHtml }}
+                style={{
+                  fontSize: "13px",
+                }}
+              />
+              <style>{`
+                #xlsx-table { border-collapse: collapse; width: 100%; }
+                #xlsx-table td, #xlsx-table th {
+                  border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left;
+                  white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis;
+                }
+                #xlsx-table tr:first-child td, #xlsx-table th {
+                  background: #f9fafb; font-weight: 600; color: #374151;
+                  position: sticky; top: 0; z-index: 1;
+                }
+                #xlsx-table tr:hover td { background: #f0fdf4; }
+              `}</style>
+            </div>
+          )}
         </div>
 
-        {/* Thumbnail strip for quick navigation */}
+        {/* Thumbnail strip for quick navigation — hidden on small mobile */}
         {allDocs.length > 1 && (
-          <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 overflow-x-auto always-scroll">
+          <div className="hidden sm:block border-t border-gray-200 bg-gray-50 px-4 py-2 overflow-x-auto always-scroll">
             <div className="flex gap-2 items-center justify-center min-w-min">
               {allDocs.map((d) => (
                 <button key={d.id} onClick={() => onNavigate(d)}
@@ -332,6 +415,15 @@ function FileViewerModal({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+        {/* Mobile: download button at bottom */}
+        {objectUrl && (
+          <div className="sm:hidden border-t border-gray-200 bg-gray-50 px-3 py-2 flex justify-center">
+            <a href={objectUrl} download={doc.originalFileName}
+              className="px-4 py-2 text-xs font-medium text-white bg-arcadia-600 hover:bg-arcadia-700 rounded-lg transition w-full text-center">
+              Download File
+            </a>
           </div>
         )}
       </div>
@@ -384,6 +476,7 @@ export default function ProjectDocumentsPage() {
 
   // Viewer
   const [viewingDoc, setViewingDoc] = useState<DocumentDto | null>(null);
+  const [viewerDocList, setViewerDocList] = useState<DocumentDto[]>([]); // docs available in viewer navigation
 
   // Current user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -391,6 +484,9 @@ export default function ProjectDocumentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DocumentDto[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Mobile: collapsible folder panel
+  const [showFolderPanel, setShowFolderPanel] = useState(false);
 
 
   useEffect(() => {
@@ -709,6 +805,18 @@ export default function ProjectDocumentsPage() {
     }
   }
 
+  /* ─── View helpers ─── */
+  function openViewer(doc: DocumentDto, docList: DocumentDto[]) {
+    setViewerDocList(docList);
+    setViewingDoc(doc);
+  }
+
+  function handleViewSelected() {
+    if (selectedDocIds.size === 0) return;
+    const selected = documents.filter((d) => selectedDocIds.has(d.id));
+    if (selected.length > 0) openViewer(selected[0], selected);
+  }
+
   /* ─── Find sub-folders at current level (for display in documents list) ─── */
   function getSubFolders(): FolderDto[] {
     if (currentFolderId == null) return folderTree;
@@ -728,8 +836,8 @@ export default function ProjectDocumentsPage() {
 
   /* ═══ RENDER ═══ */
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-arcadia-800">Project Documents</h1>
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">Project Documents</h1>
 
       {/* ── Global Search Bar ── */}
       <div className="relative group">
@@ -781,7 +889,7 @@ export default function ProjectDocumentsPage() {
                 <div
                   key={doc.id}
                   onClick={() => {
-                    setViewingDoc(doc);
+                    openViewer(doc, searchResults);
                     setSearchQuery("");
                   }}
                   className="px-4 py-3 hover:bg-arcadia-50 cursor-pointer flex items-center gap-3 transition group"
@@ -820,8 +928,8 @@ export default function ProjectDocumentsPage() {
       )}
 
       {/* ── Project Selector ── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Select Project</label>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Select Project</label>
         <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500">
           <option value="">-- Choose a project --</option>
@@ -830,14 +938,21 @@ export default function ProjectDocumentsPage() {
       </div>
 
       {selectedProject && (
-        <div className="flex gap-5">
-          {/* ══════ LEFT: Folder Tree Panel ══════ */}
-          <div className="w-64 flex-shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
+          {/* ══════ LEFT: Folder Tree Panel (collapsible on mobile) ══════ */}
+          <div className="w-full lg:w-64 lg:flex-shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700">Folders</h3>
+              <button className="text-sm font-semibold text-gray-700 flex items-center gap-2 lg:cursor-default"
+                onClick={() => setShowFolderPanel(!showFolderPanel)}>
+                <span className="lg:hidden text-gray-400">{showFolderPanel ? "▾" : "▸"}</span>
+                Folders
+                <span className="lg:hidden text-xs text-gray-400 font-normal">
+                  {breadcrumb.length > 1 ? `(${breadcrumb[breadcrumb.length - 1].name})` : "(Root)"}
+                </span>
+              </button>
               {getCurrentDepth() < 3 && (
                 <button
-                  onClick={() => { setShowFolderInput(!showFolderInput); setNewFolderName(""); }}
+                  onClick={() => { setShowFolderInput(!showFolderInput); setNewFolderName(""); setShowFolderPanel(true); }}
                   className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium"
                   title="New Folder"
                 >
@@ -873,12 +988,13 @@ export default function ProjectDocumentsPage() {
               </div>
             )}
 
-            <div className="p-2 max-h-96 overflow-y-auto always-scroll">
+            {/* Folder tree — always visible on desktop, toggled on mobile */}
+            <div className={`p-2 max-h-96 overflow-y-auto always-scroll ${showFolderPanel ? "block" : "hidden lg:block"}`}>
               {/* Root item */}
               <div
                 className={`flex items-center gap-1 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition
                   ${currentFolderId === null ? "bg-arcadia-100 text-arcadia-800 font-semibold" : "hover:bg-gray-100 text-gray-700"}`}
-                onClick={() => navigateToFolder(null)}
+                onClick={() => { navigateToFolder(null); setShowFolderPanel(false); }}
               >
                 <span className="w-4 flex-shrink-0" />
                 <span className="flex-shrink-0">{"\u{1F3E0}"}</span>
@@ -892,7 +1008,7 @@ export default function ProjectDocumentsPage() {
                   folder={folder}
                   depth={1}
                   selectedFolderId={currentFolderId}
-                  onSelect={handleFolderSelect}
+                  onSelect={(id) => { handleFolderSelect(id); setShowFolderPanel(false); }}
                   expandedIds={expandedIds}
                   onToggle={toggleExpand}
                 />
@@ -905,9 +1021,9 @@ export default function ProjectDocumentsPage() {
           </div>
 
           {/* ══════ RIGHT: Main Content ══════ */}
-          <div className="flex-1 space-y-5 min-w-0">
+          <div className="flex-1 space-y-4 lg:space-y-5 min-w-0">
             {/* ── Breadcrumb ── */}
-            <div className="flex items-center gap-1 text-sm flex-wrap">
+            <div className="flex items-center gap-1 text-xs sm:text-sm flex-wrap">
               {breadcrumb.map((item, i) => (
                 <span key={item.id ?? "root"} className="flex items-center gap-1">
                   {i > 0 && <span className="text-gray-400">/</span>}
@@ -927,14 +1043,14 @@ export default function ProjectDocumentsPage() {
 
             {/* ── Sub-folders in current view ── */}
             {subFolders.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                 {subFolders.map((folder) => (
                   <div key={folder.id}
-                    className="bg-white border border-gray-200 rounded-lg p-3 hover:border-arcadia-300 hover:shadow-sm cursor-pointer transition group"
+                    className="bg-white border border-gray-200 rounded-lg p-2.5 sm:p-3 hover:border-arcadia-300 hover:shadow-sm cursor-pointer transition group"
                     onClick={() => handleFolderSelect(folder.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{"\u{1F4C1}"}</span>
+                      <span className="text-xl sm:text-2xl">{"\u{1F4C1}"}</span>
                       {renamingFolderId === folder.id ? (
                         <input
                           type="text" value={renameValue}
@@ -942,16 +1058,16 @@ export default function ProjectDocumentsPage() {
                           onKeyDown={(e) => { if (e.key === "Enter") handleRenameFolder(); if (e.key === "Escape") setRenamingFolderId(null); }}
                           onBlur={handleRenameFolder}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 border border-gray-300 rounded px-1 py-0.5 text-sm focus:ring-1 focus:ring-arcadia-500"
+                          className="flex-1 border border-gray-300 rounded px-1 py-0.5 text-xs sm:text-sm focus:ring-1 focus:ring-arcadia-500"
                           autoFocus
                         />
                       ) : (
-                        <span className="text-sm font-medium text-gray-700 truncate flex-1">{folder.name}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700 truncate flex-1">{folder.name}</span>
                       )}
                     </div>
-                    {/* Folder actions — visible on hover */}
+                    {/* Folder actions — visible on hover (or always on mobile for touch) */}
                     {isAdmin && renamingFolderId !== folder.id && (
-                      <div className="mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
+                      <div className="mt-2 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => { setRenamingFolderId(folder.id); setRenameValue(folder.name); }}
                           className="text-[10px] text-gray-500 hover:text-arcadia-600">Rename</button>
                         <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
@@ -964,36 +1080,36 @@ export default function ProjectDocumentsPage() {
             )}
 
             {/* ── Upload Section ── */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-800">Upload Documents</h2>
-                <span className="text-xs text-gray-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">Upload Documents</h2>
+                <span className="text-[10px] sm:text-xs text-gray-400 truncate">
                   to: {breadcrumb.map((b) => b.name).join(" / ")}
                 </span>
               </div>
 
               {uploadMsg && (
-                <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{uploadMsg}</div>
+                <div className="p-2.5 sm:p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-xs sm:text-sm">{uploadMsg}</div>
               )}
               {uploadError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{uploadError}</div>
+                <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs sm:text-sm">{uploadError}</div>
               )}
 
               <div>
                 <input ref={fileInputRef} type="file" multiple
                   accept=".pdf,.docx,.ppt,.pptx,.xlsx,.xls,.png,.jpg,.jpeg"
                   onChange={handleFileChange} disabled={uploading}
-                  className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-arcadia-50 file:text-arcadia-700 hover:file:bg-arcadia-100 cursor-pointer disabled:opacity-50"
+                  className="w-full text-xs sm:text-sm text-gray-600 file:mr-2 sm:file:mr-3 file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-medium file:bg-arcadia-50 file:text-arcadia-700 hover:file:bg-arcadia-100 cursor-pointer disabled:opacity-50"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG (max 100 MB each). Select multiple files.
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                  PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG (max 100 MB each).
                 </p>
               </div>
 
               {/* File Queue */}
               {fileQueue.length > 0 && (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                  <div className="px-3 sm:px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                     <p className="text-xs font-semibold text-gray-600">
                       {fileQueue.length} file{fileQueue.length > 1 ? "s" : ""}
                       {" "}({formatFileSize(fileQueue.reduce((sum, f) => sum + f.file.size, 0))})
@@ -1004,23 +1120,23 @@ export default function ProjectDocumentsPage() {
                   </div>
                   <div className="divide-y divide-gray-100 max-h-60 overflow-y-auto">
                     {fileQueue.map((item) => (
-                      <div key={item.id} className="px-4 py-2.5 space-y-1">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg flex-shrink-0">{fileIcon(item.file.type)}</span>
+                      <div key={item.id} className="px-3 sm:px-4 py-2 sm:py-2.5 space-y-1">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-base sm:text-lg flex-shrink-0">{fileIcon(item.file.type)}</span>
                           <div className="flex-1 min-w-0">
                             {item.status === "pending" ? (
                               <input type="text" value={item.displayName}
                                 onChange={(e) => updateDisplayName(item.id, e.target.value)}
-                                className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-arcadia-500" placeholder="Display name" />
+                                className="w-full border border-gray-200 rounded px-2 py-1 text-xs sm:text-sm focus:ring-1 focus:ring-arcadia-500" placeholder="Display name" />
                             ) : (
-                              <p className="text-sm font-medium text-gray-700 truncate">{item.displayName || item.file.name}</p>
+                              <p className="text-xs sm:text-sm font-medium text-gray-700 truncate">{item.displayName || item.file.name}</p>
                             )}
-                            <p className="text-xs text-gray-400">{item.file.name} &middot; {formatFileSize(item.file.size)}</p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 truncate">{item.file.name} &middot; {formatFileSize(item.file.size)}</p>
                           </div>
-                          <div className="flex-shrink-0 flex items-center gap-2">
-                            {item.status === "done" && <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">Done</span>}
-                            {item.status === "error" && <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded" title={item.error}>Failed</span>}
-                            {item.status === "cancelled" && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Cancelled</span>}
+                          <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2">
+                            {item.status === "done" && <span className="text-[10px] sm:text-xs font-medium text-green-600 bg-green-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">Done</span>}
+                            {item.status === "error" && <span className="text-[10px] sm:text-xs font-medium text-red-600 bg-red-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded" title={item.error}>Failed</span>}
+                            {item.status === "cancelled" && <span className="text-[10px] sm:text-xs font-medium text-gray-500 bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">Cancelled</span>}
                             {item.status === "pending" && !uploading && (
                               <button onClick={() => removeFromQueue(item.id)} className="text-gray-400 hover:text-red-500 text-lg leading-none transition" title="Remove">&times;</button>
                             )}
@@ -1028,9 +1144,9 @@ export default function ProjectDocumentsPage() {
                         </div>
                         {item.status === "uploading" && (
                           <div className="space-y-1">
-                            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                              <div className="bg-arcadia-600 h-3 rounded-full transition-all duration-300 flex items-center justify-center" style={{ width: `${item.progress}%` }}>
-                                {item.progress > 15 && <span className="text-[9px] font-semibold text-white leading-none">{item.progress}%</span>}
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 sm:h-3 overflow-hidden">
+                              <div className="bg-arcadia-600 h-full rounded-full transition-all duration-300 flex items-center justify-center" style={{ width: `${item.progress}%` }}>
+                                {item.progress > 15 && <span className="text-[8px] sm:text-[9px] font-semibold text-white leading-none">{item.progress}%</span>}
                               </div>
                             </div>
                             <p className="text-[10px] text-gray-500">Uploading: {formatFileSize(item.loaded)} / {formatFileSize(item.file.size)}</p>
@@ -1038,9 +1154,9 @@ export default function ProjectDocumentsPage() {
                         )}
                         {item.status === "processing" && (
                           <div className="space-y-1">
-                            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                              <div className="bg-green-500 h-3 rounded-full w-full animate-pulse flex items-center justify-center">
-                                <span className="text-[9px] font-semibold text-white leading-none">Processing...</span>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 sm:h-3 overflow-hidden">
+                              <div className="bg-green-500 h-full rounded-full w-full animate-pulse flex items-center justify-center">
+                                <span className="text-[8px] sm:text-[9px] font-semibold text-white leading-none">Processing...</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
@@ -1059,13 +1175,13 @@ export default function ProjectDocumentsPage() {
                 {!uploading ? (
                   <button onClick={handleUploadAll}
                     disabled={fileQueue.filter((f) => f.status === "pending").length === 0}
-                    className="bg-arcadia-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
+                    className="bg-arcadia-600 text-white px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
                     Upload {fileQueue.filter((f) => f.status === "pending").length > 1
                       ? `All (${fileQueue.filter((f) => f.status === "pending").length} files)` : ""}
                   </button>
                 ) : (
                   <button onClick={handleCancelUpload}
-                    className="px-5 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition">
+                    className="px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition">
                     Cancel All
                   </button>
                 )}
@@ -1074,103 +1190,167 @@ export default function ProjectDocumentsPage() {
 
             {/* ── Documents List ── */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">
-                  Documents {currentFolderId ? "" : `in "${selectedProject}" (Root)`}
+              <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-xs sm:text-sm font-semibold text-gray-700">
+                  Documents {currentFolderId ? "" : `(${selectedProject})`}
                 </h2>
-                {isAdmin && selectedDocIds.size > 0 && (
-                  <button onClick={handleBulkDelete}
-                    className="text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg transition">
-                    Delete Selected ({selectedDocIds.size})
-                  </button>
+                {selectedDocIds.size > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button onClick={handleViewSelected}
+                      className="text-[10px] sm:text-xs font-medium text-arcadia-600 bg-arcadia-50 hover:bg-arcadia-100 border border-arcadia-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
+                      View Selected ({selectedDocIds.size})
+                    </button>
+                    {isAdmin && (
+                      <button onClick={handleBulkDelete}
+                        className="text-[10px] sm:text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
+                        Delete Selected ({selectedDocIds.size})
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
               {loadingDocs ? (
-                <div className="flex items-center gap-2 text-gray-500 py-8 justify-center">
+                <div className="flex items-center gap-2 text-gray-500 py-8 justify-center text-sm">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
                   Loading...
                 </div>
               ) : documents.length === 0 && subFolders.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-5xl text-gray-300 mb-3">{"\u{1F4C2}"}</div>
-                  <p className="text-gray-500">No documents here yet.</p>
-                  <p className="text-sm text-gray-400 mt-1">Upload files or create a folder to get started.</p>
+                <div className="text-center py-8 sm:py-12">
+                  <div className="text-4xl sm:text-5xl text-gray-300 mb-3">{"\u{1F4C2}"}</div>
+                  <p className="text-gray-500 text-sm">No documents here yet.</p>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1">Upload files to get started.</p>
                 </div>
               ) : documents.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-400 text-sm">No documents in this folder.</p>
                 </div>
               ) : (
-                <div className="overflow-auto max-h-[60vh] always-scroll">
-                  <table className="w-full text-sm min-w-[700px]">
-                    <thead className="bg-gray-50 border-b sticky top-0 z-10">
-                      <tr>
-                        {isAdmin && (
+                <>
+                  {/* ── Desktop table view (hidden on mobile) ── */}
+                  <div className="hidden sm:block overflow-auto max-h-[60vh] always-scroll">
+                    <table className="w-full text-sm min-w-[700px]">
+                      <thead className="bg-gray-50 border-b sticky top-0 z-10">
+                        <tr>
                           <th className="px-4 py-3 whitespace-nowrap w-10">
                             <input type="checkbox"
                               checked={documents.length > 0 && selectedDocIds.size === documents.length}
                               onChange={toggleSelectAll}
                               className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
                           </th>
-                        )}
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">#</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">File Name</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                        <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Size</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Uploaded By</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Date</th>
-                        <th className="text-center px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {documents.map((doc, i) => (
-                        <tr key={doc.id} className={`border-b hover:bg-gray-50 cursor-pointer ${selectedDocIds.has(doc.id) ? "bg-arcadia-50" : ""}`} onClick={() => setViewingDoc(doc)}>
-                          {isAdmin && (
+                          <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">#</th>
+                          <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">File Name</th>
+                          <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Type</th>
+                          <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Size</th>
+                          <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Uploaded By</th>
+                          <th className="text-left px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                          <th className="text-center px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {documents.map((doc, i) => (
+                          <tr key={doc.id} className={`border-b hover:bg-gray-50 cursor-pointer ${selectedDocIds.has(doc.id) ? "bg-arcadia-50" : ""}`} onClick={() => openViewer(doc, documents)}>
                             <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <input type="checkbox"
                                 checked={selectedDocIds.has(doc.id)}
                                 onChange={() => toggleDocSelection(doc.id)}
                                 className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
                             </td>
-                          )}
-                          <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{fileIcon(doc.contentType)}</span>
-                              <div className="min-w-0">
-                                <p className="font-medium text-arcadia-700 truncate max-w-[200px]">{doc.fileName}</p>
-                                {doc.fileName !== doc.originalFileName && (
-                                  <p className="text-xs text-gray-400 truncate max-w-[200px]">{doc.originalFileName}</p>
+                            <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{fileIcon(doc.contentType)}</span>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-arcadia-700 truncate max-w-[200px]">{doc.fileName}</p>
+                                  {doc.fileName !== doc.originalFileName && (
+                                    <p className="text-xs text-gray-400 truncate max-w-[200px]">{doc.originalFileName}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                              {doc.contentType === "application/pdf" ? "PDF"
+                                : doc.contentType.includes("wordprocessingml") ? "DOCX"
+                                : doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint") ? "PPT"
+                                : doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel") ? "XLSX"
+                                : doc.contentType === "image/png" ? "PNG" : "JPEG"}
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{formatFileSize(doc.fileSize)}</td>
+                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{doc.uploadedBy}</td>
+                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(doc.createdAt)}</td>
+                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                              <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => openViewer(doc, documents)}
+                                  className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
+                                {isAdmin && (
+                                  <button onClick={() => handleDelete(doc)}
+                                    className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
                                 )}
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* ── Mobile card view (hidden on desktop) ── */}
+                  <div className="sm:hidden">
+                    {/* Select all bar */}
+                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                      <input type="checkbox"
+                        checked={documents.length > 0 && selectedDocIds.size === documents.length}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
+                      <span className="text-[10px] text-gray-500 font-medium">Select All ({documents.length})</span>
+                    </div>
+                    <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+                      {documents.map((doc, i) => (
+                        <div key={doc.id}
+                          className={`px-3 py-3 flex items-start gap-2.5 active:bg-gray-50 ${selectedDocIds.has(doc.id) ? "bg-arcadia-50" : ""}`}
+                          onClick={() => openViewer(doc, documents)}>
+                          {/* Checkbox */}
+                          <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox"
+                              checked={selectedDocIds.has(doc.id)}
+                              onChange={() => toggleDocSelection(doc.id)}
+                              className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
+                          </div>
+                          {/* Icon */}
+                          <span className="text-2xl flex-shrink-0 mt-0.5">{fileIcon(doc.contentType)}</span>
+                          {/* Details */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-arcadia-700 truncate">{doc.fileName}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-gray-500 flex-wrap">
+                              <span className="font-medium text-gray-600">
+                                {doc.contentType === "application/pdf" ? "PDF"
+                                  : doc.contentType.includes("wordprocessingml") ? "DOCX"
+                                  : doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint") ? "PPT"
+                                  : doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel") ? "XLSX"
+                                  : doc.contentType === "image/png" ? "PNG" : "JPEG"}
+                              </span>
+                              <span className="text-gray-300">&middot;</span>
+                              <span>{formatFileSize(doc.fileSize)}</span>
+                              <span className="text-gray-300">&middot;</span>
+                              <span>{formatDate(doc.createdAt)}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                            {doc.contentType === "application/pdf" ? "PDF"
-                              : doc.contentType.includes("wordprocessingml") ? "DOCX"
-                              : doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint") ? "PPT"
-                              : doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel") ? "XLSX"
-                              : doc.contentType === "image/png" ? "PNG" : "JPEG"}
-                          </td>
-                          <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{formatFileSize(doc.fileSize)}</td>
-                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{doc.uploadedBy}</td>
-                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(doc.createdAt)}</td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
-                              <button onClick={() => setViewingDoc(doc)}
-                                className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
+                            {/* Actions row */}
+                            <div className="flex items-center gap-3 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                              <button onClick={() => openViewer(doc, documents)}
+                                className="text-[11px] text-arcadia-600 font-semibold">View</button>
                               {isAdmin && (
                                 <button onClick={() => handleDelete(doc)}
-                                  className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
+                                  className="text-[11px] text-red-500 font-semibold">Delete</button>
                               )}
                             </div>
-                          </td>
-                        </tr>
+                          </div>
+                          {/* Row number */}
+                          <span className="text-[10px] text-gray-300 font-medium flex-shrink-0">{i + 1}</span>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -1181,8 +1361,8 @@ export default function ProjectDocumentsPage() {
       {viewingDoc && (
         <FileViewerModal
           doc={viewingDoc}
-          allDocs={documents}
-          onClose={() => setViewingDoc(null)}
+          allDocs={viewerDocList.length > 0 ? viewerDocList : documents}
+          onClose={() => { setViewingDoc(null); setViewerDocList([]); }}
           onNavigate={(d) => setViewingDoc(d)}
         />
       )}
