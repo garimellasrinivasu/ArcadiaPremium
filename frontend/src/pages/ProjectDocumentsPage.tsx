@@ -95,6 +95,9 @@ function FolderTreeNode({
 }
 
 /* ─── File Viewer Modal (with prev/next navigation) ─── */
+/** In-memory cache for viewed document blobs — avoids re-fetching on navigation */
+const docBlobCache = new Map<number, string>(); // doc.id → objectUrl
+
 function FileViewerModal({
   doc,
   allDocs,
@@ -142,12 +145,48 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, allDocs.length]);
 
+  // Preload adjacent documents in background for instant navigation
+  useEffect(() => {
+    const preloadIds: number[] = [];
+    if (hasPrev) preloadIds.push(allDocs[currentIndex - 1].id);
+    if (hasNext) preloadIds.push(allDocs[currentIndex + 1].id);
+    preloadIds.forEach((id) => {
+      if (!docBlobCache.has(id)) {
+        fetch(documentService.getViewUrl(id), {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.blob() : null)
+          .then((blob) => {
+            if (blob) docBlobCache.set(id, URL.createObjectURL(blob));
+          })
+          .catch(() => {});
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id]);
+
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     setError("");
-    // Revoke previous URL
-    if (objectUrl) { URL.revokeObjectURL(objectUrl); setObjectUrl(null); }
+
+    // Check cache first — instant display for previously viewed files
+    const cached = docBlobCache.get(doc.id);
+    if (cached) {
+      setObjectUrl(cached);
+      setLoading(false);
+      if (isOfficeDoc) {
+        const a = document.createElement("a");
+        a.href = cached;
+        a.download = doc.originalFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      return;
+    }
+
+    setLoading(true);
+    setObjectUrl(null);
     async function loadFile() {
       try {
         const res = await fetch(documentService.getViewUrl(doc.id), {
@@ -157,6 +196,7 @@ function FileViewerModal({
         const blob = await res.blob();
         if (!cancelled) {
           const url = URL.createObjectURL(blob);
+          docBlobCache.set(doc.id, url); // Cache for future views
           setObjectUrl(url);
           if (isOfficeDoc) {
             const a = document.createElement("a");
@@ -178,10 +218,8 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id]);
 
-  useEffect(() => {
-    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Don't revoke on unmount — cache keeps URLs alive for re-use
+  // Cache is cleared naturally when user navigates away from the page
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
