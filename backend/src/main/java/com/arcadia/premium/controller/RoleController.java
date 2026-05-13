@@ -21,26 +21,26 @@ public class RoleController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<List<RoleDto>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRoles());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<RoleDto> getRoleById(@PathVariable Long id) {
         return ResponseEntity.ok(roleService.getRoleById(id));
     }
 
     @GetMapping("/permissions")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<List<PermissionDto>> getAllPermissions() {
         return ResponseEntity.ok(roleService.getAllPermissions());
     }
 
     @SuppressWarnings("unchecked")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<RoleDto> createRole(@RequestBody Map<String, Object> body) {
         String name = (String) body.get("name");
         String description = (String) body.get("description");
@@ -52,7 +52,7 @@ public class RoleController {
 
     @SuppressWarnings("unchecked")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<RoleDto> updateRole(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         String name = (String) body.get("name");
         String description = (String) body.get("description");
@@ -63,7 +63,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'ROLES')")
     public ResponseEntity<Void> deleteRole(@PathVariable Long id) {
         roleService.deleteRole(id);
         return ResponseEntity.noContent().build();

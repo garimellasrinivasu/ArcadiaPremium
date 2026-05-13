@@ -9,6 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,6 +22,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    /** Full user list — admin only (includes allowedPages, phone, etc.) */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -50,5 +53,14 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Update only page access for a user */
+    @PutMapping("/{id}/page-access")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto> updatePageAccess(@PathVariable Long id,
+                                                     @RequestBody Map<String, Set<String>> body) {
+        Set<String> pages = body.getOrDefault("allowedPages", Set.of());
+        return ResponseEntity.ok(userService.updatePageAccess(id, pages));
     }
 }

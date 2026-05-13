@@ -29,25 +29,25 @@ public class ProjectController {
 
     /** Get all projects (including inactive) — admin only. */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECTS')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
         return ResponseEntity.ok(projectService.getAllProjects());
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECTS')")
     public ResponseEntity<ProjectDto> create(@Valid @RequestBody CreateProjectRequest request) {
         return ResponseEntity.ok(projectService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECTS')")
     public ResponseEntity<ProjectDto> update(@PathVariable Long id, @Valid @RequestBody CreateProjectRequest request) {
         return ResponseEntity.ok(projectService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECTS')")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
         projectService.delete(id);
         return ResponseEntity.ok(Map.of("message", "Project deleted successfully"));

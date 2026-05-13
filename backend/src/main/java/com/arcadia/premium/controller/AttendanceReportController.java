@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/attendance-reports")
-@PreAuthorize("hasAnyRole('ADMIN', 'PARTNER', 'ACCOUNTING')")
+@PreAuthorize("hasAnyRole('ADMIN', 'PARTNER', 'ACCOUNTING') or @pageAccess.hasAccess(authentication, 'ATTENDANCE_REPORTS')")
 public class AttendanceReportController {
 
     private final AttendanceReportService reportService;

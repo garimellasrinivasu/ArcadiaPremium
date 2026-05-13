@@ -7,6 +7,12 @@ export const userService = {
     return data;
   },
 
+  /** Lightweight user list (id, name, email, roles) — accessible by all authenticated users */
+  async getAllBasic(): Promise<User[]> {
+    const { data } = await api.get<User[]>("/auth/users-basic");
+    return data;
+  },
+
   async getById(id: number): Promise<User> {
     const { data } = await api.get<User>(`/users/${id}`);
     return data;
@@ -24,6 +30,11 @@ export const userService = {
 
   async delete(id: number): Promise<void> {
     await api.delete(`/users/${id}`);
+  },
+
+  async updatePageAccess(id: number, allowedPages: string[]): Promise<User> {
+    const { data } = await api.put<User>(`/users/${id}/page-access`, { allowedPages });
+    return data;
   },
 
   async getAllRoles(): Promise<Role[]> {

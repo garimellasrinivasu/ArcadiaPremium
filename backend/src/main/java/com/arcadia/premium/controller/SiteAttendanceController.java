@@ -60,7 +60,7 @@ public class SiteAttendanceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'SITE_ATTENDANCE')")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Record deleted successfully"));

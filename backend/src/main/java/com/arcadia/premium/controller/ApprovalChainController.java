@@ -31,20 +31,20 @@ public class ApprovalChainController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'APPROVAL_CHAINS')")
     public ResponseEntity<ApprovalChainDto> create(@Valid @RequestBody CreateApprovalChainRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'APPROVAL_CHAINS')")
     public ResponseEntity<ApprovalChainDto> update(@PathVariable Long id,
                                                     @Valid @RequestBody CreateApprovalChainRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'APPROVAL_CHAINS')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

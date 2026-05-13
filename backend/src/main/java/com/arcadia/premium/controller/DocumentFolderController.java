@@ -59,9 +59,9 @@ public class DocumentFolderController {
         }
     }
 
-    /** Delete a folder (admin only) */
+    /** Delete a folder */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             service.delete(id);

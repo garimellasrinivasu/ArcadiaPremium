@@ -6,8 +6,10 @@ import type { User } from "../types/user";
 interface MenuItem {
   label: string;
   path: string;
+  pageKey?: string; // matches user_allowed_pages key for per-user access control
   adminOnly?: boolean;
   requiredRoles?: string[]; // if set, user must have at least one of these roles
+  alwaysVisible?: boolean; // shown to all logged-in users regardless of access config
 }
 
 interface MenuSection {
@@ -19,39 +21,40 @@ const menuSections: MenuSection[] = [
   {
     label: "User Management",
     items: [
-      { label: "Add User", path: "/users/add", adminOnly: true },
-      { label: "Delete User", path: "/users/delete", adminOnly: true },
-      { label: "Edit User", path: "/users/edit", adminOnly: true },
-      { label: "User Management Summary", path: "/users", adminOnly: true },
-      { label: "Roles & Permissions", path: "/roles", requiredRoles: ["ADMIN", "PARTNER"] },
-      { label: "Change Password", path: "/users/change-password" },
+      { label: "Add User", path: "/users/add", pageKey: "USER_ADD" },
+      { label: "Delete User", path: "/users/delete", pageKey: "USER_DELETE" },
+      { label: "Edit User", path: "/users/edit", pageKey: "USER_EDIT" },
+      { label: "User Management Summary", path: "/users", pageKey: "USER_SUMMARY" },
+      { label: "Roles & Permissions", path: "/roles", pageKey: "ROLES" },
+      { label: "Change Password", path: "/users/change-password", alwaysVisible: true },
     ],
   },
   {
     label: "Activities",
     items: [
-      { label: "Sale Entry", path: "/activities/sale-entry" },
-      { label: "Sale Quote", path: "/activities/sale-quote" },
-      { label: "Finance Spent", path: "/activities/finance-spent" },
-      { label: "Master Plan", path: "/activities/master-plan" },
-      { label: "Site Attendance", path: "/activities/site-attendance" },
-      { label: "Project Documents", path: "/activities/documents" },
-      { label: "Partner Investment", path: "/activities/partner-investment", requiredRoles: ["ADMIN", "PARTNER"] },
+      { label: "Sale Entry", path: "/activities/sale-entry", pageKey: "SALE_ENTRY" },
+      { label: "Sale Quote", path: "/activities/sale-quote", pageKey: "SALE_QUOTE" },
+      { label: "Finance Spent", path: "/activities/finance-spent", pageKey: "FINANCE_SPENT" },
+      { label: "Master Plan", path: "/activities/master-plan", pageKey: "MASTER_PLAN" },
+      { label: "Site Attendance", path: "/activities/site-attendance", pageKey: "SITE_ATTENDANCE" },
+      { label: "Project Documents", path: "/activities/documents", pageKey: "PROJECT_DOCUMENTS" },
+      { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
     ],
   },
   {
     label: "Reports",
     items: [
-      { label: "Attendance Reports", path: "/reports/attendance", requiredRoles: ["ADMIN", "PARTNER", "ACCOUNTING"] },
+      { label: "Attendance Reports", path: "/reports/attendance", pageKey: "ATTENDANCE_REPORTS" },
     ],
   },
   {
     label: "Admin Settings",
     items: [
-      { label: "Projects", path: "/admin/projects", adminOnly: true },
-      { label: "Approval Chains", path: "/admin/approval-chains", adminOnly: true },
-      { label: "Capital Fund", path: "/admin/capitol-fund", requiredRoles: ["ADMIN", "PARTNER"] },
-      { label: "Project Estimation", path: "/admin/project-estimation", requiredRoles: ["ADMIN", "PARTNER"] },
+      { label: "Projects", path: "/admin/projects", pageKey: "PROJECTS" },
+      { label: "Approval Chains", path: "/admin/approval-chains", pageKey: "APPROVAL_CHAINS" },
+      { label: "Capital Fund", path: "/admin/capitol-fund", pageKey: "CAPITOL_FUND" },
+      { label: "Project Estimation", path: "/admin/project-estimation", pageKey: "PROJECT_ESTIMATION" },
+      { label: "User Access Config", path: "/admin/user-access", pageKey: "USER_ACCESS_CONFIG" },
     ],
   },
 ];
@@ -73,19 +76,22 @@ function CollapsibleSection({
   section,
   currentPath,
   isAdmin,
-  userRoles,
+  allowedPages,
 }: {
   section: MenuSection;
   currentPath: string;
   isAdmin: boolean;
-  userRoles: string[];
+  allowedPages: Set<string>;
 }) {
   const visibleItems = section.items.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.requiredRoles && item.requiredRoles.length > 0) {
-      return item.requiredRoles.some((r) => userRoles.includes(r));
-    }
-    return true;
+    // Always-visible items (e.g. Change Password) shown to everyone
+    if (item.alwaysVisible) return true;
+    // Admin users see everything
+    if (isAdmin) return true;
+    // Per-user page access check
+    if (item.pageKey) return allowedPages.has(item.pageKey);
+    // No pageKey = hidden for non-admin (should not happen after migration)
+    return false;
   });
 
   // Don't render the section at all if no items are visible
@@ -164,9 +170,7 @@ export default function Layout() {
     ? currentUser.roles.some((r) => r.name === "ADMIN")
     : false;
 
-  const userRoles = currentUser
-    ? currentUser.roles.map((r) => r.name)
-    : [];
+  const allowedPages = new Set<string>(currentUser?.allowedPages || []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -237,7 +241,7 @@ export default function Layout() {
                 section={section}
                 currentPath={location.pathname}
                 isAdmin={isAdmin}
-                userRoles={userRoles}
+                allowedPages={allowedPages}
               />
             ))}
           </nav>

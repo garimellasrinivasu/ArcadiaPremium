@@ -9,6 +9,7 @@ public class UpdateUserRequest {
     private String phone;
     private Set<Long> roleIds;
     private Boolean active;
+    private Set<String> allowedPages;
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -22,4 +23,6 @@ public class UpdateUserRequest {
     public void setRoleIds(Set<Long> roleIds) { this.roleIds = roleIds; }
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
+    public Set<String> getAllowedPages() { return allowedPages; }
+    public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
 }

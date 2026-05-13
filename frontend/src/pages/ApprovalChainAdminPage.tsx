@@ -50,7 +50,7 @@ export default function ApprovalChainAdminPage() {
       const [chainsData, rolesData, usersData] = await Promise.all([
         approvalChainService.getAll(),
         userService.getAllRoles(),
-        userService.getAll(),
+        userService.getAllBasic(),
       ]);
       setChains(chainsData);
       setRoles(rolesData);

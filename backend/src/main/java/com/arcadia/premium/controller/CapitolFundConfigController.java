@@ -22,14 +22,14 @@ public class CapitolFundConfigController {
 
     /** Get current config — accessible by ADMIN and PARTNER */
     @GetMapping("/config")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARTNER') or @pageAccess.hasAccess(authentication, 'CAPITOL_FUND')")
     public ResponseEntity<CapitolFundConfigDto> getConfig() {
         return ResponseEntity.ok(service.getConfig());
     }
 
     /** Update SFT price and/or default interest rate — admin only */
     @PutMapping("/config")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'CAPITOL_FUND')")
     public ResponseEntity<?> updateConfig(@RequestBody Map<String, Object> body, Principal principal) {
         try {
             BigDecimal sftPrice = body.containsKey("sftPrice")

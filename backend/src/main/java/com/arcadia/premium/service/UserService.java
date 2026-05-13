@@ -35,6 +35,13 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    /** Returns a lightweight user list (strips sensitive fields like allowedPages, phone). */
+    public List<UserDto> getAllUsersBasic() {
+        return userRepository.findAll().stream()
+                .map(UserDto::basicFromEntity)
+                .collect(Collectors.toList());
+    }
+
     public UserDto getUserById(Long id) {
         return userRepository.findById(id)
                 .map(UserDto::fromEntity)
@@ -81,7 +88,18 @@ public class UserService {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
             user.setRoles(roles);
         }
+        if (request.getAllowedPages() != null) {
+            user.setAllowedPages(request.getAllowedPages());
+        }
 
+        return UserDto.fromEntity(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserDto updatePageAccess(Long id, Set<String> allowedPages) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        user.setAllowedPages(allowedPages != null ? allowedPages : new HashSet<>());
         return UserDto.fromEntity(userRepository.save(user));
     }
 

@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/partner-investments")
-@PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+@PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'PARTNER_INVESTMENT')")
 public class PartnerInvestmentController {
 
     private final PartnerInvestmentService service;
@@ -69,7 +69,7 @@ public class PartnerInvestmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PARTNER_INVESTMENT')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
@@ -87,7 +87,7 @@ public class PartnerInvestmentController {
 
     /** One-time migration to fix existing entries missing auto-approvals */
     @PostMapping("/migrate-auto-approvals")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PARTNER_INVESTMENT')")
     public ResponseEntity<Map<String, Object>> migrateAutoApprovals() {
         int fixed = service.migrateAutoApprovals();
         return ResponseEntity.ok(Map.of("fixed", fixed, "message", "Migration complete"));

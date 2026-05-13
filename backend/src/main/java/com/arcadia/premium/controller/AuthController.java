@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import com.arcadia.premium.model.User;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -53,6 +54,13 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(Principal principal) {
         return ResponseEntity.ok(userService.getUserByEmail(principal.getName()));
+    }
+
+    /** Lightweight user list — any authenticated user. Returns id, name, email, roles only.
+     *  Used by pages like Approval Chains and Site Attendance for dropdowns. */
+    @GetMapping("/users-basic")
+    public ResponseEntity<List<UserDto>> getAllUsersBasic() {
+        return ResponseEntity.ok(userService.getAllUsersBasic());
     }
 
     @PutMapping("/change-password")

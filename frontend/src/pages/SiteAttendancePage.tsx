@@ -69,7 +69,7 @@ export default function SiteAttendancePage() {
 
   useEffect(() => {
     authService.getCurrentUser().then(setCurrentUser).catch(() => { });
-    userService.getAll().then(setUsers).catch(() => { });
+    userService.getAllBasic().then(setUsers).catch(() => { });
   }, []);
 
   function onSubmitSuccess() {

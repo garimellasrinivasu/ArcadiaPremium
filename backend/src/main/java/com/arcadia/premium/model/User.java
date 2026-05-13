@@ -44,6 +44,12 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    /** Per-user page access keys (e.g. "SALE_ENTRY", "FINANCE_SPENT"). Empty = no access. ADMIN bypasses. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_allowed_pages", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "page_key")
+    private Set<String> allowedPages = new HashSet<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -70,6 +76,8 @@ public class User {
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
     public Set<Role> getRoles() { return roles; }
     public void setRoles(Set<Role> roles) { this.roles = roles; }
+    public Set<String> getAllowedPages() { return allowedPages; }
+    public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

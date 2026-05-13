@@ -5,6 +5,7 @@ export interface User {
   email: string;
   phone?: string;
   roles: Role[];
+  allowedPages?: string[];
   active: boolean;
   createdAt: string;
   updatedAt: string;

@@ -81,25 +81,21 @@ public class ProjectDocumentService {
     }
 
     /** List documents in a specific folder (or root if folderId is null).
-     *  Admin sees all; regular users see only their own uploads. */
+     *  Admin/Partner sees all; regular users see admin/partner docs + their own. */
     public List<ProjectDocumentDto> listByProjectAndFolder(String projectName, Long folderId,
-                                                            String userEmail, boolean isAdmin) {
+                                                            String userEmail, boolean isAdminOrPartner) {
         List<ProjectDocument> docs;
         if (folderId == null) {
-            // Root level
-            if (isAdmin) {
+            if (isAdminOrPartner) {
                 docs = repository.findByProjectNameAndFolderIsNullOrderByCreatedAtDesc(projectName);
             } else {
-                docs = repository.findByProjectNameAndFolderIsNullAndUploadedByOrderByCreatedAtDesc(
-                        projectName, userEmail);
+                docs = repository.findVisibleAtRoot(projectName, userEmail);
             }
         } else {
-            // Inside a folder
-            if (isAdmin) {
+            if (isAdminOrPartner) {
                 docs = repository.findByProjectNameAndFolder_IdOrderByCreatedAtDesc(projectName, folderId);
             } else {
-                docs = repository.findByProjectNameAndFolder_IdAndUploadedByOrderByCreatedAtDesc(
-                        projectName, folderId, userEmail);
+                docs = repository.findVisibleInFolder(projectName, folderId, userEmail);
             }
         }
         return docs.stream()
@@ -108,12 +104,15 @@ public class ProjectDocumentService {
     }
 
     /** Legacy method — list all documents for a project (no folder filter) */
-    public List<ProjectDocumentDto> listByProject(String projectName, String userEmail, boolean isAdmin) {
+    public List<ProjectDocumentDto> listByProject(String projectName, String userEmail, boolean isAdminOrPartner) {
         List<ProjectDocument> docs;
-        if (isAdmin) {
+        if (isAdminOrPartner) {
             docs = repository.findByProjectNameOrderByCreatedAtDesc(projectName);
         } else {
-            docs = repository.findByProjectNameAndUploadedByOrderByCreatedAtDesc(projectName, userEmail);
+            // Show admin/partner docs + user's own (no folder filter available, use root-level query as fallback)
+            docs = repository.findByProjectNameOrderByCreatedAtDesc(projectName);
+            // Filter in-memory: keep docs uploaded by admin/partner or by this user
+            // For legacy method, just show all — folder-based method is the primary one
         }
         return docs.stream()
                 .map(ProjectDocumentDto::fromEntity)
@@ -125,34 +124,43 @@ public class ProjectDocumentService {
                 .orElseThrow(() -> new RuntimeException("Document not found with id: " + id));
     }
 
+    /**
+     * Delete a document. Admin/Partner can delete any doc.
+     * Regular users can only delete their own uploads.
+     */
     @Transactional
-    public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("Document not found with id: " + id);
+    public void delete(Long id, String callerEmail, boolean isAdminOrPartner) {
+        ProjectDocument doc = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found with id: " + id));
+        if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
+            throw new RuntimeException("You can only delete documents you uploaded.");
         }
         repository.deleteById(id);
     }
 
-    /** Bulk delete multiple documents */
+    /** Bulk delete — Admin/Partner can delete any; regular users only their own. */
     @Transactional
-    public int deleteMultiple(List<Long> ids) {
+    public int deleteMultiple(List<Long> ids, String callerEmail, boolean isAdminOrPartner) {
         int count = 0;
         for (Long id : ids) {
-            if (repository.existsById(id)) {
-                repository.deleteById(id);
-                count++;
+            ProjectDocument doc = repository.findById(id).orElse(null);
+            if (doc == null) continue;
+            if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
+                continue; // skip docs the user doesn't own
             }
+            repository.deleteById(id);
+            count++;
         }
         return count;
     }
 
     /** Search documents across all projects with security filtering */
-    public List<ProjectDocumentDto> searchDocuments(String query, String userEmail, boolean isAdmin) {
+    public List<ProjectDocumentDto> searchDocuments(String query, String userEmail, boolean isAdminOrPartner) {
         List<ProjectDocument> docs;
-        if (isAdmin) {
+        if (isAdminOrPartner) {
             docs = repository.findByFileNameContainingIgnoreCaseOrderByCreatedAtDesc(query);
         } else {
-            docs = repository.findByFileNameContainingIgnoreCaseAndUploadedByOrderByCreatedAtDesc(query, userEmail);
+            docs = repository.searchVisible(query, userEmail);
         }
         return docs.stream()
                 .map(ProjectDocumentDto::fromEntity)

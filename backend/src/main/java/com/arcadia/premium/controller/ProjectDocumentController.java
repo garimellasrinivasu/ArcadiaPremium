@@ -52,23 +52,23 @@ public class ProjectDocumentController {
     }
 
     /** List documents for a project in a specific folder (or root if folderId absent).
-     *  Admins see all; others see only their own. */
+     *  Admin/Partner see all; others see admin/partner docs + their own. */
     @GetMapping
     public ResponseEntity<List<ProjectDocumentDto>> listByProject(
             @RequestParam("projectName") String projectName,
             @RequestParam(value = "folderId", required = false) Long folderId,
             Principal principal) {
-        boolean isAdmin = isCurrentUserAdmin();
+        boolean isAdminOrPartner = isCurrentUserAdminOrPartner();
         return ResponseEntity.ok(
-            service.listByProjectAndFolder(projectName, folderId, principal.getName(), isAdmin));
+            service.listByProjectAndFolder(projectName, folderId, principal.getName(), isAdminOrPartner));
     }
 
-    private boolean isCurrentUserAdmin() {
+    private boolean isCurrentUserAdminOrPartner() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(a -> a.equals("ROLE_ADMIN"));
+                .anyMatch(a -> a.equals("ROLE_ADMIN") || a.equals("ROLE_PARTNER"));
     }
 
     /** Download / view a document by ID (requires JWT) */
@@ -115,12 +115,13 @@ public class ProjectDocumentController {
         return buildFileResponse(doc);
     }
 
-    /** Delete a document (admin only) */
+    /** Delete a document — admin/partner can delete any; regular users only their own */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
+    public ResponseEntity<?> delete(@PathVariable Long id, Principal principal) {
         try {
-            service.delete(id);
+            boolean isAdminOrPartner = isCurrentUserAdminOrPartner();
+            service.delete(id, principal.getName(), isAdminOrPartner);
             return ResponseEntity.ok(Map.of("message", "Document deleted successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -128,16 +129,17 @@ public class ProjectDocumentController {
         }
     }
 
-    /** Bulk delete documents (admin only) */
+    /** Bulk delete documents — admin/partner can delete any; regular users only their own */
     @DeleteMapping("/bulk")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> bulkDelete(@RequestBody Map<String, List<Long>> request) {
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
+    public ResponseEntity<?> bulkDelete(@RequestBody Map<String, List<Long>> request, Principal principal) {
         try {
             List<Long> ids = request.get("ids");
             if (ids == null || ids.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "No document IDs provided."));
             }
-            int count = service.deleteMultiple(ids);
+            boolean isAdminOrPartner = isCurrentUserAdminOrPartner();
+            int count = service.deleteMultiple(ids, principal.getName(), isAdminOrPartner);
             return ResponseEntity.ok(Map.of("message", count + " document(s) deleted successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -151,8 +153,8 @@ public class ProjectDocumentController {
         if (query == null || query.trim().length() < 2) {
             return ResponseEntity.ok(List.of());
         }
-        boolean isAdmin = isCurrentUserAdmin();
-        return ResponseEntity.ok(service.searchDocuments(query.trim(), principal.getName(), isAdmin));
+        boolean isAdminOrPartner = isCurrentUserAdminOrPartner();
+        return ResponseEntity.ok(service.searchDocuments(query.trim(), principal.getName(), isAdminOrPartner));
     }
 
     private ResponseEntity<byte[]> buildFileResponse(ProjectDocument doc) {

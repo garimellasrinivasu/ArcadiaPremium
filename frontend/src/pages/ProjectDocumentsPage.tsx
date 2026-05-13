@@ -516,7 +516,16 @@ export default function ProjectDocumentsPage() {
   }, [searchQuery]);
 
 
-  const isAdmin = currentUser ? currentUser.roles.some((r) => r.name === "ADMIN") : false;
+  const isAdminOrPartner = currentUser ? currentUser.roles.some((r) => r.name === "ADMIN" || r.name === "PARTNER") : false;
+  const currentEmail = currentUser?.email || "";
+
+  /** Check if the current user can delete a specific document */
+  function canDelete(doc: DocumentDto): boolean {
+    // Admin/Partner can delete any document
+    if (isAdminOrPartner) return true;
+    // Regular users can only delete their own uploads
+    return doc.uploadedBy === currentEmail;
+  }
 
   /* ─── Load folder tree ─── */
   const loadFolders = useCallback(async (proj: string) => {
@@ -1066,7 +1075,7 @@ export default function ProjectDocumentsPage() {
                       )}
                     </div>
                     {/* Folder actions — visible on hover (or always on mobile for touch) */}
-                    {isAdmin && renamingFolderId !== folder.id && (
+                    {isAdminOrPartner && renamingFolderId !== folder.id && (
                       <div className="mt-2 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => { setRenamingFolderId(folder.id); setRenameValue(folder.name); }}
                           className="text-[10px] text-gray-500 hover:text-arcadia-600">Rename</button>
@@ -1200,7 +1209,7 @@ export default function ProjectDocumentsPage() {
                       className="text-[10px] sm:text-xs font-medium text-arcadia-600 bg-arcadia-50 hover:bg-arcadia-100 border border-arcadia-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
                       View Selected ({selectedDocIds.size})
                     </button>
-                    {isAdmin && (
+                    {documents.some((d) => selectedDocIds.has(d.id) && canDelete(d)) && (
                       <button onClick={handleBulkDelete}
                         className="text-[10px] sm:text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
                         Delete Selected ({selectedDocIds.size})
@@ -1282,7 +1291,7 @@ export default function ProjectDocumentsPage() {
                               <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
                                 <button onClick={() => openViewer(doc, documents)}
                                   className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
-                                {isAdmin && (
+                                {canDelete(doc) && (
                                   <button onClick={() => handleDelete(doc)}
                                     className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
                                 )}
@@ -1338,7 +1347,7 @@ export default function ProjectDocumentsPage() {
                             <div className="flex items-center gap-3 mt-1.5" onClick={(e) => e.stopPropagation()}>
                               <button onClick={() => openViewer(doc, documents)}
                                 className="text-[11px] text-arcadia-600 font-semibold">View</button>
-                              {isAdmin && (
+                              {canDelete(doc) && (
                                 <button onClick={() => handleDelete(doc)}
                                   className="text-[11px] text-red-500 font-semibold">Delete</button>
                               )}

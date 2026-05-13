@@ -45,13 +45,13 @@ public class FinanceSpentController {
     }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER','ACCOUNTS','ACCOUNTING')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER','ACCOUNTS','ACCOUNTING') or @pageAccess.hasAccess(authentication, 'FINANCE_SPENT')")
     public ResponseEntity<List<FinanceSpentDto>> pendingApprovals() {
         return ResponseEntity.ok(service.getPendingApprovals());
     }
 
     @GetMapping("/reports")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER','ACCOUNTS','ACCOUNTING')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER','ACCOUNTS','ACCOUNTING') or @pageAccess.hasAccess(authentication, 'FINANCE_SPENT')")
     public ResponseEntity<List<FinanceSpentDto>> reports(
             @RequestParam String from,
             @RequestParam String to,
@@ -61,7 +61,7 @@ public class FinanceSpentController {
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('ADMIN','PARTNER')")
+    @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'FINANCE_SPENT')")
     public ResponseEntity<FinanceSpentDto> approve(
             @PathVariable Long id,
             @RequestBody Map<String, String> body,
@@ -72,7 +72,7 @@ public class FinanceSpentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'FINANCE_SPENT')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
