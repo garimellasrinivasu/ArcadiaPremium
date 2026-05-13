@@ -59,6 +59,7 @@ public class AuthController {
     /** Lightweight user list — any authenticated user. Returns id, name, email, roles only.
      *  Used by pages like Approval Chains and Site Attendance for dropdowns. */
     @GetMapping("/users-basic")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserDto>> getAllUsersBasic() {
         return ResponseEntity.ok(userService.getAllUsersBasic());
     }
