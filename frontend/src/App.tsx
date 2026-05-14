@@ -22,6 +22,7 @@ import CapitolFundPage from "./pages/CapitolFundPage";
 import ProjectEstimationPage from "./pages/ProjectEstimationPage";
 import PartnerInvestmentPage from "./pages/PartnerInvestmentPage";
 import UserAccessConfigPage from "./pages/UserAccessConfigPage";
+import MessagingPage from "./pages/MessagingPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />
         <Route path="admin/project-estimation" element={<ProjectEstimationPage />} />
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
+        <Route path="admin/messaging" element={<MessagingPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
       </Route>
     </Routes>

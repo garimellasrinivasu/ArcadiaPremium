@@ -55,6 +55,7 @@ const menuSections: MenuSection[] = [
       { label: "Capital Fund", path: "/admin/capitol-fund", pageKey: "CAPITOL_FUND" },
       { label: "Project Estimation", path: "/admin/project-estimation", pageKey: "PROJECT_ESTIMATION" },
       { label: "User Access Config", path: "/admin/user-access", pageKey: "USER_ACCESS_CONFIG" },
+      { label: "Messaging", path: "/admin/messaging", pageKey: "MESSAGING" },
     ],
   },
 ];

@@ -92,7 +92,7 @@ public class ProjectDocumentController {
         shareTokens.entrySet().removeIf(e -> e.getValue()[1] < now);
 
         String token = UUID.randomUUID().toString();
-        long expiresAt = now + 10 * 60 * 1000; // 10 minutes
+        long expiresAt = now + 24 * 60 * 60 * 1000; // 24 hours
         shareTokens.put(token, new long[]{id, expiresAt});
 
         return ResponseEntity.ok(Map.of("token", token));
