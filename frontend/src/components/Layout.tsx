@@ -167,7 +167,7 @@ export default function Layout() {
     : "...";
 
   const isAdmin = currentUser
-    ? currentUser.roles.some((r) => r.name === "ADMIN")
+    ? currentUser.role?.name === "ADMIN"
     : false;
 
   const allowedPages = new Set<string>(currentUser?.allowedPages || []);

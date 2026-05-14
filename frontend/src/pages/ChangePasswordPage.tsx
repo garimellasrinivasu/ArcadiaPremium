@@ -25,7 +25,7 @@ export default function ChangePasswordPage() {
   useEffect(() => {
     authService.getCurrentUser().then((user) => {
       setCurrentUser(user);
-      const admin = user.roles.some((r) => r.name === "ADMIN");
+      const admin = user.role?.name === "ADMIN";
       setIsAdmin(admin);
       if (admin) {
         setMode("admin");
@@ -185,7 +185,7 @@ export default function ChangePasswordPage() {
                   <option value="">-- Select a user --</option>
                   {allUsers.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.firstName} {u.lastName} — {u.email} ({u.roles.map((r) => r.name).join(", ")})
+                      {u.firstName} {u.lastName} — {u.email} ({u.role?.name ?? "No role"})
                     </option>
                   ))}
                 </select>

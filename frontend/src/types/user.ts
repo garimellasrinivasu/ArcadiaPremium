@@ -4,7 +4,7 @@ export interface User {
   lastName: string;
   email: string;
   phone?: string;
-  roles: Role[];
+  role: Role | null;
   allowedPages?: string[];
   active: boolean;
   createdAt: string;
@@ -43,7 +43,7 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   phone?: string;
-  roleIds: number[];
+  roleId: number;
 }
 
 export interface UpdateUserRequest {
@@ -51,7 +51,7 @@ export interface UpdateUserRequest {
   lastName?: string;
   email?: string;
   phone?: string;
-  roleIds?: number[];
+  roleId?: number;
   active?: boolean;
 }
 

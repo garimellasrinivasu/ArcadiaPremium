@@ -3,9 +3,7 @@ package com.arcadia.premium.dto;
 import com.arcadia.premium.model.User;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UserDto {
     private Long id;
@@ -15,7 +13,7 @@ public class UserDto {
     private String phone;
     private boolean active;
     private boolean mustChangePassword;
-    private List<RoleDto> roles;
+    private RoleDto role;
     private Set<String> allowedPages;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -31,14 +29,12 @@ public class UserDto {
         dto.mustChangePassword = user.isMustChangePassword();
         dto.createdAt = user.getCreatedAt();
         dto.updatedAt = user.getUpdatedAt();
-        dto.roles = user.getRoles().stream()
-                .map(RoleDto::fromEntity)
-                .collect(Collectors.toList());
+        dto.role = user.getRole() != null ? RoleDto.fromEntity(user.getRole()) : null;
         dto.allowedPages = user.getAllowedPages();
         return dto;
     }
 
-    /** Lightweight version — only id, name, email, active, roles. No sensitive fields. */
+    /** Lightweight version — only id, name, email, active, role. No sensitive fields. */
     public static UserDto basicFromEntity(User user) {
         UserDto dto = new UserDto();
         dto.id = user.getId();
@@ -46,9 +42,7 @@ public class UserDto {
         dto.lastName = user.getLastName();
         dto.email = user.getEmail();
         dto.active = user.isActive();
-        dto.roles = user.getRoles().stream()
-                .map(RoleDto::fromEntity)
-                .collect(Collectors.toList());
+        dto.role = user.getRole() != null ? RoleDto.fromEntity(user.getRole()) : null;
         return dto;
     }
 
@@ -66,8 +60,8 @@ public class UserDto {
     public void setActive(boolean active) { this.active = active; }
     public boolean isMustChangePassword() { return mustChangePassword; }
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
-    public List<RoleDto> getRoles() { return roles; }
-    public void setRoles(List<RoleDto> roles) { this.roles = roles; }
+    public RoleDto getRole() { return role; }
+    public void setRole(RoleDto role) { this.role = role; }
     public Set<String> getAllowedPages() { return allowedPages; }
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public LocalDateTime getCreatedAt() { return createdAt; }

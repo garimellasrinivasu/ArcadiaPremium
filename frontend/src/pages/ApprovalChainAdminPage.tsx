@@ -110,7 +110,7 @@ export default function ApprovalChainAdminPage() {
   // Get users who have a specific role
   function getUsersForRole(roleName: string): User[] {
     return users.filter(
-      (u) => u.active && u.roles.some((r) => r.name === roleName)
+      (u) => u.active && u.role?.name === roleName
     );
   }
 

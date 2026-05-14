@@ -22,6 +22,12 @@ public class UserController {
         this.userService = userService;
     }
 
+    /** Lightweight user list for permission pickers — all authenticated users */
+    @GetMapping("/simple")
+    public ResponseEntity<List<SimpleUserDto>> getSimpleUserList() {
+        return ResponseEntity.ok(userService.getSimpleUserList());
+    }
+
     /** Full user list — admin only (includes allowedPages, phone, etc.) */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

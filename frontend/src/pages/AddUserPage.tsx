@@ -13,7 +13,7 @@ export default function AddUserPage() {
     email: "",
     password: "",
     phone: "",
-    roleIds: [],
+    roleId: 0,
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -50,13 +50,8 @@ export default function AddUserPage() {
     }
   };
 
-  const toggleRole = (roleId: number) => {
-    setForm((prev) => {
-      const ids = new Set(prev.roleIds);
-      if (ids.has(roleId)) ids.delete(roleId);
-      else ids.add(roleId);
-      return { ...prev, roleIds: Array.from(ids) };
-    });
+  const selectRole = (roleId: number) => {
+    setForm((prev) => ({ ...prev, roleId }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,8 +62,8 @@ export default function AddUserPage() {
       setPasswordError("Passwords do not match.");
       return;
     }
-    if (form.roleIds.length === 0) {
-      setError("Please select at least one role.");
+    if (!form.roleId) {
+      setError("Please select a role.");
       return;
     }
 
@@ -157,22 +152,17 @@ export default function AddUserPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Roles *</label>
-            <div className="flex flex-wrap gap-2">
-              {roles.map((role) => {
-                const selected = form.roleIds.includes(role.id);
-                return (
-                  <button key={role.id} type="button" onClick={() => toggleRole(role.id)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
-                      selected
-                        ? "bg-arcadia-600 text-white border-arcadia-600"
-                        : "bg-white text-gray-600 border-gray-300 hover:border-arcadia-400"
-                    }`}>
-                    {role.name}
-                  </button>
-                );
-              })}
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+            <select
+              value={form.roleId}
+              onChange={(e) => selectRole(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none text-sm bg-white"
+            >
+              <option value={0}>-- Select a role --</option>
+              {roles.filter((r) => r.name !== "ADMIN").map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-3 pt-2">

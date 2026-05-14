@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { projectService, type ProjectDto } from "../services/projectService";
 import { documentService, type DocumentDto, type UploadHandle } from "../services/documentService";
 import { folderService, type FolderDto } from "../services/folderService";
+import { folderPermissionService, type FolderPermissionDto, type SimpleUser } from "../services/folderPermissionService";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
 
@@ -442,6 +443,262 @@ interface FileQueueItem {
   error?: string;
 }
 
+/* ─── Share Folder Modal ─── */
+function ShareFolderModal({
+  folderId,
+  folderName,
+  currentUserEmail,
+  onClose,
+}: {
+  folderId: number;
+  folderName: string;
+  currentUserEmail: string;
+  onClose: () => void;
+}) {
+  const [permissions, setPermissions] = useState<FolderPermissionDto[]>([]);
+  const [allUsers, setAllUsers] = useState<SimpleUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Add form
+  const [selectedEmail, setSelectedEmail] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState<string>("VIEW");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const [perms, users] = await Promise.all([
+          folderPermissionService.getPermissions(folderId),
+          folderPermissionService.getSimpleUserList(),
+        ]);
+        setPermissions(perms);
+        setAllUsers(users);
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Failed to load permissions.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [folderId]);
+
+  // Users not yet added to this folder
+  const availableUsers = allUsers.filter(
+    (u) =>
+      u.email !== currentUserEmail &&
+      !permissions.some((p) => p.userEmail === u.email)
+  );
+
+  async function handleAdd() {
+    if (!selectedEmail) return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const added = await folderPermissionService.setPermission(
+        folderId,
+        selectedEmail,
+        selectedLevel
+      );
+      setPermissions((prev) => [...prev, added]);
+      setSelectedEmail("");
+      setSelectedLevel("VIEW");
+      setSuccess("Permission added.");
+      setTimeout(() => setSuccess(""), 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to add permission.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdate(userEmail: string, newLevel: string) {
+    setError("");
+    try {
+      const updated = await folderPermissionService.setPermission(
+        folderId,
+        userEmail,
+        newLevel
+      );
+      setPermissions((prev) =>
+        prev.map((p) => (p.userEmail === userEmail ? updated : p))
+      );
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to update permission.");
+    }
+  }
+
+  async function handleRemove(userEmail: string) {
+    if (!confirm(`Remove access for ${userEmail}?`)) return;
+    setError("");
+    try {
+      await folderPermissionService.removePermission(folderId, userEmail);
+      setPermissions((prev) => prev.filter((p) => p.userEmail !== userEmail));
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to remove permission.");
+    }
+  }
+
+  const LEVELS = ["VIEW", "UPLOAD", "DELETE", "MANAGE"] as const;
+  const levelColors: Record<string, string> = {
+    VIEW: "bg-blue-100 text-blue-700",
+    UPLOAD: "bg-green-100 text-green-700",
+    DELETE: "bg-orange-100 text-orange-700",
+    MANAGE: "bg-purple-100 text-purple-700",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h3 className="text-base font-semibold text-gray-800">Share Folder</h3>
+            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+              <span>{"\u{1F4C1}"}</span> {folderName}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition text-lg leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {error && (
+            <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs">
+              {error}
+              <button onClick={() => setError("")} className="float-right text-red-500">&times;</button>
+            </div>
+          )}
+          {success && (
+            <div className="p-2.5 bg-green-50 border border-green-200 text-green-700 rounded-lg text-xs">
+              {success}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-gray-500 text-sm">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600 mr-2" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              {/* Add user form */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Add User
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedEmail}
+                    onChange={(e) => setSelectedEmail(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none"
+                  >
+                    <option value="">-- Select user --</option>
+                    {availableUsers.map((u) => (
+                      <option key={u.email} value={u.email}>
+                        {u.firstName} {u.lastName} ({u.email})
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => setSelectedLevel(e.target.value)}
+                    className="w-28 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none"
+                  >
+                    {LEVELS.map((l) => (
+                      <option key={l} value={l}>{l}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleAdd}
+                    disabled={!selectedEmail || saving}
+                    className="px-4 py-2 bg-arcadia-600 text-white rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
+                  >
+                    {saving ? "..." : "Add"}
+                  </button>
+                </div>
+                {availableUsers.length === 0 && (
+                  <p className="text-xs text-gray-400 italic">All users already have access.</p>
+                )}
+              </div>
+
+              {/* Current permissions list */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Current Access ({permissions.length})
+                </label>
+                {permissions.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-4 text-center">
+                    This folder is private. Add users above to share.
+                  </p>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 overflow-hidden">
+                    {permissions.map((p) => (
+                      <div
+                        key={p.userEmail}
+                        className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition"
+                      >
+                        {/* Avatar */}
+                        <div className="w-8 h-8 rounded-full bg-arcadia-100 text-arcadia-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          {(p.userName || p.userEmail).charAt(0).toUpperCase()}
+                        </div>
+                        {/* Name & email */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">
+                            {p.userName || p.userEmail}
+                          </p>
+                          <p className="text-[11px] text-gray-400 truncate">{p.userEmail}</p>
+                        </div>
+                        {/* Permission dropdown */}
+                        <select
+                          value={p.permissionLevel}
+                          onChange={(e) => handleUpdate(p.userEmail, e.target.value)}
+                          className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer outline-none ${levelColors[p.permissionLevel] || "bg-gray-100 text-gray-600"}`}
+                        >
+                          {LEVELS.map((l) => (
+                            <option key={l} value={l}>{l}</option>
+                          ))}
+                        </select>
+                        {/* Remove button */}
+                        <button
+                          onClick={() => handleRemove(p.userEmail)}
+                          className="text-gray-400 hover:text-red-500 text-lg leading-none transition flex-shrink-0"
+                          title="Remove access"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Permission levels legend */}
+              <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Permission Levels</p>
+                <div className="grid grid-cols-2 gap-1 text-[11px] text-gray-600">
+                  <div><span className="font-semibold text-blue-600">VIEW</span> &mdash; Can see files</div>
+                  <div><span className="font-semibold text-green-600">UPLOAD</span> &mdash; Can add files</div>
+                  <div><span className="font-semibold text-orange-600">DELETE</span> &mdash; Can remove files</div>
+                  <div><span className="font-semibold text-purple-600">MANAGE</span> &mdash; Can share folder</div>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">Higher levels include all lower ones.</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════ */
@@ -488,6 +745,8 @@ export default function ProjectDocumentsPage() {
   // Mobile: collapsible folder panel
   const [showFolderPanel, setShowFolderPanel] = useState(false);
 
+  // Share folder modal
+  const [sharingFolder, setSharingFolder] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
     projectService.getActiveProjects().then(setProjects).catch(() => setError("Failed to load projects."));
@@ -516,7 +775,7 @@ export default function ProjectDocumentsPage() {
   }, [searchQuery]);
 
 
-  const isAdminOrPartner = currentUser ? currentUser.roles.some((r) => r.name === "ADMIN" || r.name === "PARTNER") : false;
+  const isAdminOrPartner = currentUser ? currentUser.role?.name === "ADMIN" || currentUser.role?.name === "PARTNER" : false;
   const currentEmail = currentUser?.email || "";
 
   /** Check if the current user can delete a specific document */
@@ -1075,12 +1334,22 @@ export default function ProjectDocumentsPage() {
                       )}
                     </div>
                     {/* Folder actions — visible on hover (or always on mobile for touch) */}
-                    {isAdminOrPartner && renamingFolderId !== folder.id && (
+                    {renamingFolderId !== folder.id && (
                       <div className="mt-2 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => { setRenamingFolderId(folder.id); setRenameValue(folder.name); }}
-                          className="text-[10px] text-gray-500 hover:text-arcadia-600">Rename</button>
-                        <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                          className="text-[10px] text-gray-500 hover:text-red-600">Delete</button>
+                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission === "MANAGE") && (
+                          <button onClick={() => setSharingFolder({ id: folder.id, name: folder.name })}
+                            className="text-[10px] text-gray-500 hover:text-arcadia-600" title="Share folder">
+                            Share
+                          </button>
+                        )}
+                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission === "MANAGE") && (
+                          <>
+                            <button onClick={() => { setRenamingFolderId(folder.id); setRenameValue(folder.name); }}
+                              className="text-[10px] text-gray-500 hover:text-arcadia-600">Rename</button>
+                            <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                              className="text-[10px] text-gray-500 hover:text-red-600">Delete</button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1373,6 +1642,16 @@ export default function ProjectDocumentsPage() {
           allDocs={viewerDocList.length > 0 ? viewerDocList : documents}
           onClose={() => { setViewingDoc(null); setViewerDocList([]); }}
           onNavigate={(d) => setViewingDoc(d)}
+        />
+      )}
+
+      {/* ── Share Folder Modal ── */}
+      {sharingFolder && (
+        <ShareFolderModal
+          folderId={sharingFolder.id}
+          folderName={sharingFolder.name}
+          currentUserEmail={currentEmail}
+          onClose={() => setSharingFolder(null)}
         />
       )}
     </div>

@@ -7,7 +7,7 @@ export default function EditUserPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", roleIds: [] as number[], active: true });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", roleId: 0 as number, active: true });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -29,7 +29,7 @@ export default function EditUserPage() {
       lastName: user.lastName,
       email: user.email,
       phone: user.phone || "",
-      roleIds: user.roles.map((r) => r.id),
+      roleId: user.role?.id ?? 0,
       active: user.active,
     });
     setError("");
@@ -42,13 +42,8 @@ export default function EditUserPage() {
     setSuccess("");
   };
 
-  const toggleRole = (roleId: number) => {
-    setForm((prev) => {
-      const ids = new Set(prev.roleIds);
-      if (ids.has(roleId)) ids.delete(roleId);
-      else ids.add(roleId);
-      return { ...prev, roleIds: Array.from(ids) };
-    });
+  const selectRole = (roleId: number) => {
+    setForm((prev) => ({ ...prev, roleId }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -102,9 +97,11 @@ export default function EditUserPage() {
                     <td className="px-6 py-4 text-gray-600">{user.email}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-1 flex-wrap">
-                        {user.roles.map((r) => (
-                          <span key={r.id} className="px-2 py-0.5 bg-arcadia-100 text-arcadia-700 rounded text-xs font-medium">{r.name}</span>
-                        ))}
+                        {user.role ? (
+                          <span className="px-2 py-0.5 bg-arcadia-100 text-arcadia-700 rounded text-xs font-medium">{user.role.name}</span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">No role</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -161,18 +158,17 @@ export default function EditUserPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Roles</label>
-              <div className="flex flex-wrap gap-2">
-                {roles.map((role) => {
-                  const selected = form.roleIds.includes(role.id);
-                  return (
-                    <button key={role.id} type="button" onClick={() => toggleRole(role.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
-                        selected ? "bg-arcadia-600 text-white border-arcadia-600" : "bg-white text-gray-600 border-gray-300 hover:border-arcadia-400"
-                      }`}>{role.name}</button>
-                  );
-                })}
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+              <select
+                value={form.roleId}
+                onChange={(e) => selectRole(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none text-sm bg-white"
+              >
+                <option value={0}>-- Select a role --</option>
+                {roles.filter((r) => r.name !== "ADMIN").map((role) => (
+                  <option key={role.id} value={role.id}>{role.name}</option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="active" checked={form.active}

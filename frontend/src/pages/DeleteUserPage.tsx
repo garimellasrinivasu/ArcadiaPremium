@@ -50,9 +50,11 @@ export default function DeleteUserPage() {
                   <td className="px-6 py-4 text-gray-600">{user.email}</td>
                   <td className="px-6 py-4">
                     <div className="flex gap-1 flex-wrap">
-                      {user.roles.map((r) => (
-                        <span key={r.id} className="px-2 py-0.5 bg-arcadia-100 text-arcadia-700 rounded text-xs font-medium">{r.name}</span>
-                      ))}
+                      {user.role ? (
+                        <span className="px-2 py-0.5 bg-arcadia-100 text-arcadia-700 rounded text-xs font-medium">{user.role.name}</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">No role</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">

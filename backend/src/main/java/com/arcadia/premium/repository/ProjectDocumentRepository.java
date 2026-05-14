@@ -40,7 +40,7 @@ public interface ProjectDocumentRepository extends JpaRepository<ProjectDocument
     /** Root level: user's own docs + docs uploaded by ADMIN/PARTNER users */
     @Query("SELECT d FROM ProjectDocument d WHERE d.projectName = :project AND d.folder IS NULL " +
            "AND (d.uploadedBy = :email OR d.uploadedBy IN " +
-           "  (SELECT u.email FROM User u JOIN u.roles r WHERE r.name IN ('ADMIN','PARTNER'))) " +
+           "  (SELECT u.email FROM User u WHERE u.role.name IN ('ADMIN','PARTNER'))) " +
            "ORDER BY d.createdAt DESC")
     List<ProjectDocument> findVisibleAtRoot(@Param("project") String projectName,
                                             @Param("email") String userEmail);
@@ -48,7 +48,7 @@ public interface ProjectDocumentRepository extends JpaRepository<ProjectDocument
     /** Inside folder: user's own docs + docs uploaded by ADMIN/PARTNER users */
     @Query("SELECT d FROM ProjectDocument d WHERE d.projectName = :project AND d.folder.id = :folderId " +
            "AND (d.uploadedBy = :email OR d.uploadedBy IN " +
-           "  (SELECT u.email FROM User u JOIN u.roles r WHERE r.name IN ('ADMIN','PARTNER'))) " +
+           "  (SELECT u.email FROM User u WHERE u.role.name IN ('ADMIN','PARTNER'))) " +
            "ORDER BY d.createdAt DESC")
     List<ProjectDocument> findVisibleInFolder(@Param("project") String projectName,
                                               @Param("folderId") Long folderId,
@@ -57,7 +57,7 @@ public interface ProjectDocumentRepository extends JpaRepository<ProjectDocument
     /** Search: user's own docs + docs uploaded by ADMIN/PARTNER users */
     @Query("SELECT d FROM ProjectDocument d WHERE LOWER(d.fileName) LIKE LOWER(CONCAT('%',:query,'%')) " +
            "AND (d.uploadedBy = :email OR d.uploadedBy IN " +
-           "  (SELECT u.email FROM User u JOIN u.roles r WHERE r.name IN ('ADMIN','PARTNER'))) " +
+           "  (SELECT u.email FROM User u WHERE u.role.name IN ('ADMIN','PARTNER'))) " +
            "ORDER BY d.createdAt DESC")
     List<ProjectDocument> searchVisible(@Param("query") String query,
                                         @Param("email") String userEmail);

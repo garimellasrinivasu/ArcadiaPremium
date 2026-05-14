@@ -48,6 +48,7 @@ public class DataSeeder implements CommandLineRunner {
 
         if (roleRepository.count() > 0) {
             log.info("Database already seeded — skipping role/user seeding.");
+            migrateUsersToSingleRole();
             seedApprovalChainsIfNeeded();
             return;
         }
@@ -102,11 +103,54 @@ public class DataSeeder implements CommandLineRunner {
         admin.setEmail("admin@arcadiapremium.com");
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setActive(true);
-        admin.setRoles(Set.of(adminRole));
+        admin.setRole(adminRole);
         userRepository.save(admin);
 
         log.info("Seeding complete — default admin: admin@arcadiapremium.com / admin123");
         log.info("NOTE: Approval chains must be configured from Admin > Approval Chains after creating users.");
+    }
+
+    /**
+     * One-time migration: for users that still have role_id = NULL (from the old
+     * ManyToMany user_roles model), assign the first role found in the legacy
+     * join table, or ADMIN role for admin@arcadiapremium.com.
+     */
+    private void migrateUsersToSingleRole() {
+        var usersWithoutRole = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == null)
+                .toList();
+        if (usersWithoutRole.isEmpty()) return;
+
+        log.info("Migrating {} users from old multi-role to single-role model...", usersWithoutRole.size());
+        Role adminRole = roleRepository.findByName("ADMIN").orElse(null);
+
+        for (User user : usersWithoutRole) {
+            // For the default admin, always assign ADMIN role
+            if ("admin@arcadiapremium.com".equalsIgnoreCase(user.getEmail()) && adminRole != null) {
+                user.setRole(adminRole);
+                userRepository.save(user);
+                log.info("  Assigned ADMIN role to {}", user.getEmail());
+                continue;
+            }
+            // For other users, try to find their role from the old user_roles table
+            // Since getRoles() returns data from the convenience method, we use a native fallback
+            var legacyRoles = user.getRoles();
+            if (!legacyRoles.isEmpty()) {
+                Role firstRole = legacyRoles.iterator().next();
+                user.setRole(firstRole);
+                userRepository.save(user);
+                log.info("  Migrated user {} to role {}", user.getEmail(), firstRole.getName());
+            } else {
+                // No legacy role found — assign a default role
+                Role defaultRole = roleRepository.findByName("OPERATIONS").orElse(adminRole);
+                if (defaultRole != null) {
+                    user.setRole(defaultRole);
+                    userRepository.save(user);
+                    log.info("  Assigned default role {} to {}", defaultRole.getName(), user.getEmail());
+                }
+            }
+        }
+        log.info("Role migration complete.");
     }
 
     private void seedApprovalChainsIfNeeded() {

@@ -73,7 +73,7 @@ export default function UserAccessConfigPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newUser, setNewUser] = useState({
     firstName: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "",
-    roleIds: [] as number[],
+    roleId: 0 as number,
   });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -107,7 +107,7 @@ export default function UserAccessConfigPage() {
   }
 
   function isAdmin(user: User): boolean {
-    return user.roles.some((r) => r.name === "ADMIN");
+    return user.role?.name === "ADMIN";
   }
 
   function selectUser(user: User) {
@@ -187,8 +187,8 @@ export default function UserAccessConfigPage() {
       setCreateError("Password must be at least 6 characters.");
       return;
     }
-    if (newUser.roleIds.length === 0) {
-      setCreateError("Please select at least one role.");
+    if (!newUser.roleId) {
+      setCreateError("Please select a role.");
       return;
     }
     setCreating(true);
@@ -199,11 +199,11 @@ export default function UserAccessConfigPage() {
         email: newUser.email,
         password: newUser.password,
         phone: newUser.phone || undefined,
-        roleIds: newUser.roleIds,
+        roleId: newUser.roleId,
       });
       setUsers((prev) => [...prev, created]);
       setShowCreateModal(false);
-      setNewUser({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "", roleIds: [] });
+      setNewUser({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "", roleId: 0 });
       setSuccessMsg(`User "${created.firstName} ${created.lastName}" created!`);
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err: any) {
@@ -245,7 +245,7 @@ export default function UserAccessConfigPage() {
           u.firstName.toLowerCase().includes(q) ||
           u.lastName.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          u.roles.some((r) => r.name.toLowerCase().includes(q))
+          (u.role?.name?.toLowerCase().includes(q) ?? false)
         );
       })
     : users;
@@ -311,13 +311,13 @@ export default function UserAccessConfigPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    {user.roles.map((r) => (
-                      <span key={r.id} className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
-                        r.name === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                    {user.role && (
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
+                        user.role.name === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
                       }`}>
-                        {r.name}
+                        {user.role.name}
                       </span>
-                    ))}
+                    )}
                     <span className="text-[9px] text-gray-400 ml-auto">
                       {adminUser ? "All pages" : `${pageCount} page${pageCount !== 1 ? "s" : ""}`}
                     </span>
@@ -346,13 +346,13 @@ export default function UserAccessConfigPage() {
                     </h2>
                     <p className="text-xs text-gray-500">{selectedUser.email}</p>
                     <div className="flex gap-1.5 mt-1">
-                      {selectedUser.roles.map((r) => (
-                        <span key={r.id} className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                          r.name === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-50 text-blue-600"
+                      {selectedUser.role && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                          selectedUser.role.name === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-50 text-blue-600"
                         }`}>
-                          {r.name}
+                          {selectedUser.role.name}
                         </span>
-                      ))}
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -382,7 +382,7 @@ export default function UserAccessConfigPage() {
                 <div className="px-6 py-12 text-center">
                   <div className="text-5xl mb-3">&#128272;</div>
                   <p className="text-gray-700 font-medium">Admin users have access to all pages</p>
-                  <p className="text-sm text-gray-400 mt-1">Remove the ADMIN role to configure page access individually.</p>
+                  <p className="text-sm text-gray-400 mt-1">This user has the Admin role.</p>
                 </div>
               ) : (
                 <>
@@ -520,30 +520,17 @@ export default function UserAccessConfigPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-2">Roles *</label>
-                <div className="flex flex-wrap gap-2">
-                  {roles.map((role) => {
-                    const selected = newUser.roleIds.includes(role.id);
-                    return (
-                      <button key={role.id} type="button"
-                        onClick={() => {
-                          setNewUser((prev) => ({
-                            ...prev,
-                            roleIds: selected
-                              ? prev.roleIds.filter((id) => id !== role.id)
-                              : [...prev.roleIds, role.id],
-                          }));
-                        }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
-                          selected
-                            ? "bg-arcadia-600 text-white border-arcadia-600"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-arcadia-400"
-                        }`}>
-                        {role.name}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">Role *</label>
+                <select
+                  value={newUser.roleId}
+                  onChange={(e) => setNewUser({ ...newUser, roleId: Number(e.target.value) })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none bg-white"
+                >
+                  <option value={0}>-- Select a role --</option>
+                  {roles.filter((r) => r.name !== "ADMIN").map((role) => (
+                    <option key={role.id} value={role.id}>{role.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">

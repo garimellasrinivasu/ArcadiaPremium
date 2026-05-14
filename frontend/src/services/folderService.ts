@@ -8,6 +8,7 @@ export interface FolderDto {
   createdBy: string;
   createdAt: string;
   children: FolderDto[];
+  userPermission: string | null; // VIEW, UPLOAD, DELETE, MANAGE, or null
 }
 
 export const folderService = {
