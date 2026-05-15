@@ -39,6 +39,7 @@ const menuSections: MenuSection[] = [
       { label: "Site Attendance", path: "/activities/site-attendance", pageKey: "SITE_ATTENDANCE" },
       { label: "Project Documents", path: "/activities/documents", pageKey: "PROJECT_DOCUMENTS" },
       { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
+      { label: "Walk-Ins", path: "/activities/walk-ins", pageKey: "WALK_INS" },
     ],
   },
   {

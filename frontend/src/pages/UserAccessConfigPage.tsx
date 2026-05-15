@@ -35,6 +35,7 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "SITE_ATTENDANCE", label: "Site Attendance", path: "/activities/site-attendance" },
       { key: "PROJECT_DOCUMENTS", label: "Project Documents", path: "/activities/documents" },
       { key: "PARTNER_INVESTMENT", label: "Partner Investment", path: "/activities/partner-investment" },
+      { key: "WALK_INS", label: "Walk-Ins", path: "/activities/walk-ins" },
     ],
   },
   {
