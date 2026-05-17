@@ -73,3 +73,12 @@ jobs:
             docker compose up -d --remove-orphans
             # Cleanup old unused images to save space
             docker image prune -f
+            
+            # Make the backup script executable
+            chmod +x ~/arcadia-app/scripts/backup.sh
+            
+            # Ensure the backup directory exists
+            mkdir -p ~/arcadia-backups
+            
+            # Setup daily backup cron job at 2:00 AM (removes any old backup job first to avoid duplicates)
+            (crontab -l 2>/dev/null | grep -v "scripts/backup.sh"; echo "0 2 * * * /bin/bash ~/arcadia-app/scripts/backup.sh >> ~/arcadia-backups/backup.log 2>&1") | crontab -
