@@ -22,8 +22,37 @@ fi
 # Remote Sync Configuration
 export REMOTE_SYNC_ENABLED="true"
 export REMOTE_SERVER="192.168.1.9"
-export REMOTE_USER="ubuntu"  # Update with the correct username on 192.168.1.9
+export REMOTE_USER="dinakar"  # Update with the correct username on 192.168.1.9
 export REMOTE_DIR="~/arcadia-backups-sync"
+
+send_email_alert() {
+    local subject="$1"
+    local message="$2"
+    
+    if [ -n "$ALERT_EMAIL" ] && [ -n "$SMTP_USER" ] && [ -n "$SMTP_PASS" ]; then
+        echo "Sending email alert to $ALERT_EMAIL..."
+        python3 -c "
+import smtplib, os
+from email.message import EmailMessage
+msg = EmailMessage()
+msg.set_content('''$message''')
+msg['Subject'] = '$subject'
+msg['From'] = os.environ.get('SMTP_USER')
+msg['To'] = os.environ.get('ALERT_EMAIL')
+try:
+    server = smtplib.SMTP(os.environ.get('SMTP_HOST'), int(os.environ.get('SMTP_PORT')))
+    server.starttls()
+    server.login(os.environ.get('SMTP_USER'), os.environ.get('SMTP_PASS'))
+    server.send_message(msg)
+    server.quit()
+    print('Alert email sent successfully.')
+except Exception as e:
+    print('Failed to send email alert:', str(e))
+"
+    else
+        echo "Email alerts are not configured. Skipping email notification."
+    fi
+}
 
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
@@ -54,6 +83,7 @@ if [ $? -eq 0 ]; then
             echo "Successfully synced backup to $REMOTE_SERVER."
         else
             echo "Warning: Failed to sync backup to $REMOTE_SERVER. Check your SSH keys and permissions."
+            send_email_alert "CRITICAL: Backup Sync Failed" "CRITICAL: The ArcadiaPremium database backup was created successfully, but it FAILED to sync to the secondary server ($REMOTE_SERVER).\n\nPlease check the server SSH keys and network connections."
         fi
     fi
     
@@ -66,30 +96,8 @@ else
     # Delete the potentially corrupted/empty backup file
     rm -f "$BACKUP_FILE"
     
-    # Send email alert if configured
-    if [ -n "$ALERT_EMAIL" ] && [ -n "$SMTP_USER" ] && [ -n "$SMTP_PASS" ]; then
-        echo "Sending failure email alert to $ALERT_EMAIL..."
-        python3 -c "
-import smtplib, os
-from email.message import EmailMessage
-msg = EmailMessage()
-msg.set_content('CRITICAL: The ArcadiaPremium database backup script encountered an error and failed to create a backup on ' + os.uname()[1] + '.\n\nPlease check the server logs immediately.')
-msg['Subject'] = 'CRITICAL: Database Backup Failed'
-msg['From'] = os.environ.get('SMTP_USER')
-msg['To'] = os.environ.get('ALERT_EMAIL')
-try:
-    server = smtplib.SMTP(os.environ.get('SMTP_HOST'), int(os.environ.get('SMTP_PORT')))
-    server.starttls()
-    server.login(os.environ.get('SMTP_USER'), os.environ.get('SMTP_PASS'))
-    server.send_message(msg)
-    server.quit()
-    print('Alert email sent successfully.')
-except Exception as e:
-    print('Failed to send email alert:', str(e))
-"
-    else
-        echo "Email alerts are not configured. Skipping email notification."
-    fi
+    # Send email alert
+    send_email_alert "CRITICAL: Database Backup Failed" "CRITICAL: The ArcadiaPremium database backup script encountered an error and failed to create a backup on the primary server.\n\nPlease check the server logs immediately."
     
     exit 1
 fi
