@@ -226,31 +226,142 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
     win.document.write(`
       <html><head><title>Investment Agreement - ${entry.projectName}</title>
       <style>
-        body { font-family: 'Times New Roman', serif; margin: 40px; color: #1a1a1a; }
-        .header { text-align: center; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 30px; }
-        .header img.logo { max-height: 80px; margin-bottom: 10px; }
-        .header h1 { font-size: 22px; margin: 0; letter-spacing: 1px; }
-        .header h2 { font-size: 16px; margin: 5px 0; color: #555; }
-        .header p { font-size: 12px; color: #777; margin: 3px 0; }
-        .section { margin-bottom: 20px; }
-        .section h3 { font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        td { padding: 6px 10px; font-size: 13px; vertical-align: top; }
-        td:first-child { font-weight: bold; width: 180px; color: #555; }
-        .amount { font-size: 20px; font-weight: bold; }
-        .signatures { display: flex; justify-content: space-around; margin-top: 60px; page-break-inside: avoid; }
-        .sig-block { text-align: center; width: 45%; }
-        .sig-block.three-col { width: 30%; }
-        .sig-block .sig-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; }
-        .sig-block .sig-name { font-weight: bold; font-size: 13px; }
-        .sig-block .sig-label { font-size: 11px; color: #777; }
-        .sig-block img { max-height: 60px; margin-bottom: -55px; }
-        .status-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .approved { background: #d4edda; color: #155724; }
-        .pending { background: #fff3cd; color: #856404; }
-        .na { background: #f0f0f0; color: #999; }
-        .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-        @media print { body { margin: 20px; } .no-print { display: none; } }
+        @page { size: A4 portrait; margin: 12mm 10mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'Segoe UI', Arial, sans-serif;
+          color: #111827;
+          font-size: 10pt;
+          line-height: 1.4;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        /* ── Header ── */
+        .p-header {
+          text-align: center;
+          padding-bottom: 4mm;
+          border-bottom: 0.75pt double #c9a961;
+          margin-bottom: 4mm;
+        }
+        .p-logo { max-width: 42mm; height: auto; margin: 0 auto 1mm; display: block; }
+        .p-developer {
+          font-size: 7pt; letter-spacing: 2pt; color: #a68845;
+          text-transform: uppercase; font-weight: 700; margin-top: 0.5mm;
+        }
+        .p-tagline {
+          font-family: Georgia, serif; font-style: italic;
+          font-size: 7.5pt; color: #6b7280; margin-top: 0.5mm;
+        }
+
+        /* ── Title Bar ── */
+        .p-title-bar {
+          text-align: center; margin: 3mm 0;
+        }
+        .p-title-bar .label {
+          display: inline-block; background: #0a2540; color: #fff;
+          padding: 1.5pt 14pt; font-size: 10pt; font-weight: 700;
+          letter-spacing: 2pt; text-transform: uppercase;
+        }
+        .p-title-bar .ref {
+          font-size: 8pt; color: #6b7280; margin-top: 1.5mm; letter-spacing: 0.4pt;
+        }
+
+        /* ── Info Grid ── */
+        .p-info-grid {
+          background: #fdf9ef; border-left: 2.5pt solid #c9a961;
+          padding: 3mm 4mm; margin: 3mm 0;
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 2mm 6mm;
+        }
+        .p-info-grid .cell .k {
+          text-transform: uppercase; font-size: 6.5pt; color: #6b7280;
+          letter-spacing: 0.6pt; font-weight: 700;
+        }
+        .p-info-grid .cell .v {
+          color: #0a2540; font-size: 9pt; font-weight: 700; margin-top: 0.3mm;
+        }
+        .p-info-grid .cell.full { grid-column: 1 / -1; }
+
+        /* ── Amount Box ── */
+        .p-amount-box {
+          background: linear-gradient(135deg, #0a2540 0%, #061a30 100%);
+          color: #fff; padding: 3mm 5mm;
+          display: grid; grid-template-columns: 1fr auto; align-items: center;
+          gap: 4mm; border: 0.75pt solid #c9a961; margin: 3mm 0;
+        }
+        .p-amount-box .tl-label {
+          font-size: 8pt; letter-spacing: 1.5pt; text-transform: uppercase;
+          color: #c9a961; font-weight: 700;
+        }
+        .p-amount-box .tl-sub { font-size: 7pt; color: #cbd5e1; margin-top: 0.3mm; }
+        .p-amount-box .tl-amt {
+          font-size: 16pt; font-weight: 800; color: #c9a961;
+          font-variant-numeric: tabular-nums;
+        }
+
+        /* ── Section Heading ── */
+        .p-section-head {
+          margin-top: 4mm; margin-bottom: 1mm;
+          padding: 1mm 3mm;
+          background: linear-gradient(to right, #0a2540, #133963);
+          color: #fff; font-size: 8pt; font-weight: 700;
+          letter-spacing: 1.5pt; text-transform: uppercase;
+        }
+
+        /* ── Table ── */
+        .p-table { width: 100%; border-collapse: collapse; }
+        .p-table td {
+          padding: 1.5mm 3mm; font-size: 9pt;
+          border-bottom: 0.3pt solid #e3e7ef; line-height: 1.3;
+        }
+        .p-table td.lbl { color: #6b7280; font-weight: 600; width: 40%; }
+        .p-table td.val { color: #0a2540; font-weight: 600; }
+
+        /* ── Approval Status ── */
+        .p-status-row { display: flex; align-items: center; gap: 3mm; margin: 2mm 0 1mm 3mm; }
+        .p-badge {
+          display: inline-block; padding: 1pt 8pt; border-radius: 10pt;
+          font-size: 7.5pt; font-weight: 700;
+        }
+        .p-badge.approved { background: #d1fae5; color: #065f46; }
+        .p-badge.pending { background: #fef3c7; color: #92400e; }
+
+        /* ── Remarks ── */
+        .p-remarks {
+          background: #fdf9ef; border-left: 2.5pt solid #c9a961;
+          padding: 2mm 4mm; margin: 3mm 0;
+          font-size: 9pt; color: #1f2937; font-style: italic;
+        }
+        .p-remarks .rlbl {
+          font-style: normal; text-transform: uppercase;
+          font-size: 6.5pt; letter-spacing: 1pt; color: #a68845; font-weight: 700;
+        }
+
+        /* ── Signatures ── */
+        .p-signatures {
+          margin-top: 12mm; display: flex; justify-content: space-between;
+          gap: 6mm; page-break-inside: avoid;
+        }
+        .p-sig-block { text-align: center; flex: 1; }
+        .p-sig-block img { max-height: 50px; margin-bottom: -45px; display: block; margin-left: auto; margin-right: auto; }
+        .p-sig-line {
+          border-top: 0.5pt solid #0a2540; margin-top: 50px;
+          padding-top: 1.5mm; text-align: center;
+        }
+        .p-sig-name { font-weight: 700; font-size: 9pt; color: #0a2540; }
+        .p-sig-label { font-size: 7pt; color: #6b7280; margin-top: 0.3mm; text-transform: uppercase; letter-spacing: 0.5pt; }
+
+        /* ── Footer ── */
+        .p-footer {
+          margin-top: 6mm; text-align: center;
+          font-size: 7pt; color: #6b7280; letter-spacing: 0.4pt;
+          border-top: 0.25pt solid #c9a961; padding-top: 2mm;
+        }
+        .p-footer strong { color: #0a2540; }
+
+        @media print { .no-print { display: none !important; } }
       </style></head><body>
       ${content.innerHTML}
       </body></html>
@@ -258,6 +369,15 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
     win.document.close();
     win.print();
   }
+
+  // Build signature data
+  const projectPartners = getProjectPartners(entry.projectName);
+  const sigData = ALL_PARTNERS.map((name, i) => ({
+    name,
+    sig: i === 0 ? entry.partner1Signature : i === 1 ? entry.partner2Signature : entry.partner3Signature,
+    inProject: projectPartners.some(pp => pp.toLowerCase() === name.toLowerCase()),
+    isInvestor: name.toLowerCase() === entry.partnerName.toLowerCase(),
+  })).filter(s => s.inProject);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center overflow-y-auto py-8">
@@ -272,89 +392,144 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
         </div>
 
         {/* Document */}
-        <div ref={printRef} className="p-8">
-          <div className="header">
-            <img className="logo" src="/arcadia-logo.png" alt="Logo" />
-            <h1>PARTNER INVESTMENT AGREEMENT</h1>
-            <h2>{entry.projectName}</h2>
-            <p>Date: {formatDate(entry.investmentDate)} &nbsp;|&nbsp; Ref: PI-{String(entry.id).padStart(4, "0")}</p>
+        <div ref={printRef} className="p-8" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+          {/* Header */}
+          <div className="p-header" style={{ textAlign: "center", paddingBottom: "12px", borderBottom: "2px double #c9a961", marginBottom: "12px" }}>
+            <img className="p-logo" src="/arcadia-logo.png" alt="Logo" style={{ maxWidth: "140px", height: "auto", margin: "0 auto 4px", display: "block" }} />
+            <div style={{ fontSize: "8px", letterSpacing: "2px", color: "#a68845", textTransform: "uppercase", fontWeight: 700 }}>
+              A Venture by Venkata Praneeth Developers Pvt. Ltd.
+            </div>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "9px", color: "#6b7280", marginTop: "2px" }}>
+              Luxury Living &middot; Premium Villas
+            </div>
           </div>
 
-          <div className="section">
-            <h3>Investment Details</h3>
-            <table>
-              <tbody>
-                <tr><td>Investing Partner</td><td>{entry.partnerName}</td></tr>
-                <tr><td>Project</td><td>{entry.projectName}</td></tr>
-                <tr><td>Investment Date</td><td>{formatDate(entry.investmentDate)}</td></tr>
-                <tr><td>Amount</td><td className="amount">{formatCurrency(entry.amount)}</td></tr>
-                <tr><td>Purpose</td><td>{entry.purpose || "—"}</td></tr>
-                <tr><td>Description</td><td>{entry.description || "—"}</td></tr>
-              </tbody>
-            </table>
+          {/* Title Bar */}
+          <div style={{ textAlign: "center", margin: "10px 0" }}>
+            <span style={{ display: "inline-block", background: "#0a2540", color: "#fff", padding: "3px 16px", fontSize: "12px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase" }}>
+              Partner Investment Agreement
+            </span>
+            <div style={{ fontSize: "9px", color: "#6b7280", marginTop: "4px", letterSpacing: "0.4px" }}>
+              Ref: PI-{String(entry.id).padStart(4, "0")} &nbsp;|&nbsp; Date: {formatDate(entry.investmentDate)}
+            </div>
           </div>
 
-          <div className="section">
-            <h3>Payment Information</h3>
-            <table>
-              <tbody>
-                <tr><td>Payment Mode</td><td>{entry.paymentMode}</td></tr>
-                {entry.bankName && <tr><td>Bank Name</td><td>{entry.bankName}</td></tr>}
-                {entry.accountDetails && <tr><td>Account Details</td><td>{entry.accountDetails}</td></tr>}
-                {entry.transactionId && <tr><td>Transaction ID</td><td>{entry.transactionId}</td></tr>}
-                {entry.referenceNo && <tr><td>Reference No</td><td>{entry.referenceNo}</td></tr>}
-              </tbody>
-            </table>
+          {/* Investment Info Grid */}
+          <div style={{ background: "#fdf9ef", borderLeft: "3px solid #c9a961", padding: "10px 14px", margin: "10px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px" }}>
+            <div>
+              <div style={{ textTransform: "uppercase", fontSize: "7px", color: "#6b7280", letterSpacing: "0.6px", fontWeight: 700 }}>Investing Partner</div>
+              <div style={{ color: "#0a2540", fontSize: "11px", fontWeight: 700, marginTop: "1px" }}>{entry.partnerName}</div>
+            </div>
+            <div>
+              <div style={{ textTransform: "uppercase", fontSize: "7px", color: "#6b7280", letterSpacing: "0.6px", fontWeight: 700 }}>Project</div>
+              <div style={{ color: "#0a2540", fontSize: "11px", fontWeight: 700, marginTop: "1px" }}>{entry.projectName}</div>
+            </div>
+            <div>
+              <div style={{ textTransform: "uppercase", fontSize: "7px", color: "#6b7280", letterSpacing: "0.6px", fontWeight: 700 }}>Investment Date</div>
+              <div style={{ color: "#0a2540", fontSize: "11px", fontWeight: 700, marginTop: "1px" }}>{formatDate(entry.investmentDate)}</div>
+            </div>
+            <div>
+              <div style={{ textTransform: "uppercase", fontSize: "7px", color: "#6b7280", letterSpacing: "0.6px", fontWeight: 700 }}>Purpose</div>
+              <div style={{ color: "#0a2540", fontSize: "11px", fontWeight: 700, marginTop: "1px" }}>{entry.purpose || "—"}</div>
+            </div>
           </div>
 
-          <div className="section">
-            <h3>Approval Status</h3>
-            <p style={{ fontSize: "13px", marginBottom: "10px" }}>
-              Status: <span className={`status-badge ${entry.status === "APPROVED" ? "approved" : "pending"}`}>{entry.status}</span>
-            </p>
-            <table>
-              <tbody>
-                {getApprovalLines(entry).filter(l => l.inProject).map(l => (
-                  <tr key={l.name}><td>{l.name}</td><td>{l.status}</td></tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Amount Box */}
+          <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #061a30 100%)", color: "#fff", padding: "10px 16px", display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: "12px", border: "1px solid #c9a961", margin: "10px 0" }}>
+            <div>
+              <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#c9a961", fontWeight: 700 }}>Investment Amount</div>
+              <div style={{ fontSize: "7px", color: "#cbd5e1", marginTop: "1px" }}>{entry.description || "Partner capital contribution"}</div>
+            </div>
+            <div style={{ fontSize: "20px", fontWeight: 800, color: "#c9a961" }}>{formatCurrency(entry.amount)}</div>
           </div>
 
+          {/* Payment Information Section */}
+          <div style={{ marginTop: "12px", marginBottom: "2px", padding: "3px 8px", background: "linear-gradient(to right, #0a2540, #133963)", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            Payment Information
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600, width: "40%" }}>Payment Mode</td>
+                <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{entry.paymentMode.replace("_", " ")}</td>
+              </tr>
+              {entry.bankName && (
+                <tr>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600 }}>Bank Name</td>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{entry.bankName}</td>
+                </tr>
+              )}
+              {entry.accountDetails && (
+                <tr>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600 }}>Account Details</td>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{entry.accountDetails}</td>
+                </tr>
+              )}
+              {entry.transactionId && (
+                <tr>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600 }}>Transaction ID</td>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{entry.transactionId}</td>
+                </tr>
+              )}
+              {entry.referenceNo && (
+                <tr>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600 }}>Reference No</td>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{entry.referenceNo}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Approval Status Section */}
+          <div style={{ marginTop: "12px", marginBottom: "2px", padding: "3px 8px", background: "linear-gradient(to right, #0a2540, #133963)", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            Approval Status
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "6px 0 4px 8px" }}>
+            <span style={{ fontSize: "10px", color: "#374151", fontWeight: 600 }}>Status:</span>
+            <span style={{
+              display: "inline-block", padding: "2px 10px", borderRadius: "10px",
+              fontSize: "9px", fontWeight: 700,
+              background: entry.status === "APPROVED" ? "#d1fae5" : "#fef3c7",
+              color: entry.status === "APPROVED" ? "#065f46" : "#92400e",
+            }}>{entry.status}</span>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              {getApprovalLines(entry).filter(l => l.inProject).map(l => (
+                <tr key={l.name}>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#6b7280", fontWeight: 600, width: "40%" }}>{l.name}</td>
+                  <td style={{ padding: "4px 8px", fontSize: "10px", borderBottom: "0.5px solid #e3e7ef", color: "#0a2540", fontWeight: 600 }}>{l.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Remarks */}
           {entry.remarks && (
-            <div className="section">
-              <h3>Remarks</h3>
-              <p style={{ fontSize: "13px" }}>{entry.remarks}</p>
+            <div style={{ background: "#fdf9ef", borderLeft: "3px solid #c9a961", padding: "6px 12px", margin: "10px 0", fontSize: "10px", color: "#1f2937", fontStyle: "italic" }}>
+              <div style={{ fontStyle: "normal", textTransform: "uppercase", fontSize: "7px", letterSpacing: "1px", color: "#a68845", fontWeight: 700, marginBottom: "2px" }}>Remarks</div>
+              {entry.remarks}
             </div>
           )}
 
-          {/* Signature Blocks — only project-relevant partners */}
-          {(() => {
-            const projectPartners = getProjectPartners(entry.projectName);
-            const sigData = ALL_PARTNERS.map((name, i) => ({
-              name,
-              sig: i === 0 ? entry.partner1Signature : i === 1 ? entry.partner2Signature : entry.partner3Signature,
-              inProject: projectPartners.some(pp => pp.toLowerCase() === name.toLowerCase()),
-            })).filter(s => s.inProject);
-            const colClass = sigData.length === 3 ? "sig-block three-col" : "sig-block";
-            return (
-              <div className="signatures">
-                {sigData.map(s => (
-                  <div key={s.name} className={colClass}>
-                    {s.sig ? <img src={s.sig} alt={`${s.name} signature`} /> : <div style={{ height: 60 }} />}
-                    <div className="sig-line">
-                      <div className="sig-name">{s.name}</div>
-                      <div className="sig-label">Partner</div>
-                    </div>
+          {/* Signature Blocks */}
+          <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-between", gap: "20px", pageBreakInside: "avoid" }}>
+            {sigData.map(s => (
+              <div key={s.name} style={{ textAlign: "center", flex: 1 }}>
+                {s.sig ? <img src={s.sig} alt={`${s.name} signature`} style={{ maxHeight: "50px", marginBottom: "-45px", display: "block", marginLeft: "auto", marginRight: "auto" }} /> : <div style={{ height: "50px" }} />}
+                <div style={{ borderTop: "0.5px solid #0a2540", marginTop: "50px", paddingTop: "4px", textAlign: "center" }}>
+                  <div style={{ fontWeight: 700, fontSize: "10px", color: "#0a2540" }}>{s.name}</div>
+                  <div style={{ fontSize: "8px", color: "#6b7280", marginTop: "1px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {s.isInvestor ? "Investment Partner" : "Partner"}
                   </div>
-                ))}
+                </div>
               </div>
-            );
-          })()}
+            ))}
+          </div>
 
-          <div className="footer">
-            <p>This document is generated by ArcadiaPremium &mdash; Partner Investment Management System</p>
-            <p>Generated on: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</p>
+          {/* Footer */}
+          <div style={{ marginTop: "20px", textAlign: "center", fontSize: "8px", color: "#6b7280", letterSpacing: "0.4px", borderTop: "0.5px solid #c9a961", paddingTop: "6px" }}>
+            <strong style={{ color: "#0a2540" }}>ArcadiaPremium</strong> &mdash; Partner Investment Management System &middot; Generated on {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
           </div>
         </div>
       </div>

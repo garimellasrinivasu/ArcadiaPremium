@@ -4,6 +4,7 @@ import com.arcadia.premium.dto.DocumentFolderDto;
 import com.arcadia.premium.service.DocumentFolderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -36,10 +37,11 @@ public class DocumentFolderController {
         }
     }
 
-    /** Get the full folder tree for a project */
+    /** Get the full folder tree for a project, filtered by user permissions */
     @GetMapping("/tree")
-    public ResponseEntity<List<DocumentFolderDto>> getTree(@RequestParam String projectName) {
-        return ResponseEntity.ok(service.getTree(projectName));
+    public ResponseEntity<List<DocumentFolderDto>> getTree(@RequestParam String projectName, Principal principal) {
+        boolean isAdmin = isCurrentUserAdmin();
+        return ResponseEntity.ok(service.getTree(projectName, principal.getName(), isAdmin));
     }
 
     /** Get breadcrumb path for a folder */
@@ -62,12 +64,18 @@ public class DocumentFolderController {
     /** Delete a folder */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id, Principal principal) {
         try {
             service.delete(id);
             return ResponseEntity.ok(Map.of("message", "Folder deleted successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    private boolean isCurrentUserAdmin() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }

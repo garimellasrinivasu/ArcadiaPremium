@@ -5,7 +5,9 @@ export default defineConfig({
   plugins: [react()],
 
   // Dev server — proxy /api to local Spring Boot backend
+  // host: true binds to 0.0.0.0 so LAN devices can access
   server: {
+    host: true,
     port: 3000,
     proxy: {
       "/api": {

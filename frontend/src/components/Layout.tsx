@@ -39,6 +39,7 @@ const menuSections: MenuSection[] = [
       { label: "Site Attendance", path: "/activities/site-attendance", pageKey: "SITE_ATTENDANCE" },
       { label: "Project Documents", path: "/activities/documents", pageKey: "PROJECT_DOCUMENTS" },
       { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
+      { label: "Walk-Ins", path: "/activities/walk-ins", pageKey: "WALK_INS" },
     ],
   },
   {
@@ -168,7 +169,7 @@ export default function Layout() {
     : "...";
 
   const isAdmin = currentUser
-    ? currentUser.roles.some((r) => r.name === "ADMIN")
+    ? currentUser.role?.name === "ADMIN"
     : false;
 
   const allowedPages = new Set<string>(currentUser?.allowedPages || []);

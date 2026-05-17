@@ -196,10 +196,10 @@ export default function FinanceSpentPage() {
   const [paidToOptions, setPaidToOptions] = useState<string[]>([]);
   const [descriptionOptions, setDescriptionOptions] = useState<string[]>([]);
 
-  const userRoles = currentUser?.roles.map((r) => r.name) ?? [];
-  const isAdminOrPartner = userRoles.some((r) => ["ADMIN", "PARTNER"].includes(r));
+  const userRole = currentUser?.role?.name ?? "";
+  const isAdminOrPartner = ["ADMIN", "PARTNER"].includes(userRole);
   const canApprove = isAdminOrPartner;
-  const canViewReports = userRoles.some((r) => ["ADMIN", "PARTNER", "ACCOUNTS", "ACCOUNTING"].includes(r));
+  const canViewReports = ["ADMIN", "PARTNER", "ACCOUNTS", "ACCOUNTING"].includes(userRole);
 
   useEffect(() => {
     authService.getCurrentUser().then(setCurrentUser).catch(() => {});

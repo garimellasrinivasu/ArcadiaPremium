@@ -10,10 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -60,7 +62,13 @@ public class UserService {
             throw new RuntimeException("Email already in use: " + request.getEmail());
         }
 
-        Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
+
+        // Block assigning ADMIN role during creation
+        if ("ADMIN".equalsIgnoreCase(role.getName())) {
+            throw new RuntimeException("ADMIN role cannot be assigned during user creation.");
+        }
 
         User user = new User();
         user.setFirstName(request.getFirstName());
@@ -68,7 +76,7 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(request.getPhone());
-        user.setRoles(roles);
+        user.setRole(role);
         user.setActive(true);
 
         return UserDto.fromEntity(userRepository.save(user));
@@ -84,9 +92,10 @@ public class UserService {
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
         if (request.getActive() != null) user.setActive(request.getActive());
-        if (request.getRoleIds() != null) {
-            Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
-            user.setRoles(roles);
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
+            user.setRole(role);
         }
         if (request.getAllowedPages() != null) {
             user.setAllowedPages(request.getAllowedPages());
@@ -163,6 +172,15 @@ public class UserService {
     public User findRawUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
+    }
+
+    /** Lightweight user list for permission pickers — active users only */
+    public List<SimpleUserDto> getSimpleUserList() {
+        return userRepository.findAll().stream()
+                .filter(User::isActive)
+                .map(u -> new SimpleUserDto(u.getId(), u.getEmail(), u.getFirstName(), u.getLastName()))
+                .sorted(Comparator.comparing(SimpleUserDto::getFirstName))
+                .collect(Collectors.toList());
     }
 
     private String generateRandomPassword(int length) {

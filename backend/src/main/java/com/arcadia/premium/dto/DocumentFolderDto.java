@@ -15,6 +15,7 @@ public class DocumentFolderDto {
     private String createdBy;
     private String createdAt;
     private List<DocumentFolderDto> children;
+    private String userPermission;
 
     public static DocumentFolderDto fromEntity(DocumentFolder folder) {
         DocumentFolderDto dto = new DocumentFolderDto();
@@ -63,4 +64,7 @@ public class DocumentFolderDto {
 
     public List<DocumentFolderDto> getChildren() { return children; }
     public void setChildren(List<DocumentFolderDto> children) { this.children = children; }
+
+    public String getUserPermission() { return userPermission; }
+    public void setUserPermission(String userPermission) { this.userPermission = userPermission; }
 }

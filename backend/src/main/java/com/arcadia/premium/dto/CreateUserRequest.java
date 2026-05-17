@@ -1,7 +1,6 @@
 package com.arcadia.premium.dto;
 
 import jakarta.validation.constraints.*;
-import java.util.Set;
 
 public class CreateUserRequest {
     @NotBlank
@@ -18,8 +17,8 @@ public class CreateUserRequest {
 
     private String phone;
 
-    @NotEmpty
-    private Set<Long> roleIds;
+    @NotNull
+    private Long roleId;
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -31,6 +30,6 @@ public class CreateUserRequest {
     public void setPassword(String password) { this.password = password; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-    public Set<Long> getRoleIds() { return roleIds; }
-    public void setRoleIds(Set<Long> roleIds) { this.roleIds = roleIds; }
+    public Long getRoleId() { return roleId; }
+    public void setRoleId(Long roleId) { this.roleId = roleId; }
 }

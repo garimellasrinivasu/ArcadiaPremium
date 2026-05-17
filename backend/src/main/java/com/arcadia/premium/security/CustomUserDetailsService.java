@@ -5,7 +5,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -21,9 +22,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         var user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        var authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toList());
+        List<SimpleGrantedAuthority> authorities = user.getRole() != null
+                ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()))
+                : Collections.emptyList();
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(), user.getPassword(), user.isActive(),

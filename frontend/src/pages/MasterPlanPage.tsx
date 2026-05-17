@@ -11,6 +11,16 @@ interface PlotDef {
   facing: string;
 }
 
+interface BlockingInfo {
+  villaNumber: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  bookingAmount: number;
+  notes: string;
+  blockedAt: string;
+}
+
 const PLOTS: PlotDef[] = [
   { villa: 1, left: 29.04, top: 27.64, width: 4.39, height: 1.05, sqYards: 350, facing: "West" },
   { villa: 2, left: 29.04, top: 25.47, width: 4.39, height: 2.14, sqYards: 200, facing: "West" },
@@ -263,9 +273,20 @@ export default function MasterPlanPage() {
   const [selected, setSelected] = useState<PlotDef | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [blockedVillas, setBlockedVillas] = useState<Map<number, BlockingInfo>>(new Map());
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Block form state
+  const [blockName, setBlockName] = useState("");
+  const [blockPhone, setBlockPhone] = useState("");
+  const [blockEmail, setBlockEmail] = useState("");
+  const [blockAmount, setBlockAmount] = useState("");
+  const [blockNotes, setBlockNotes] = useState("");
 
   const handlePlotClick = useCallback((plot: PlotDef) => {
     setSelected(plot);
+    setShowBlockForm(false);
   }, []);
 
   const handleCreateSale = useCallback(() => {
@@ -274,6 +295,34 @@ export default function MasterPlanPage() {
       `/activities/sale-entry?villa=${selected.villa}&sqYards=${selected.sqYards}&facing=${selected.facing}`
     );
   }, [selected, navigate]);
+
+  const handleBlockVilla = useCallback(() => {
+    if (!selected || !blockName.trim() || !blockPhone.trim()) return;
+    const info: BlockingInfo = {
+      villaNumber: selected.villa,
+      customerName: blockName.trim(),
+      customerPhone: blockPhone.trim(),
+      customerEmail: blockEmail.trim(),
+      bookingAmount: parseFloat(blockAmount) || 0,
+      notes: blockNotes.trim(),
+      blockedAt: new Date().toISOString(),
+    };
+    setBlockedVillas((prev) => {
+      const next = new Map(prev);
+      next.set(selected.villa, info);
+      return next;
+    });
+    setToast(`Villa ${selected.villa} blocked for ${blockName.trim()}`);
+    setTimeout(() => setToast(null), 3000);
+    // Reset form
+    setBlockName("");
+    setBlockPhone("");
+    setBlockEmail("");
+    setBlockAmount("");
+    setBlockNotes("");
+    setShowBlockForm(false);
+    setSelected(null);
+  }, [selected, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
 
   const zoomIn = useCallback(() => {
     setZoom((z) => Math.min(3, z + 0.25));
@@ -289,9 +338,16 @@ export default function MasterPlanPage() {
 
   return (
     <div className="space-y-4">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[100] bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+          {toast}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-arcadia-800">
-          Master Plan \u2014 Praneeth Arcadia Premium
+          Master Plan &mdash; Praneeth Arcadia Premium
         </h1>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">
@@ -307,7 +363,7 @@ export default function MasterPlanPage() {
             onClick={zoomOut}
             className="px-3 py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition"
           >
-            \u2212
+            &minus;
           </button>
           <button
             onClick={resetView}
@@ -344,12 +400,16 @@ export default function MasterPlanPage() {
           <span className="w-4 h-3 rounded" style={{ background: "#e3bfbf" }} />
           198 SqYd
         </span>
+        <span className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded border border-red-400" style={{ background: "#fecaca" }} />
+          Blocked
+        </span>
         <span className="text-gray-400 ml-2">
           Click any plot to view details
         </span>
       </div>
 
-      {/* Map container - scrollable, no auto-zoom */}
+      {/* Map container */}
       <div
         className="relative overflow-auto border-2 border-arcadia-200 rounded-xl bg-gray-100"
         style={{ height: "calc(100vh - 280px)" }}
@@ -374,6 +434,7 @@ export default function MasterPlanPage() {
           {PLOTS.map((plot) => {
             const isHovered = hovered === plot.villa;
             const isSelected = selected?.villa === plot.villa;
+            const isBlocked = blockedVillas.has(plot.villa);
             return (
               <div
                 key={plot.villa}
@@ -383,7 +444,7 @@ export default function MasterPlanPage() {
                 }}
                 onMouseEnter={() => setHovered(plot.villa)}
                 onMouseLeave={() => setHovered(null)}
-                title={`Villa ${plot.villa} \u2014 ${plot.sqYards} SqYd \u2014 ${plot.facing}`}
+                title={`Villa ${plot.villa} — ${plot.sqYards} SqYd — ${plot.facing}${isBlocked ? " [BLOCKED]" : ""}`}
                 style={{
                   position: "absolute",
                   left: `${plot.left}%`,
@@ -391,40 +452,68 @@ export default function MasterPlanPage() {
                   width: `${plot.width}%`,
                   height: `${plot.height}%`,
                   cursor: "pointer",
-                  border: isSelected
+                  border: isBlocked
+                    ? "2px solid #ef4444"
+                    : isSelected
                     ? "2px solid #2563eb"
                     : isHovered
                     ? "2px solid #f59e0b"
-                    : "1px solid transparent",
-                  background: isSelected
+                    : "1px solid rgba(0,0,0,0.08)",
+                  background: isBlocked
+                    ? "rgba(239, 68, 68, 0.25)"
+                    : isSelected
                     ? "rgba(37, 99, 235, 0.25)"
                     : isHovered
                     ? "rgba(245, 158, 11, 0.18)"
-                    : "transparent",
+                    : "rgba(255, 255, 255, 0.01)",
                   borderRadius: "2px",
                   transition: "border 0.15s, background 0.15s",
                   zIndex: isSelected ? 20 : isHovered ? 10 : 1,
                   boxSizing: "border-box",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                {isBlocked && (
+                  <span
+                    style={{
+                      fontSize: "7px",
+                      fontWeight: 700,
+                      color: "#dc2626",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      pointerEvents: "none",
+                      userSelect: "none",
+                    }}
+                  >
+                    BLOCKED
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>
       </div>
 
       {/* Selected plot modal */}
-      {selected && (
+      {selected && !showBlockForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex justify-between items-start">
               <h2 className="text-xl font-bold text-arcadia-800">
                 Villa {selected.villa}
+                {blockedVillas.has(selected.villa) && (
+                  <span className="ml-2 text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded">
+                    BLOCKED
+                  </span>
+                )}
               </h2>
               <button
                 onClick={() => setSelected(null)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
               >
-                \u2715
+                &times;
               </button>
             </div>
 
@@ -441,18 +530,151 @@ export default function MasterPlanPage() {
               </div>
             </div>
 
+            {/* Show blocking details if blocked */}
+            {blockedVillas.has(selected.villa) && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm space-y-1">
+                <div className="font-semibold text-red-800">Blocked By:</div>
+                <div>{blockedVillas.get(selected.villa)!.customerName}</div>
+                <div className="text-gray-600">{blockedVillas.get(selected.villa)!.customerPhone}</div>
+                {blockedVillas.get(selected.villa)!.customerEmail && (
+                  <div className="text-gray-600">{blockedVillas.get(selected.villa)!.customerEmail}</div>
+                )}
+                {blockedVillas.get(selected.villa)!.bookingAmount > 0 && (
+                  <div className="text-gray-600">
+                    Amount: &#8377;{blockedVillas.get(selected.villa)!.bookingAmount.toLocaleString("en-IN")}
+                  </div>
+                )}
+                {blockedVillas.get(selected.villa)!.notes && (
+                  <div className="text-gray-500 italic">{blockedVillas.get(selected.villa)!.notes}</div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3 pt-2">
+              {!blockedVillas.has(selected.villa) && (
+                <button
+                  onClick={() => setShowBlockForm(true)}
+                  className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-medium hover:bg-amber-600 transition"
+                >
+                  Block the Villa
+                </button>
+              )}
               <button
                 onClick={handleCreateSale}
                 className="flex-1 bg-arcadia-600 text-white py-2.5 rounded-lg font-medium hover:bg-arcadia-700 transition"
               >
-                Create Sale Entry
+                Sale Entry
               </button>
               <button
                 onClick={() => setSelected(null)}
                 className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Block Villa form modal */}
+      {selected && showBlockForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <h2 className="text-xl font-bold text-amber-700">
+                Block Villa {selected.villa}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowBlockForm(false);
+                  setBlockName("");
+                  setBlockPhone("");
+                  setBlockEmail("");
+                  setBlockAmount("");
+                  setBlockNotes("");
+                }}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={blockName}
+                  onChange={(e) => setBlockName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
+                  placeholder="Enter customer name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={blockPhone}
+                  onChange={(e) => setBlockPhone(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={blockEmail}
+                  onChange={(e) => setBlockEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
+                  placeholder="Enter email (optional)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Booking Amount (&#8377;)
+                </label>
+                <input
+                  type="number"
+                  value={blockAmount}
+                  onChange={(e) => setBlockAmount(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
+                  placeholder="Enter booking amount"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={blockNotes}
+                  onChange={(e) => setBlockNotes(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
+                  rows={2}
+                  placeholder="Any additional notes"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleBlockVilla}
+                disabled={!blockName.trim() || !blockPhone.trim()}
+                className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-medium hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm Blocking
+              </button>
+              <button
+                onClick={() => setShowBlockForm(false)}
+                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition"
+              >
+                Back
               </button>
             </div>
           </div>

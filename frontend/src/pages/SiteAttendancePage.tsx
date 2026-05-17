@@ -78,9 +78,7 @@ export default function SiteAttendancePage() {
   }
 
   // Check if user can see reports (Admin, Partner, or Accounting)
-  const canViewReports = currentUser?.roles.some((r) =>
-    ["ADMIN", "PARTNER", "ACCOUNTING"].includes(r.name)
-  );
+  const canViewReports = ["ADMIN", "PARTNER", "ACCOUNTING"].includes(currentUser?.role?.name ?? "");
 
   const visibleTabs: Tab[] = canViewReports
     ? ["capture", "submissions", "approvals", "reports"]
@@ -167,7 +165,7 @@ function CaptureTab({
     approvalChainService
       .getAll()
       .then((chains) => {
-        const userRoles = currentUser.roles?.map((r) => r.name) || [];
+        const userRoles = currentUser.role ? [currentUser.role.name] : [];
         // Find a chain that matches the user's role AND has all steps with users assigned
         const matched = chains.find(
           (c) =>
@@ -536,7 +534,7 @@ function CaptureTab({
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Your role: {currentUser?.roles?.map((r) => displayRole(r.name)).join(", ")}
+                  Your role: {currentUser?.role ? displayRole(currentUser.role.name) : "None"}
                 </p>
               </div>
             ) : (
@@ -771,7 +769,7 @@ function AttendanceCard({
   const [acting, setActing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const isAdmin = currentUser?.roles.some((r) => r.name === "ADMIN") ?? false;
+  const isAdmin = currentUser?.role?.name === "ADMIN";
 
   const handleAction = async (action: "APPROVED" | "REJECTED") => {
     setActing(true);

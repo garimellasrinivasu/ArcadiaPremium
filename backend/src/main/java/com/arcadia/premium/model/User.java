@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collections;
 
 @Entity
 @Table(name = "users")
@@ -36,13 +37,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean mustChangePassword = false;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles = new HashSet<>();
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
 
     /** Per-user page access keys (e.g. "SALE_ENTRY", "FINANCE_SPENT"). Empty = no access. ADMIN bypasses. */
     @ElementCollection(fetch = FetchType.EAGER)
@@ -74,8 +71,10 @@ public class User {
     public void setActive(boolean active) { this.active = active; }
     public boolean isMustChangePassword() { return mustChangePassword; }
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
-    public Set<Role> getRoles() { return roles; }
-    public void setRoles(Set<Role> roles) { this.roles = roles; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+    /** Convenience: returns single role as a Set for backward compatibility with Spring Security */
+    public Set<Role> getRoles() { return role != null ? Set.of(role) : Collections.emptySet(); }
     public Set<String> getAllowedPages() { return allowedPages; }
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public LocalDateTime getCreatedAt() { return createdAt; }
