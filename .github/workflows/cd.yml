@@ -19,6 +19,7 @@ jobs:
 
       # Verify BOTH CI workflows passed before deploying
       - name: Check all CI workflows passed
+        id: check_ci
         if: github.event_name != 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,16 +35,19 @@ jobs:
           echo "Frontend CI status: $FRONTEND_STATUS"
 
           if [ "$BACKEND_STATUS" != "success" ] || [ "$FRONTEND_STATUS" != "success" ]; then
-            echo "ERROR: Not all CI workflows have passed."
+            echo "Not all CI workflows have passed yet."
             echo "  Backend: $BACKEND_STATUS"
             echo "  Frontend: $FRONTEND_STATUS"
-            echo "Skipping deploy until both pass."
-            exit 1
+            echo "Skipping deploy for this trigger (waiting for the other to finish)."
+            echo "ready=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
           echo "Both CI workflows passed. Proceeding with deploy."
+          echo "ready=true" >> $GITHUB_OUTPUT
 
       - name: Copy Docker Compose to Server
+        if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -53,6 +57,7 @@ jobs:
           target: "~/arcadia-app"
 
       - name: Deploy via SSH
+        if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
