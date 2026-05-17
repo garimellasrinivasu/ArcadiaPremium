@@ -19,6 +19,12 @@ if [ -f "$HOME/.backup_secrets" ]; then
     source "$HOME/.backup_secrets"
 fi
 
+# Remote Sync Configuration
+export REMOTE_SYNC_ENABLED="true"
+export REMOTE_SERVER="192.168.1.9"
+export REMOTE_USER="ubuntu"  # Update with the correct username on 192.168.1.9
+export REMOTE_DIR="~/arcadia-backups-sync"
+
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 
@@ -33,6 +39,23 @@ docker exec -t $CONTAINER_NAME pg_dump -U $DB_USER $DB_NAME | gzip > "$BACKUP_FI
 
 if [ $? -eq 0 ]; then
     echo "Backup completed successfully: $BACKUP_FILE"
+    
+    # Sync to remote server if enabled
+    if [ "$REMOTE_SYNC_ENABLED" = "true" ] && [ -n "$REMOTE_SERVER" ] && [ -n "$REMOTE_USER" ]; then
+        echo "Syncing backup to remote server $REMOTE_SERVER..."
+        
+        # Ensure remote directory exists
+        ssh -o StrictHostKeyChecking=no "$REMOTE_USER@$REMOTE_SERVER" "mkdir -p $REMOTE_DIR" 2>/dev/null
+        
+        # Copy the backup file
+        scp -o StrictHostKeyChecking=no "$BACKUP_FILE" "$REMOTE_USER@$REMOTE_SERVER:$REMOTE_DIR/"
+        
+        if [ $? -eq 0 ]; then
+            echo "Successfully synced backup to $REMOTE_SERVER."
+        else
+            echo "Warning: Failed to sync backup to $REMOTE_SERVER. Check your SSH keys and permissions."
+        fi
+    fi
     
     # Clean up old backups
     echo "Cleaning up backups older than $RETENTION_DAYS days..."
