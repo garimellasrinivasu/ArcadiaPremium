@@ -11,9 +11,13 @@ RETENTION_DAYS=7
 # Fill these in to receive an email if the backup fails
 export ALERT_EMAIL="dinakar.anumolu@zohomail.com"
 export SMTP_USER="dinakar.anumolu@zohomail.com"
-export SMTP_PASS="6Ku5eLmjjEk5"
 export SMTP_HOST="smtp.zoho.com"
 export SMTP_PORT="587"
+
+# Load secure SMTP password from hidden server file
+if [ -f "$HOME/.backup_secrets" ]; then
+    source "$HOME/.backup_secrets"
+fi
 
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"

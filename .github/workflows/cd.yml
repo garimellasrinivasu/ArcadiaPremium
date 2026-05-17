@@ -59,11 +59,18 @@ jobs:
       - name: Deploy via SSH
         if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ZOHO_SMTP_PASSWORD
           script: |
+            # Securely inject SMTP password
+            echo "export SMTP_PASS=\"$ZOHO_SMTP_PASSWORD\"" > ~/.backup_secrets
+            chmod 600 ~/.backup_secrets
+            
             cd ~/arcadia-app
             # Login to registry
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
