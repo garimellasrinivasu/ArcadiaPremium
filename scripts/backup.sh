@@ -9,10 +9,10 @@ RETENTION_DAYS=7
 
 # Email Alert Configuration (Optional)
 # Fill these in to receive an email if the backup fails
-export ALERT_EMAIL=""
-export SMTP_USER=""
-export SMTP_PASS=""
-export SMTP_HOST="smtp.gmail.com"
+export ALERT_EMAIL="dinakar.anumolu@zohomail.com"
+export SMTP_USER="dinakar.anumolu@zohomail.com"
+export SMTP_PASS="6Ku5eLmjjEk5"
+export SMTP_HOST="smtp.zoho.com"
 export SMTP_PORT="587"
 
 # Create backup directory if it doesn't exist
