@@ -334,7 +334,7 @@ export default function FinanceSpentPage() {
 
   useEffect(() => {
     authService.getCurrentUser().then(setCurrentUser).catch(() => {});
-    api.get<Project[]>("/projects").then((r) => setProjects(r.data)).catch(() => {});
+    api.get<Project[]>("/projects/active").then((r) => setProjects(r.data)).catch(() => {});
     financeSpentService.getUserNames().then(setUserNames).catch(() => {});
     financeSpentService.getDistinctPaidTo().then(setPaidToOptions).catch(() => {});
     financeSpentService.getDistinctDescriptions().then(setDescriptionOptions).catch(() => {});
