@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { authService } from "../services/authService";
 import { financeSpentService } from "../services/financeSpentService";
 import type { FinanceSpentDto, CreateFinanceSpentRequest, UserName } from "../services/financeSpentService";
@@ -293,6 +293,98 @@ function EntryTab({
   const [imagePreview, setImagePreview] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Camera capture state
+  type ReceiptMode = "camera" | "upload";
+  const [receiptMode, setReceiptMode] = useState<ReceiptMode>("camera");
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { stopCamera(); };
+  }, [stopCamera]);
+
+  // When cameraActive becomes true and video element is mounted, attach stream
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      const video = videoRef.current;
+      video.srcObject = streamRef.current;
+      video.setAttribute("playsinline", "true");
+      video.muted = true;
+      video.play().catch((err) => {
+        console.error("Video play error:", err);
+      });
+    }
+  }, [cameraActive]);
+
+  async function startCamera() {
+    setCameraError("");
+    try {
+      // On Mac/desktop, don't force facingMode since there's typically only one camera
+      const constraints: MediaStreamConstraints = {
+        video: { width: { ideal: 1280 }, height: { ideal: 960 } },
+      };
+      // Try with environment facing first (mobile), fall back to any camera
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 960 } },
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+      streamRef.current = stream;
+      // Set active state - the useEffect above will attach stream to video element
+      setCameraActive(true);
+    } catch (err: any) {
+      setCameraError("Camera access denied or not available. Please allow camera access or use Upload mode.");
+      console.error("Camera error:", err);
+    }
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    // Ensure video has actual dimensions before capturing
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setCameraError("Camera not ready yet. Please wait a moment and try again.");
+      return;
+    }
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    const base64 = canvas.toDataURL("image/jpeg", 0.85);
+    setForm((prev) => ({ ...prev, receiptImageBase64: base64 }));
+    setImagePreview(base64);
+    stopCamera();
+  }
+
+  function clearImage() {
+    setImagePreview("");
+    setForm((p) => ({ ...p, receiptImageBase64: "" }));
+    stopCamera();
+  }
+
+  function handleModeSwitch(mode: ReceiptMode) {
+    stopCamera();
+    setReceiptMode(mode);
+    setCameraError("");
+  }
+
   // Build "Who Paid" options from user names
   const whoPaidOptions = userNames.map((u) => u.name);
 
@@ -335,6 +427,7 @@ function EntryTab({
         remarks: "",
       });
       setImagePreview("");
+      stopCamera();
       setTimeout(() => {
         setSuccess("");
         onSuccess();
@@ -415,18 +508,85 @@ function EntryTab({
 
       {/* Receipt Image */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Receipt (Image)</label>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2 text-sm border border-arcadia-300 text-arcadia-700 rounded-lg hover:bg-arcadia-50">
-            Upload / Capture Receipt
+        <label className="block text-sm font-medium text-gray-700 mb-2">Payment Receipt (Image)</label>
+
+        {/* Mode Toggle */}
+        <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1 w-fit">
+          <button type="button" onClick={() => handleModeSwitch("camera")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${receiptMode === "camera" ? "bg-white text-arcadia-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            📷 Capture
           </button>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
-          {imagePreview && <span className="text-xs text-green-600">Image attached</span>}
+          <button type="button" onClick={() => handleModeSwitch("upload")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${receiptMode === "upload" ? "bg-white text-arcadia-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            📁 Upload
+          </button>
         </div>
+
+        {/* Camera Mode */}
+        {receiptMode === "camera" && !imagePreview && (
+          <div className="space-y-3">
+            {cameraError && (
+              <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">{cameraError}</div>
+            )}
+            {!cameraActive ? (
+              <button type="button" onClick={startCamera}
+                className="flex items-center gap-2 px-5 py-3 text-sm font-medium border-2 border-dashed border-arcadia-300 text-arcadia-700 rounded-xl hover:bg-arcadia-50 hover:border-arcadia-400 transition w-full justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Open Camera to Capture Receipt
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative rounded-xl overflow-hidden border-2 border-arcadia-300 bg-black">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-64 object-cover" />
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={capturePhoto}
+                    className="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Capture
+                  </button>
+                  <button type="button" onClick={stopCamera}
+                    className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+        )}
+
+        {/* Upload Mode */}
+        {receiptMode === "upload" && !imagePreview && (
+          <div>
+            <button type="button" onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-2 px-5 py-3 text-sm font-medium border-2 border-dashed border-arcadia-300 text-arcadia-700 rounded-xl hover:bg-arcadia-50 hover:border-arcadia-400 transition w-full justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Choose File to Upload
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </div>
+        )}
+
+        {/* Image Preview (both modes) */}
         {imagePreview && (
-          <div className="mt-2 relative inline-block">
-            <img src={imagePreview} alt="Receipt" className="max-h-40 rounded-lg border" />
-            <button type="button" onClick={() => { setImagePreview(""); setForm((p) => ({ ...p, receiptImageBase64: "" })); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">x</button>
+          <div className="mt-2">
+            <div className="relative inline-block">
+              <img src={imagePreview} alt="Receipt" className="max-h-48 rounded-xl border-2 border-green-300 shadow-sm" />
+              <button type="button" onClick={clearImage}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center shadow hover:bg-red-600 transition">
+                ✕
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-green-600 font-medium">Receipt image attached</p>
           </div>
         )}
       </div>

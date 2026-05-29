@@ -50,4 +50,15 @@ export const saleService = {
   async delete(id: number): Promise<void> {
     await api.delete(`/sales/${id}`);
   },
+
+  /** Update an individual payment entry (admin only) */
+  async updatePaymentEntry(saleId: number, paymentId: number, payment: AddPaymentRequest): Promise<SaleEntry> {
+    const { data } = await api.put<SaleEntry>(`/sales/${saleId}/payments/${paymentId}`, payment);
+    return data;
+  },
+
+  /** Delete an individual payment entry (admin only) */
+  async deletePaymentEntry(saleId: number, paymentId: number): Promise<void> {
+    await api.delete(`/sales/${saleId}/payments/${paymentId}`);
+  },
 };

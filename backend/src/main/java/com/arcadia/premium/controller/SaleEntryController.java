@@ -8,6 +8,7 @@ import com.arcadia.premium.dto.UpdatePaymentRequest;
 import com.arcadia.premium.service.SaleEntryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -74,9 +75,31 @@ public class SaleEntryController {
         return ResponseEntity.ok(saleEntryService.getPayments(id));
     }
 
+    /** Delete a sale entry — admin only */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteSaleEntry(@PathVariable Long id) {
         saleEntryService.deleteSaleEntry(id);
         return ResponseEntity.ok(Map.of("message", "Sale entry deleted successfully"));
+    }
+
+    /** Update an individual payment entry — admin only */
+    @PutMapping("/{saleId}/payments/{paymentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SaleEntryDto> updatePaymentEntry(
+            @PathVariable Long saleId,
+            @PathVariable Long paymentId,
+            @Valid @RequestBody AddPaymentRequest request) {
+        return ResponseEntity.ok(saleEntryService.updatePaymentEntry(saleId, paymentId, request));
+    }
+
+    /** Delete an individual payment entry — admin only */
+    @DeleteMapping("/{saleId}/payments/{paymentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deletePaymentEntry(
+            @PathVariable Long saleId,
+            @PathVariable Long paymentId) {
+        saleEntryService.deletePaymentEntry(saleId, paymentId);
+        return ResponseEntity.ok(Map.of("message", "Payment entry deleted successfully"));
     }
 }

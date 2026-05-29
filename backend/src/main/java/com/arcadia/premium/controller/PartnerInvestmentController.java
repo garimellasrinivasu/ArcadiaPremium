@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/partner-investments")
-@PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'PARTNER_INVESTMENT')")
+@PreAuthorize("hasAnyRole('ADMIN','PARTNER','SALES','SUPERVISOR','OFFICE_ASSISTANT') or @pageAccess.hasAccess(authentication, 'PARTNER_INVESTMENT')")
 public class PartnerInvestmentController {
 
     private final PartnerInvestmentService service;

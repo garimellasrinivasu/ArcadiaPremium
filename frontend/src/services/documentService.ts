@@ -109,6 +109,18 @@ export const documentService = {
     return `${origin}/api/documents/public/${token}`;
   },
 
+  /** Get PPTX slide count */
+  async getSlideCount(id: number): Promise<{ totalSlides: number }> {
+    const { data } = await api.get(`/documents/${id}/slides`);
+    return data;
+  },
+
+  /** Get URL for a single slide image (rendered as JPEG) */
+  getSlideImageUrl(id: number, slideIndex: number, width = 960): string {
+    const base = api.defaults.baseURL || "/api";
+    return `${base}/documents/${id}/slides/${slideIndex}?width=${width}`;
+  },
+
   /** Delete a document (admin only) */
   async delete(id: number): Promise<void> {
     await api.delete(`/documents/${id}`);

@@ -167,6 +167,61 @@ public class SaleEntryService {
         repository.deleteById(id);
     }
 
+    /**
+     * Update an individual payment entry and recalculate sale balances.
+     */
+    @Transactional
+    public SaleEntryDto updatePaymentEntry(Long saleEntryId, Long paymentId, AddPaymentRequest request) {
+        SaleEntry entry = repository.findById(saleEntryId)
+                .orElseThrow(() -> new RuntimeException("Sale entry not found with id: " + saleEntryId));
+
+        PaymentEntry payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment entry not found with id: " + paymentId));
+
+        if (!payment.getSaleEntry().getId().equals(saleEntryId)) {
+            throw new RuntimeException("Payment does not belong to this sale entry");
+        }
+
+        payment.setAmount(request.getAmount());
+        if (request.getPaymentDate() != null) payment.setPaymentDate(request.getPaymentDate());
+        if (request.getPaymentMode() != null) payment.setPaymentMode(request.getPaymentMode());
+        payment.setReferenceNumber(request.getReferenceNumber());
+        payment.setRemarks(request.getRemarks());
+
+        paymentRepository.save(payment);
+
+        // Recalculate totals from all payments
+        BigDecimal totalPaid = paymentRepository.sumBySaleEntryId(saleEntryId);
+        calculateTotals(entry, totalPaid);
+
+        return SaleEntryDto.fromEntity(repository.save(entry));
+    }
+
+    /**
+     * Delete an individual payment entry and recalculate sale balances.
+     */
+    @Transactional
+    public void deletePaymentEntry(Long saleEntryId, Long paymentId) {
+        SaleEntry entry = repository.findById(saleEntryId)
+                .orElseThrow(() -> new RuntimeException("Sale entry not found with id: " + saleEntryId));
+
+        PaymentEntry payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment entry not found with id: " + paymentId));
+
+        if (!payment.getSaleEntry().getId().equals(saleEntryId)) {
+            throw new RuntimeException("Payment does not belong to this sale entry");
+        }
+
+        entry.getPayments().remove(payment);
+        paymentRepository.delete(payment);
+
+        // Recalculate totals from remaining payments
+        BigDecimal totalPaid = paymentRepository.sumBySaleEntryId(saleEntryId);
+        calculateTotals(entry, totalPaid);
+
+        repository.save(entry);
+    }
+
     // --- Private helpers ---
 
     private void applyBasicFields(SaleEntry entry, CreateSaleEntryRequest req) {

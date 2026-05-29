@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { saleService } from "../services/saleService";
 import { projectService } from "../services/projectService";
-import type { SaleEntry, CreateSaleEntryRequest, PaymentEntry, AddPaymentRequest } from "../types/user";
+import { authService } from "../services/authService";
+import type { SaleEntry, CreateSaleEntryRequest, PaymentEntry, AddPaymentRequest, User } from "../types/user";
 const SALE_INITIATION_OPTIONS = ["SPG", "Praneeth", "SPG-Praneeth"];
 const TYPE_OPTIONS = ["OTP", "General", "OTP-General"];
 const PERSONAL_COMPANY = ["Personal", "Company"];
@@ -97,6 +98,25 @@ export default function SaleEntryPage() {
   const [sbuaMultiplier, setSbuaMultiplier] = useState(DEFAULT_SBUA_MULTIPLIER);
   const [searchParams, setSearchParams] = useSearchParams();
   const [projectNames, setProjectNames] = useState<string[]>([]);
+
+  // Current user / admin detection
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const isAdmin = currentUser?.role?.name === "ADMIN";
+
+  // Edit payment inline state
+  const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
+  const [editPaymentForm, setEditPaymentForm] = useState<AddPaymentRequest>({
+    amount: 0, paymentDate: "", paymentMode: "", referenceNumber: "", remarks: "",
+  });
+
+  // Delete confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "sale" | "payment"; saleId: number; paymentId?: number; label: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Load current user
+  useEffect(() => {
+    authService.getCurrentUser().then(setCurrentUser).catch(() => {});
+  }, []);
 
   // Load projects from API
   useEffect(() => {
@@ -297,6 +317,64 @@ export default function SaleEntryPage() {
     setSbuaMultiplier(DEFAULT_SBUA_MULTIPLIER);
   };
 
+  // --- Admin: Delete sale entry ---
+  const handleDeleteSale = async (saleId: number) => {
+    setDeleteLoading(true);
+    try {
+      await saleService.delete(saleId);
+      setSuccess("Sale entry deleted successfully");
+      setDeleteConfirm(null);
+      loadEntries();
+    } catch { setError("Failed to delete sale entry"); }
+    finally { setDeleteLoading(false); }
+  };
+
+  // --- Admin: Start editing a payment ---
+  const startEditPayment = (p: PaymentEntry) => {
+    setEditingPaymentId(p.id);
+    setEditPaymentForm({
+      amount: p.amount,
+      paymentDate: p.paymentDate || "",
+      paymentMode: p.paymentMode || "",
+      referenceNumber: p.referenceNumber || "",
+      remarks: p.remarks || "",
+    });
+  };
+
+  // --- Admin: Save edited payment ---
+  const handleSavePaymentEdit = async () => {
+    if (!paymentModal || !editingPaymentId) return;
+    if (!editPaymentForm.amount || editPaymentForm.amount <= 0) { setError("Amount must be positive"); return; }
+    setPaymentSaving(true);
+    try {
+      const updated = await saleService.updatePaymentEntry(paymentModal.id, editingPaymentId, editPaymentForm);
+      setSuccess("Payment updated successfully");
+      setEditingPaymentId(null);
+      setPaymentModal(updated);
+      const payments = await saleService.getPayments(paymentModal.id);
+      setPaymentHistory(payments);
+      loadEntries();
+    } catch { setError("Failed to update payment"); }
+    finally { setPaymentSaving(false); }
+  };
+
+  // --- Admin: Delete a payment entry ---
+  const handleDeletePayment = async (saleId: number, paymentId: number) => {
+    setDeleteLoading(true);
+    try {
+      await saleService.deletePaymentEntry(saleId, paymentId);
+      setSuccess("Payment deleted successfully");
+      setDeleteConfirm(null);
+      // Refresh the payment modal data
+      const updatedSale = await saleService.getById(saleId);
+      setPaymentModal(updatedSale);
+      const payments = await saleService.getPayments(saleId);
+      setPaymentHistory(payments);
+      loadEntries();
+    } catch { setError("Failed to delete payment"); }
+    finally { setDeleteLoading(false); }
+  };
+
   // Stats
   const totalSales = entries.length;
   const totalConsideration = entries.reduce((s, e) => s + (e.grandTotal || e.totalSalesConsideration || 0), 0);
@@ -449,7 +527,7 @@ export default function SaleEntryPage() {
               </div>
             </div>
 
-            {/* Row 4: Land Extent, Multiplier */}
+            {/* Row 4: Land Extent, Multiplier, SBUA */}
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Land Extent (Sq.yards)</label>
@@ -518,18 +596,20 @@ export default function SaleEntryPage() {
             </div>
 
             {/* Row 5: Base Price, Amenities */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Base Price per Sft (₹)</label>
-                <input type="number" step="0.01" value={form.basePricePerSft ?? ""} onChange={(e) => handleFieldChange("basePricePerSft", e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-arcadia-500 outline-none" />
+            {(
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Base Price per Sft (₹)</label>
+                  <input type="number" step="0.01" value={form.basePricePerSft ?? ""} onChange={(e) => handleFieldChange("basePricePerSft", e.target.value ? parseFloat(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-arcadia-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Amenities & Other Premiums (notes)</label>
+                  <input type="text" value={form.amenitiesPremiums || ""} onChange={(e) => handleFieldChange("amenitiesPremiums", e.target.value)}
+                    placeholder="e.g. Corner premium, park-facing etc." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-arcadia-500 outline-none" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Amenities & Other Premiums (notes)</label>
-                <input type="text" value={form.amenitiesPremiums || ""} onChange={(e) => handleFieldChange("amenitiesPremiums", e.target.value)}
-                  placeholder="e.g. Corner premium, park-facing etc." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-arcadia-500 outline-none" />
-              </div>
-            </div>
+            )}
 
             {/* ===== ADDITIONAL CHARGES SECTION ===== */}
             <div className="border border-orange-200 rounded-xl bg-orange-50/50 p-4">
@@ -598,7 +678,7 @@ export default function SaleEntryPage() {
               )}
             </div>
 
-            {/* ===== VILLA VALUE BREAKDOWN ===== */}
+            {/* ===== VALUE BREAKDOWN ===== */}
             {(form.sbuaSft && form.basePricePerSft) ? (
               <div className="border border-blue-200 rounded-xl bg-blue-50/60 p-4">
                 <h4 className="text-sm font-bold text-blue-800 mb-3">Villa Value Breakdown</h4>
@@ -649,7 +729,7 @@ export default function SaleEntryPage() {
               </div>
             </div>
 
-            {/* ===== TOTAL GRAND VILLA VALUE SUMMARY ===== */}
+            {/* ===== TOTAL GRAND VALUE SUMMARY ===== */}
             {(form.sbuaSft && form.basePricePerSft) ? (
               <div className="bg-gradient-to-r from-arcadia-50 to-blue-50 border-2 border-arcadia-300 rounded-xl p-5">
                 <div className="grid grid-cols-3 gap-6 text-center">
@@ -698,7 +778,8 @@ export default function SaleEntryPage() {
               <tr className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">S.No</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Villa #</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Project</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Villa/Plot #</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Facing</th>
@@ -713,13 +794,14 @@ export default function SaleEntryPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={13} className="text-center py-10 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={14} className="text-center py-10 text-gray-400">Loading...</td></tr>
               ) : entries.length === 0 ? (
-                <tr><td colSpan={13} className="text-center py-10 text-gray-400">No sale entries found. Click "+ New Sale Entry" to add one.</td></tr>
+                <tr><td colSpan={14} className="text-center py-10 text-gray-400">No sale entries found. Click "+ New Sale Entry" to add one.</td></tr>
               ) : entries.map((entry) => (
                 <tr key={entry.id} className="border-b hover:bg-gray-50 transition">
                   <td className="px-3 py-3 text-gray-700">{entry.serialNo}</td>
                   <td className="px-3 py-3 text-gray-700">{entry.bookingDate}</td>
+                  <td className="px-3 py-3 text-gray-600 text-xs">{entry.project || "—"}</td>
                   <td className="px-3 py-3 text-gray-500 font-medium">{entry.tokenNumber || "—"}</td>
                   <td className="px-3 py-3 text-gray-800 font-medium">{entry.customerName}</td>
                   <td className="px-3 py-3">
@@ -746,6 +828,11 @@ export default function SaleEntryPage() {
                         className="px-2 py-1 text-xs bg-green-50 text-green-600 rounded hover:bg-green-100 transition">Payment</button>
                       <button onClick={() => handleEdit(entry)} title="Edit"
                         className="px-2 py-1 text-xs bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100 transition">Edit</button>
+                      {isAdmin && (
+                        <button onClick={() => setDeleteConfirm({ type: "sale", saleId: entry.id, label: `Sale #${entry.serialNo} — ${entry.customerName}` })}
+                          title="Delete Sale Entry"
+                          className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition">Delete</button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -855,25 +942,78 @@ export default function SaleEntryPage() {
                         <th className="text-right px-2 py-2 text-gray-600">Amount</th>
                         <th className="text-left px-2 py-2 text-gray-600">Ref #</th>
                         <th className="text-left px-2 py-2 text-gray-600">Remarks</th>
+                        {isAdmin && <th className="text-center px-2 py-2 text-gray-600">Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {paymentHistory.map((p, i) => (
-                        <tr key={p.id} className="border-b hover:bg-gray-50">
-                          <td className="px-2 py-1.5">{i + 1}</td>
-                          <td className="px-2 py-1.5">{p.paymentDate}</td>
-                          <td className="px-2 py-1.5">{p.paymentMode || "—"}</td>
-                          <td className="px-2 py-1.5 text-right font-medium text-green-700">{formatCurrency(p.amount)}</td>
-                          <td className="px-2 py-1.5 text-gray-500">{p.referenceNumber || "—"}</td>
-                          <td className="px-2 py-1.5 text-gray-500">{p.remarks || "—"}</td>
-                        </tr>
+                        editingPaymentId === p.id ? (
+                          /* Inline edit row */
+                          <tr key={p.id} className="border-b bg-yellow-50">
+                            <td className="px-2 py-1.5">{i + 1}</td>
+                            <td className="px-2 py-1.5">
+                              <input type="date" value={editPaymentForm.paymentDate || ""} onChange={(e) => setEditPaymentForm(f => ({ ...f, paymentDate: e.target.value }))}
+                                className="w-full px-1 py-0.5 border rounded text-xs" />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <select value={editPaymentForm.paymentMode || ""} onChange={(e) => setEditPaymentForm(f => ({ ...f, paymentMode: e.target.value }))}
+                                className="w-full px-1 py-0.5 border rounded text-xs bg-white">
+                                <option value="">--</option>
+                                {PAYMENT_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input type="number" step="0.01" value={editPaymentForm.amount || ""} onChange={(e) => setEditPaymentForm(f => ({ ...f, amount: e.target.value ? parseFloat(e.target.value) : 0 }))}
+                                className="w-full px-1 py-0.5 border rounded text-xs text-right" />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input type="text" value={editPaymentForm.referenceNumber || ""} onChange={(e) => setEditPaymentForm(f => ({ ...f, referenceNumber: e.target.value }))}
+                                className="w-full px-1 py-0.5 border rounded text-xs" />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input type="text" value={editPaymentForm.remarks || ""} onChange={(e) => setEditPaymentForm(f => ({ ...f, remarks: e.target.value }))}
+                                className="w-full px-1 py-0.5 border rounded text-xs" />
+                            </td>
+                            <td className="px-2 py-1.5 text-center">
+                              <div className="flex justify-center gap-1">
+                                <button onClick={handleSavePaymentEdit} disabled={paymentSaving}
+                                  className="px-1.5 py-0.5 text-[10px] bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+                                  {paymentSaving ? "..." : "Save"}
+                                </button>
+                                <button onClick={() => setEditingPaymentId(null)}
+                                  className="px-1.5 py-0.5 text-[10px] bg-gray-200 text-gray-600 rounded hover:bg-gray-300">Cancel</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          /* Normal display row */
+                          <tr key={p.id} className="border-b hover:bg-gray-50">
+                            <td className="px-2 py-1.5">{i + 1}</td>
+                            <td className="px-2 py-1.5">{p.paymentDate}</td>
+                            <td className="px-2 py-1.5">{p.paymentMode || "—"}</td>
+                            <td className="px-2 py-1.5 text-right font-medium text-green-700">{formatCurrency(p.amount)}</td>
+                            <td className="px-2 py-1.5 text-gray-500">{p.referenceNumber || "—"}</td>
+                            <td className="px-2 py-1.5 text-gray-500">{p.remarks || "—"}</td>
+                            {isAdmin && (
+                              <td className="px-2 py-1.5 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <button onClick={() => startEditPayment(p)} title="Edit Payment"
+                                    className="px-1.5 py-0.5 text-[10px] bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100">Edit</button>
+                                  <button onClick={() => setDeleteConfirm({ type: "payment", saleId: paymentModal!.id, paymentId: p.id, label: `Payment of ${formatCurrency(p.amount)} on ${p.paymentDate}` })}
+                                    title="Delete Payment"
+                                    className="px-1.5 py-0.5 text-[10px] bg-red-50 text-red-600 rounded hover:bg-red-100">Del</button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        )
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="bg-green-50 font-semibold">
                         <td colSpan={3} className="px-2 py-2 text-right text-green-800">Total Received:</td>
                         <td className="px-2 py-2 text-right text-green-800">{formatCurrency(paymentHistory.reduce((s, p) => s + p.amount, 0))}</td>
-                        <td colSpan={2}></td>
+                        <td colSpan={isAdmin ? 3 : 2}></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -932,6 +1072,43 @@ export default function SaleEntryPage() {
                 <button onClick={() => setPaymentModal(null)}
                   className="px-5 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Close</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== DELETE CONFIRMATION MODAL ===== */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => !deleteLoading && setDeleteConfirm(null)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 text-lg">!</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  {deleteConfirm.type === "sale" ? "Delete Sale Entry" : "Delete Payment"}
+                </h3>
+                <p className="text-sm text-gray-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 mb-1">Are you sure you want to delete:</p>
+            <p className="text-sm font-semibold text-red-700 bg-red-50 rounded-lg px-3 py-2 mb-4">{deleteConfirm.label}</p>
+            {deleteConfirm.type === "sale" && (
+              <p className="text-xs text-gray-500 mb-4">All associated payment entries will also be permanently deleted.</p>
+            )}
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDeleteConfirm(null)} disabled={deleteLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={() => {
+                  if (deleteConfirm.type === "sale") handleDeleteSale(deleteConfirm.saleId);
+                  else if (deleteConfirm.paymentId) handleDeletePayment(deleteConfirm.saleId, deleteConfirm.paymentId);
+                }} disabled={deleteLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
             </div>
           </div>
         </div>

@@ -513,19 +513,60 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
           )}
 
           {/* Signature Blocks */}
-          <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-between", gap: "20px", pageBreakInside: "avoid" }}>
-            {sigData.map(s => (
-              <div key={s.name} style={{ textAlign: "center", flex: 1 }}>
-                {s.sig ? <img src={s.sig} alt={`${s.name} signature`} style={{ maxHeight: "50px", marginBottom: "-45px", display: "block", marginLeft: "auto", marginRight: "auto" }} /> : <div style={{ height: "50px" }} />}
-                <div style={{ borderTop: "0.5px solid #0a2540", marginTop: "50px", paddingTop: "4px", textAlign: "center" }}>
-                  <div style={{ fontWeight: 700, fontSize: "10px", color: "#0a2540" }}>{s.name}</div>
-                  <div style={{ fontSize: "8px", color: "#6b7280", marginTop: "1px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {s.isInvestor ? "Investment Partner" : "Partner"}
-                  </div>
+          {(() => {
+            const isKalpavruksha = entry.projectName === "Kalpavruksha Developers";
+
+            if (isKalpavruksha) {
+              // Kalpavruksha: Prakash N (Partner) + selected investing partner name
+              const investorName = entry.partnerName || "Investing Partner";
+              const isPrakashInvestor = investorName.toLowerCase().includes("prakash");
+              const prakashSig = entry.partner1Signature;
+              const investorSig = isPrakashInvestor ? entry.partner1Signature
+                : investorName.toLowerCase().includes("suresh") ? entry.partner2Signature
+                : investorName.toLowerCase().includes("garimella") || investorName.toLowerCase().includes("srinivas") ? entry.partner3Signature
+                : null;
+
+              const sigBlocks = isPrakashInvestor
+                ? [{ name: "Prakash N", label: "Partner / Investment Partner", sig: prakashSig }]
+                : [
+                    { name: "Prakash N", label: "Partner", sig: prakashSig },
+                    { name: investorName, label: "Investment Partner", sig: investorSig },
+                  ];
+
+              return (
+                <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-between", gap: "20px", pageBreakInside: "avoid" }}>
+                  {sigBlocks.map(s => (
+                    <div key={s.name} style={{ textAlign: "center", flex: 1 }}>
+                      {s.sig ? <img src={s.sig} alt={`${s.name} signature`} style={{ maxHeight: "50px", marginBottom: "-45px", display: "block", marginLeft: "auto", marginRight: "auto" }} /> : <div style={{ height: "50px" }} />}
+                      <div style={{ borderTop: "0.5px solid #0a2540", marginTop: "50px", paddingTop: "4px", textAlign: "center" }}>
+                        <div style={{ fontWeight: 700, fontSize: "10px", color: "#0a2540" }}>{s.name}</div>
+                        <div style={{ fontSize: "8px", color: "#6b7280", marginTop: "1px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          {s.label}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              );
+            }
+
+            // Other projects: show all project partners (original behavior)
+            return (
+              <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-between", gap: "20px", pageBreakInside: "avoid" }}>
+                {sigData.map(s => (
+                  <div key={s.name} style={{ textAlign: "center", flex: 1 }}>
+                    {s.sig ? <img src={s.sig} alt={`${s.name} signature`} style={{ maxHeight: "50px", marginBottom: "-45px", display: "block", marginLeft: "auto", marginRight: "auto" }} /> : <div style={{ height: "50px" }} />}
+                    <div style={{ borderTop: "0.5px solid #0a2540", marginTop: "50px", paddingTop: "4px", textAlign: "center" }}>
+                      <div style={{ fontWeight: 700, fontSize: "10px", color: "#0a2540" }}>{s.name}</div>
+                      <div style={{ fontSize: "8px", color: "#6b7280", marginTop: "1px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        {s.isInvestor ? "Investment Partner" : "Partner"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
           {/* Footer */}
           <div style={{ marginTop: "20px", textAlign: "center", fontSize: "8px", color: "#6b7280", letterSpacing: "0.4px", borderTop: "0.5px solid #c9a961", paddingTop: "6px" }}>
@@ -602,6 +643,7 @@ function EntryTab({ projects, onSuccess }: { projects: Project[]; onSuccess: () 
     remarks: "",
   });
   const [saving, setSaving] = useState(false);
+  const [otherPartner, setOtherPartner] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [imagePreview, setImagePreview] = useState("");
@@ -618,6 +660,7 @@ function EntryTab({ projects, onSuccess }: { projects: Project[]; onSuccess: () 
         const newPartners = getProjectPartners(value as string);
         if (!newPartners.includes(prev.partnerName)) {
           updated.partnerName = "";
+          setOtherPartner(false);
         }
       }
       return updated;
@@ -648,6 +691,7 @@ function EntryTab({ projects, onSuccess }: { projects: Project[]; onSuccess: () 
       await partnerInvestmentService.create(form);
       setSuccess("Investment entry submitted for partner approval!");
       setForm({ projectName: "", partnerName: "", investmentDate: toISODate(new Date()), amount: 0, paymentMode: "", referenceNo: "", bankName: "", accountDetails: "", transactionId: "", description: "", purpose: "", receiptImageBase64: "", remarks: "" });
+      setOtherPartner(false);
       setImagePreview("");
       setTimeout(() => { setSuccess(""); onSuccess(); }, 1500);
     } catch (err: any) {
@@ -670,10 +714,34 @@ function EntryTab({ projects, onSuccess }: { projects: Project[]; onSuccess: () 
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Investing Partner <span className="text-red-500">*</span></label>
-          <select value={form.partnerName} onChange={(e) => handleChange("partnerName", e.target.value)} required className="w-full px-3 py-2 border rounded-lg text-sm">
+          <select
+            value={otherPartner ? "__OTHER__" : form.partnerName}
+            onChange={(e) => {
+              if (e.target.value === "__OTHER__") {
+                setOtherPartner(true);
+                handleChange("partnerName", "");
+              } else {
+                setOtherPartner(false);
+                handleChange("partnerName", e.target.value);
+              }
+            }}
+            className="w-full px-3 py-2 border rounded-lg text-sm"
+          >
             <option value="">Select Partner</option>
             {getProjectPartners(form.projectName || "").map((p) => <option key={p} value={p}>{p}</option>)}
+            <option value="__OTHER__">Other (Enter Name)</option>
           </select>
+          {otherPartner && (
+            <input
+              type="text"
+              value={form.partnerName}
+              onChange={(e) => handleChange("partnerName", e.target.value)}
+              placeholder="Enter partner name"
+              required
+              autoFocus
+              className="w-full mt-2 px-3 py-2 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 outline-none bg-orange-50"
+            />
+          )}
         </div>
       </div>
 

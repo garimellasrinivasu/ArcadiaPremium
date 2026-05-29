@@ -120,12 +120,31 @@ function FileViewerModal({
   const [xlsxActiveSheet, setXlsxActiveSheet] = useState(0);
   const [xlsxAllHtml, setXlsxAllHtml] = useState<Record<string, string>>({});
 
+  // PPTX slide viewer state
+  const [pptCurrentSlide, setPptCurrentSlide] = useState(0);
+  const [pptTotalSlides, setPptTotalSlides] = useState(0);
+  const [pptLoading, setPptLoading] = useState(false);
+  const [pptSlideUrl, setPptSlideUrl] = useState<string | null>(null);
+  const [pptSlideLoading, setPptSlideLoading] = useState(false);
+  const [pptFullscreen, setPptFullscreen] = useState(false);
+  const [pptControlsVisible, setPptControlsVisible] = useState(false);
+  const pptFullscreenRef = useRef<HTMLDivElement>(null);
+  const pptMouseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // General viewer fullscreen state (for PDF, XLSX, DOCX, Images)
+  const [viewerFullscreen, setViewerFullscreen] = useState(false);
+  const [viewerControlsVisible, setViewerControlsVisible] = useState(false);
+  const viewerFullscreenRef = useRef<HTMLDivElement>(null);
+  const viewerMouseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // DOCX rendered HTML state
+  const [docxHtml, setDocxHtml] = useState<string>("");
+
   const isImage = doc.contentType.startsWith("image/");
   const isPdf = doc.contentType === "application/pdf";
   const isDocx = doc.contentType.includes("wordprocessingml");
   const isPpt = doc.contentType.includes("presentation") || doc.contentType.includes("powerpoint");
   const isXlsx = doc.contentType.includes("spreadsheetml") || doc.contentType.includes("ms-excel");
-  const isOfficeDoc = isDocx || isPpt; // XLSX is now rendered inline, not downloaded
 
   // Navigation: find current index and prev/next docs
   const currentIndex = allDocs.findIndex((d) => d.id === doc.id);
@@ -139,17 +158,119 @@ function FileViewerModal({
     if (hasNext) onNavigate(allDocs[currentIndex + 1]);
   }
 
-  // Keyboard navigation: left/right arrows, Escape to close
+  // Keyboard navigation: left/right arrows, Escape to close (or exit fullscreen first)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
       else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
-      else if (e.key === "Escape") { e.preventDefault(); onClose(); }
+      else if (e.key === "Escape") {
+        e.preventDefault();
+        if (pptFullscreen) { setPptFullscreen(false); }
+        else if (viewerFullscreen) { setViewerFullscreen(false); }
+        else { onClose(); }
+      }
+      else if (e.key === "f" || e.key === "F") {
+        if (e.target instanceof HTMLInputElement) return;
+        e.preventDefault();
+        // F key toggles fullscreen for PPTX
+        if (isPpt && pptTotalSlides > 0) {
+          setPptFullscreen((v) => !v);
+        }
+        // F key toggles fullscreen for PDF, XLSX, DOCX, Images
+        else if (isPdf || isXlsx || isDocx || isImage) {
+          setViewerFullscreen((v) => !v);
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, allDocs.length]);
+  }, [currentIndex, allDocs.length, pptFullscreen, viewerFullscreen, isPpt, pptTotalSlides, isPdf, isXlsx, isDocx, isImage]);
+
+  // Enter/exit native browser fullscreen when pptFullscreen toggles
+  useEffect(() => {
+    const el = pptFullscreenRef.current;
+    if (!el) return;
+
+    if (pptFullscreen) {
+      // Enter native fullscreen
+      const enterFS = el.requestFullscreen?.bind(el)
+        || (el as any).webkitRequestFullscreen?.bind(el)
+        || (el as any).msRequestFullscreen?.bind(el);
+      if (enterFS) enterFS().catch(() => {});
+      // Show controls briefly on enter
+      setPptControlsVisible(true);
+      pptMouseTimer.current = setTimeout(() => setPptControlsVisible(false), 3000);
+    } else {
+      // Exit native fullscreen if currently in it
+      if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+        const exitFS = document.exitFullscreen?.bind(document)
+          || (document as any).webkitExitFullscreen?.bind(document)
+          || (document as any).msExitFullscreen?.bind(document);
+        if (exitFS) exitFS().catch(() => {});
+      }
+    }
+
+    return () => {
+      if (pptMouseTimer.current) clearTimeout(pptMouseTimer.current);
+    };
+  }, [pptFullscreen]);
+
+  // Sync state if user exits fullscreen via browser Escape (not our handler)
+  useEffect(() => {
+    function onFsChange() {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        setPptFullscreen(false);
+        setViewerFullscreen(false);
+      }
+    }
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
+
+  // Enter/exit native browser fullscreen for general viewer (PDF, XLSX, DOCX, Images)
+  useEffect(() => {
+    const el = viewerFullscreenRef.current;
+    if (!el) return;
+
+    if (viewerFullscreen) {
+      const enterFS = el.requestFullscreen?.bind(el)
+        || (el as any).webkitRequestFullscreen?.bind(el)
+        || (el as any).msRequestFullscreen?.bind(el);
+      if (enterFS) enterFS().catch(() => {});
+      setViewerControlsVisible(true);
+      viewerMouseTimer.current = setTimeout(() => setViewerControlsVisible(false), 3000);
+    } else {
+      if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+        const exitFS = document.exitFullscreen?.bind(document)
+          || (document as any).webkitExitFullscreen?.bind(document)
+          || (document as any).msExitFullscreen?.bind(document);
+        if (exitFS) exitFS().catch(() => {});
+      }
+    }
+
+    return () => {
+      if (viewerMouseTimer.current) clearTimeout(viewerMouseTimer.current);
+    };
+  }, [viewerFullscreen]);
+
+  // Mouse movement shows controls in general fullscreen, then auto-hides after 3s
+  function handleViewerFullscreenMouseMove() {
+    setViewerControlsVisible(true);
+    if (viewerMouseTimer.current) clearTimeout(viewerMouseTimer.current);
+    viewerMouseTimer.current = setTimeout(() => setViewerControlsVisible(false), 3000);
+  }
+
+  // Mouse movement shows controls in fullscreen, then auto-hides after 3s
+  function handleFullscreenMouseMove() {
+    setPptControlsVisible(true);
+    if (pptMouseTimer.current) clearTimeout(pptMouseTimer.current);
+    pptMouseTimer.current = setTimeout(() => setPptControlsVisible(false), 3000);
+  }
 
   // Preload adjacent documents in background for instant navigation
   useEffect(() => {
@@ -171,23 +292,25 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id]);
 
+  // Load file blob for PDF, image, XLSX, DOCX
   useEffect(() => {
     let cancelled = false;
     setError("");
+    setPptCurrentSlide(0);
+    setPptTotalSlides(0);
+    setDocxHtml("");
 
-    // Check cache first — instant display for previously viewed files
+    // For PPTX, use the slides endpoint instead of blob
+    if (isPpt) {
+      setLoading(false); // PPTX loading handled by pptLoading state
+      return;
+    }
+
+    // Check cache first
     const cached = docBlobCache.get(doc.id);
     if (cached) {
       setObjectUrl(cached);
       setLoading(false);
-      if (isOfficeDoc) {
-        const a = document.createElement("a");
-        a.href = cached;
-        a.download = doc.originalFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
       return;
     }
 
@@ -202,16 +325,8 @@ function FileViewerModal({
         const blob = await res.blob();
         if (!cancelled) {
           const url = URL.createObjectURL(blob);
-          docBlobCache.set(doc.id, url); // Cache for future views
+          docBlobCache.set(doc.id, url);
           setObjectUrl(url);
-          if (isOfficeDoc) {
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = doc.originalFileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message);
@@ -224,6 +339,92 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id]);
 
+  // Load PPTX slide count from backend (lightweight — no rendering yet)
+  useEffect(() => {
+    if (!isPpt) return;
+    let cancelled = false;
+    setPptLoading(true);
+    setPptCurrentSlide(0);
+    setPptTotalSlides(0);
+
+    async function loadSlideCount() {
+      try {
+        const data = await documentService.getSlideCount(doc.id);
+        if (!cancelled) {
+          setPptTotalSlides(data.totalSlides);
+          setPptCurrentSlide(0);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError("Failed to load presentation: " + (e.response?.data?.error || e.message));
+      } finally {
+        if (!cancelled) setPptLoading(false);
+      }
+    }
+    loadSlideCount();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id, isPpt]);
+
+  // Load current PPTX slide image via fetch (needs auth header)
+  // Uses higher resolution (1920px) in fullscreen mode for crisp display
+  useEffect(() => {
+    if (!isPpt || pptTotalSlides === 0) return;
+    let cancelled = false;
+    setPptSlideLoading(true);
+    setPptSlideUrl(null);
+
+    async function loadSlide() {
+      try {
+        const width = pptFullscreen ? 1920 : 960;
+        const url = documentService.getSlideImageUrl(doc.id, pptCurrentSlide, width);
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to render slide");
+        const blob = await res.blob();
+        if (!cancelled) {
+          setPptSlideUrl(URL.createObjectURL(blob));
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(`Failed to render slide ${pptCurrentSlide + 1}`);
+      } finally {
+        if (!cancelled) setPptSlideLoading(false);
+      }
+    }
+    loadSlide();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id, pptCurrentSlide, pptTotalSlides, isPpt, pptFullscreen]);
+
+  // Parse DOCX files using mammoth.js
+  useEffect(() => {
+    if (!isDocx || !objectUrl) return;
+    setDocxHtml("");
+
+    async function parseDocx() {
+      try {
+        if (!(window as any).mammoth) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load mammoth.js"));
+            document.head.appendChild(script);
+          });
+        }
+        const mammoth = (window as any).mammoth;
+        const resp = await fetch(objectUrl!);
+        const arrayBuffer = await resp.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        setDocxHtml(result.value);
+      } catch (e: any) {
+        console.error("DOCX parse error:", e);
+        setDocxHtml(`<p style="color:red;padding:20px;">Failed to render document: ${e.message}</p>`);
+      }
+    }
+    parseDocx();
+  }, [objectUrl, isDocx]);
+
   // Parse XLSX files into HTML tables using SheetJS (loaded from CDN)
   useEffect(() => {
     if (!isXlsx || !objectUrl) return;
@@ -234,7 +435,6 @@ function FileViewerModal({
 
     async function parseXlsx() {
       try {
-        // Dynamically load SheetJS from CDN if not already loaded
         if (!(window as any).XLSX) {
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
@@ -264,8 +464,33 @@ function FileViewerModal({
     parseXlsx();
   }, [objectUrl, isXlsx]);
 
-  // Don't revoke on unmount — cache keeps URLs alive for re-use
-  // Cache is cleared naturally when user navigates away from the page
+  // Helper to get download URL (fetch blob on demand for PPT since we skip blob loading)
+  function handleDownload() {
+    if (objectUrl) {
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = doc.originalFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      // For PPTX where we didn't load blob, fetch it now
+      fetch(documentService.getViewUrl(doc.id), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = doc.originalFileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
@@ -316,12 +541,21 @@ function FileViewerModal({
                 </button>
               </div>
             )}
-            {objectUrl && (
-              <a href={objectUrl} download={doc.originalFileName}
-                className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
-                Download
-              </a>
+            {/* Fullscreen toggle for PDF, XLSX, DOCX, Images (not PPTX — it has its own) */}
+            {!isPpt && (isPdf || isXlsx || isDocx || isImage) && (
+              <button onClick={() => setViewerFullscreen(true)}
+                title="Full Screen (F)"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-arcadia-600 hover:bg-arcadia-700 rounded-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+                </svg>
+                Full Screen
+              </button>
             )}
+            <button onClick={handleDownload}
+              className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
+              Download
+            </button>
             <button onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition text-lg leading-none">
               &times;
@@ -329,69 +563,324 @@ function FileViewerModal({
           </div>
         </div>
         <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-2 sm:p-4">
-          {loading && (
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
-              Loading file...
+          {(loading || pptLoading) && (
+            <div className="flex flex-col items-center gap-3 text-gray-500 text-sm">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-arcadia-600" />
+              {pptLoading ? "Rendering presentation slides..." : "Loading file..."}
             </div>
           )}
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {!loading && !error && isPdf && objectUrl && (
-            <iframe src={objectUrl} title={doc.fileName} className="w-full h-full min-h-[50vh] sm:min-h-[70vh] rounded-lg border" />
-          )}
-          {!loading && !error && isImage && objectUrl && (
-            <img src={objectUrl} alt={doc.fileName} className="max-w-full max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg shadow" />
-          )}
-          {!loading && !error && isOfficeDoc && objectUrl && (
-            <div className="text-center space-y-4 py-12">
-              <div className="text-6xl">{fileIcon(doc.contentType)}</div>
-              <p className="text-gray-700 font-medium">File downloaded successfully!</p>
-              <p className="text-gray-500 text-sm">
-                "{doc.originalFileName}" has been downloaded.<br />
-                Open it with {isPpt ? "PowerPoint" : "Word"} on your device.
-              </p>
-              <a href={objectUrl} download={doc.originalFileName}
-                className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
-                Download Again
-              </a>
-            </div>
-          )}
-          {!loading && !error && isXlsx && objectUrl && (
+          {error && <p className="text-red-500 text-sm text-center px-4">{error}</p>}
+
+          {/* General viewer fullscreen container (PDF, XLSX, DOCX, Images) */}
+          <div
+            ref={viewerFullscreenRef}
+            className={`${!isPpt && (isPdf || isImage || isDocx || isXlsx) && !loading && !error && objectUrl ? "flex" : "hidden"} flex-col w-full h-full ${viewerFullscreen ? "bg-gray-900" : ""}`}
+            style={viewerFullscreen ? { cursor: viewerControlsVisible ? "default" : "none" } : undefined}
+            onMouseMove={viewerFullscreen ? handleViewerFullscreenMouseMove : undefined}
+          >
+            {/* Fullscreen top controls — only visible in fullscreen on mouse move */}
+            {viewerFullscreen && (
+              <div
+                className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-3 transition-all duration-300"
+                style={{
+                  background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
+                  opacity: viewerControlsVisible ? 1 : 0,
+                  pointerEvents: viewerControlsVisible ? "auto" : "none",
+                }}
+              >
+                <div className="flex items-center gap-4 text-white">
+                  <span className="text-sm font-medium">{doc.fileName}</span>
+                  <span className="text-xs opacity-70">{formatFileSize(doc.fileSize)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleDownload}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
+                    Download
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); setViewerFullscreen(false); }}
+                    title="Exit Full Screen (Esc)"
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v4H5M15 4v4h4M9 20v-4H5M15 20v-4h4" />
+                    </svg>
+                    Exit
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PDF Viewer */}
+            {isPdf && objectUrl && (
+              <iframe src={objectUrl} title={doc.fileName}
+                className={`w-full ${viewerFullscreen ? "h-full" : "h-full min-h-[50vh] sm:min-h-[70vh]"} ${viewerFullscreen ? "" : "rounded-lg border"}`} />
+            )}
+
+            {/* Image Viewer */}
+            {isImage && objectUrl && (
+              <div className={`flex-1 flex items-center justify-center ${viewerFullscreen ? "p-0" : ""}`}>
+                <img src={objectUrl} alt={doc.fileName}
+                  className={`object-contain ${viewerFullscreen ? "w-full h-full" : "max-w-full max-h-[60vh] sm:max-h-[75vh] rounded-lg shadow"}`}
+                  style={viewerFullscreen ? { width: "100vw", height: "100vh" } : undefined} />
+              </div>
+            )}
+
+            {/* DOCX Document Viewer (inside fullscreen container) */}
+            {isDocx && objectUrl && (
+              <div className={`w-full ${viewerFullscreen ? "h-full" : "h-full"} flex flex-col ${viewerFullscreen ? "" : "min-h-[70vh]"}`}>
+                {docxHtml ? (
+                  <div className={`flex-1 overflow-auto ${viewerFullscreen ? "bg-white p-8 sm:p-12" : "bg-white rounded-lg p-6 sm:p-10"}`}
+                    dangerouslySetInnerHTML={{ __html: docxHtml }}
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-500 text-sm justify-center py-12">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
+                    Rendering document...
+                  </div>
+                )}
+                <style>{`
+                  .docx-viewer-content h1 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; }
+                  .docx-viewer-content h2 { font-size: 1.25rem; font-weight: bold; margin: 0.8rem 0 0.4rem; }
+                  .docx-viewer-content p { margin: 0.4rem 0; line-height: 1.6; }
+                  .docx-viewer-content table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
+                  .docx-viewer-content td, .docx-viewer-content th { border: 1px solid #e5e7eb; padding: 6px 10px; }
+                  .docx-viewer-content img { max-width: 100%; height: auto; }
+                `}</style>
+              </div>
+            )}
+
+            {/* XLSX Spreadsheet Viewer (inside fullscreen container) */}
+            {isXlsx && objectUrl && (
+              <div className={`w-full ${viewerFullscreen ? "h-full" : "h-full"} flex flex-col ${viewerFullscreen ? "" : "min-h-[70vh]"}`}>
+                {xlsxSheets.length > 1 && (
+                  <div className="flex gap-1 px-3 py-2 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
+                    {xlsxSheets.map((name, i) => (
+                      <button key={name} onClick={() => { setXlsxActiveSheet(i); setXlsxHtml(xlsxAllHtml[name] || ""); }}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition ${
+                          i === xlsxActiveSheet
+                            ? "bg-arcadia-100 text-arcadia-700 border border-arcadia-300"
+                            : "text-gray-600 hover:bg-gray-100 border border-transparent"
+                        }`}>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex-1 overflow-auto bg-white rounded-lg"
+                  dangerouslySetInnerHTML={{ __html: xlsxHtml }}
+                  style={{ fontSize: viewerFullscreen ? "15px" : "13px" }}
+                />
+                <style>{`
+                  #xlsx-table { border-collapse: collapse; width: 100%; }
+                  #xlsx-table td, #xlsx-table th {
+                    border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left;
+                    white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis;
+                  }
+                  #xlsx-table tr:first-child td, #xlsx-table th {
+                    background: #f9fafb; font-weight: 600; color: #374151;
+                    position: sticky; top: 0; z-index: 1;
+                  }
+                  #xlsx-table tr:hover td { background: #f0fdf4; }
+                `}</style>
+              </div>
+            )}
+          </div>
+
+          {/* PPTX Slide Viewer — renders one slide at a time via img src */}
+          {!pptLoading && !error && isPpt && pptTotalSlides > 0 && !pptFullscreen && (
             <div className="w-full h-full flex flex-col min-h-[70vh]">
-              {/* Sheet tabs */}
-              {xlsxSheets.length > 1 && (
-                <div className="flex gap-1 px-3 py-2 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
-                  {xlsxSheets.map((name, i) => (
-                    <button key={name} onClick={() => { setXlsxActiveSheet(i); setXlsxHtml(xlsxAllHtml[name] || ""); }}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition ${
-                        i === xlsxActiveSheet
-                          ? "bg-arcadia-100 text-arcadia-700 border border-arcadia-300"
-                          : "text-gray-600 hover:bg-gray-100 border border-transparent"
-                      }`}>
-                      {name}
-                    </button>
-                  ))}
+              {/* Slide navigation bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+                <button onClick={() => setPptCurrentSlide(Math.max(0, pptCurrentSlide - 1))}
+                  disabled={pptCurrentSlide === 0}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
+                  Previous Slide
+                </button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    Slide {pptCurrentSlide + 1} of {pptTotalSlides}
+                  </span>
+                  <button onClick={() => setPptFullscreen(true)}
+                    title="Full Screen (F)"
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-arcadia-600 hover:bg-arcadia-700 rounded-lg transition flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+                    </svg>
+                    Full Screen
+                  </button>
+                </div>
+                <button onClick={() => setPptCurrentSlide(Math.min(pptTotalSlides - 1, pptCurrentSlide + 1))}
+                  disabled={pptCurrentSlide >= pptTotalSlides - 1}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
+                  Next Slide
+                </button>
+              </div>
+              {/* Current slide — loaded on demand via authenticated fetch */}
+              <div className="flex-1 flex items-center justify-center overflow-auto p-4 bg-gray-200">
+                {pptSlideLoading && (
+                  <div className="flex flex-col items-center gap-2 text-gray-500 text-sm">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-arcadia-600" />
+                    Rendering slide {pptCurrentSlide + 1}...
+                  </div>
+                )}
+                {!pptSlideLoading && pptSlideUrl && (
+                  <img
+                    src={pptSlideUrl}
+                    alt={`Slide ${pptCurrentSlide + 1}`}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg bg-white cursor-pointer"
+                    onClick={() => setPptFullscreen(true)}
+                    title="Click to view full screen"
+                  />
+                )}
+              </div>
+              {/* Slide number quick-jump */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-white border-t border-gray-200 overflow-x-auto flex-shrink-0 justify-center">
+                {Array.from({ length: Math.min(pptTotalSlides, 30) }, (_, i) => (
+                  <button key={i} onClick={() => { setError(""); setPptCurrentSlide(i); }}
+                    className={`w-8 h-8 text-xs font-medium rounded-lg transition flex-shrink-0 ${
+                      i === pptCurrentSlide
+                        ? "bg-arcadia-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}>
+                    {i + 1}
+                  </button>
+                ))}
+                {pptTotalSlides > 30 && (
+                  <span className="text-xs text-gray-400 ml-1">+{pptTotalSlides - 30} more</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* PPTX Fullscreen Presentation Mode — uses native Fullscreen API (like F5 in PPT) */}
+          <div
+            ref={pptFullscreenRef}
+            className={`${isPpt && pptFullscreen && pptTotalSlides > 0 ? "flex" : "hidden"} flex-col bg-black w-full h-full`}
+            style={isPpt && pptFullscreen ? { cursor: pptControlsVisible ? "default" : "none" } : undefined}
+            onMouseMove={handleFullscreenMouseMove}
+            onClick={(e) => {
+              // Click on the slide area (not buttons) advances to next slide like PPT
+              const target = e.target as HTMLElement;
+              if (target.tagName === "IMG" || target.dataset.slideArea === "true") {
+                if (pptCurrentSlide < pptTotalSlides - 1) {
+                  setPptCurrentSlide(pptCurrentSlide + 1);
+                } else {
+                  // Last slide — exit fullscreen on click (like PPT)
+                  setPptFullscreen(false);
+                }
+              }
+            }}
+          >
+            {/* Top controls — only visible on mouse move */}
+            <div
+              className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-3 transition-all duration-300"
+              style={{
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
+                opacity: pptControlsVisible ? 1 : 0,
+                pointerEvents: pptControlsVisible ? "auto" : "none",
+              }}
+            >
+              <div className="flex items-center gap-4 text-white">
+                <span className="text-sm font-medium">{doc.fileName}</span>
+                <span className="text-xs opacity-70">
+                  Slide {pptCurrentSlide + 1} / {pptTotalSlides}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={handleDownload}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
+                  Download
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); setPptFullscreen(false); }}
+                  title="Exit Full Screen (Esc)"
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v4H5M15 4v4h4M9 20v-4H5M15 20v-4h4" />
+                  </svg>
+                  Exit
+                </button>
+              </div>
+            </div>
+
+            {/* Slide area — the slide fills the entire screen */}
+            <div className="flex-1 flex items-center justify-center relative" data-slide-area="true">
+              {/* Left arrow — visible on mouse move */}
+              {pptCurrentSlide > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPptCurrentSlide(pptCurrentSlide - 1); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-14 h-14 flex items-center justify-center bg-black/40 hover:bg-black/60 rounded-full text-white text-3xl transition-all duration-300"
+                  style={{ opacity: pptControlsVisible ? 1 : 0, pointerEvents: pptControlsVisible ? "auto" : "none" }}
+                >
+                  &#8249;
+                </button>
+              )}
+              {/* Right arrow — visible on mouse move */}
+              {pptCurrentSlide < pptTotalSlides - 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPptCurrentSlide(pptCurrentSlide + 1); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-14 h-14 flex items-center justify-center bg-black/40 hover:bg-black/60 rounded-full text-white text-3xl transition-all duration-300"
+                  style={{ opacity: pptControlsVisible ? 1 : 0, pointerEvents: pptControlsVisible ? "auto" : "none" }}
+                >
+                  &#8250;
+                </button>
+              )}
+              {/* Slide image — fills the screen edge to edge */}
+              {pptSlideLoading && (
+                <div className="flex flex-col items-center gap-3 text-white/70 text-sm">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white" />
+                  Rendering slide {pptCurrentSlide + 1}...
                 </div>
               )}
-              {/* Spreadsheet HTML table */}
-              <div className="flex-1 overflow-auto bg-white rounded-lg"
-                dangerouslySetInnerHTML={{ __html: xlsxHtml }}
-                style={{
-                  fontSize: "13px",
-                }}
-              />
-              <style>{`
-                #xlsx-table { border-collapse: collapse; width: 100%; }
-                #xlsx-table td, #xlsx-table th {
-                  border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left;
-                  white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis;
-                }
-                #xlsx-table tr:first-child td, #xlsx-table th {
-                  background: #f9fafb; font-weight: 600; color: #374151;
-                  position: sticky; top: 0; z-index: 1;
-                }
-                #xlsx-table tr:hover td { background: #f0fdf4; }
-              `}</style>
+              {!pptSlideLoading && pptSlideUrl && (
+                <img
+                  src={pptSlideUrl}
+                  alt={`Slide ${pptCurrentSlide + 1}`}
+                  className="object-contain"
+                  style={{ width: "100vw", height: "100vh" }}
+                />
+              )}
+            </div>
+
+            {/* Bottom slide indicator — only on mouse move */}
+            <div
+              className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-center gap-1.5 px-4 py-3 transition-all duration-300"
+              style={{
+                background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
+                opacity: pptControlsVisible ? 1 : 0,
+                pointerEvents: pptControlsVisible ? "auto" : "none",
+              }}
+            >
+              <span className="text-white text-xs font-medium mr-3">
+                {pptCurrentSlide + 1} / {pptTotalSlides}
+              </span>
+              {pptTotalSlides <= 50 ? (
+                Array.from({ length: pptTotalSlides }, (_, i) => (
+                  <button key={i} onClick={(e) => { e.stopPropagation(); setError(""); setPptCurrentSlide(i); }}
+                    className={`h-1.5 rounded-full transition-all flex-shrink-0 ${
+                      i === pptCurrentSlide
+                        ? "bg-white w-8"
+                        : "bg-white/30 hover:bg-white/50 w-5"
+                    }`}
+                    title={`Slide ${i + 1}`}
+                  />
+                ))
+              ) : (
+                <span className="text-white/50 text-xs">Use arrow keys or click to navigate</span>
+              )}
+            </div>
+          </div>
+
+          {/* Fallback for unsupported types */}
+          {!loading && !pptLoading && !error && !isPdf && !isImage && !isPpt && !isDocx && !isXlsx && objectUrl && (
+            <div className="text-center space-y-4 py-12">
+              <div className="text-6xl">{fileIcon(doc.contentType)}</div>
+              <p className="text-gray-700 font-medium">Preview not available</p>
+              <p className="text-gray-500 text-sm">
+                This file type cannot be previewed in the browser.
+              </p>
+              <button onClick={handleDownload}
+                className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
+                Download File
+              </button>
             </div>
           )}
         </div>

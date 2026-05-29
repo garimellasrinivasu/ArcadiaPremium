@@ -548,6 +548,31 @@
 <main>
   <div class="input-panels">
 
+    <!-- PROJECT SELECTOR -->
+    <div class="panel" style="margin-bottom:20px; grid-column: 1 / -1;">
+      <div class="panel-head" style="background: linear-gradient(to right, #1a5276, #2471a3);">
+        <span class="dot" style="background:#f39c12;"></span> Select Project
+      </div>
+      <div class="panel-body" style="display:flex; flex-wrap:wrap; gap:16px; align-items:end;">
+        <div style="flex:1; min-width:220px;">
+          <label style="font-size:13px; color:#374151; font-weight:600; display:block; margin-bottom:6px;">Project</label>
+          <select id="projectSelect" onchange="onProjectChange()" style="width:100%; padding:10px 12px; border:2px solid #2471a3; border-radius:8px; font-size:15px; font-weight:600; background:#f0f7ff; color:#1a5276;">
+            <option value="arcadia">Praneeth Arcadia Premium</option>
+            <option value="kalpavruksha">Kalpavruksha Developers</option>
+            <option value="redfern">Redfern Square</option>
+          </select>
+        </div>
+        <div id="saleTypeWrap" style="flex:1; min-width:220px; display:none;">
+          <label style="font-size:13px; color:#374151; font-weight:600; display:block; margin-bottom:6px;">Sale Type</label>
+          <select id="saleTypeSelect" onchange="onSaleTypeChange()" style="width:100%; padding:10px 12px; border:2px solid #2471a3; border-radius:8px; font-size:15px; font-weight:600; background:#f0f7ff; color:#1a5276;">
+            <option value="villa">Villa</option>
+            <option value="plot">Plot</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+
     <div class="panel" style="margin-bottom:20px;">
       <div class="panel-head"><span class="dot"></span> Customer &amp; Villa Details</div>
       <div class="panel-body">
@@ -560,9 +585,9 @@
           <input type="tel" id="customerPhone" placeholder="e.g., +91 98765 43210">
         </div>
         <div class="field">
-          <label>Villa / Plot No.</label>
+          <label id="plotNoLabel">Villa / Plot No.</label>
           <div style="display:flex; align-items:stretch;">
-            <span style="padding:8px 12px; background:#fdf9ef; border:1px solid var(--border); border-right:0; border-radius:6px 0 0 6px; font-weight:700; color:var(--navy); font-size:14px; letter-spacing:0.5px;">V-</span>
+            <span id="plotNoPrefix" style="padding:8px 12px; background:#fdf9ef; border:1px solid var(--border); border-right:0; border-radius:6px 0 0 6px; font-weight:700; color:var(--navy); font-size:14px; letter-spacing:0.5px;">V-</span>
             <input type="text" id="plotNo" placeholder="e.g., 42" style="border-radius:0 6px 6px 0; flex:1;">
           </div>
         </div>
@@ -577,13 +602,22 @@
             <option value="300">300 Sq. Yards</option>
           </select>
         </div>
-        <div class="field">
+        <div class="field" id="sftRatioField">
           <label>Construction Ratio <span class="hint">Sft per Sq. Yard (default 14)</span></label>
           <input type="number" id="sftRatio" value="14" step="0.5" min="1" oninput="updateArea()">
         </div>
-        <div class="field">
+        <div class="field" id="totalSftField">
           <label>Total Construction (Sft) <span class="hint">Auto-calculated</span></label>
           <input type="text" id="totalSft" readonly value="2800">
+        </div>
+
+        <div class="field" id="plotRateField" style="display:none;">
+          <label>Rate per Sq. Yard <span class="hint">Price per square yard</span></label>
+          <input type="number" id="plotRatePerSqYd" value="15000" step="100" min="0" oninput="calculate()">
+        </div>
+        <div class="field" id="plotTotalValueField" style="display:none;">
+          <label>Plot Sale Value <span class="hint">Auto-calculated (Area × Rate)</span></label>
+          <input type="text" id="plotTotalValue" readonly value="0">
         </div>
       </div>
     </div>
@@ -748,6 +782,7 @@
       <div id="resultsWords" class="words" style="display:none;"></div>
       <div class="btn-row no-print" id="printRow" style="display:none; margin:0; padding:14px 18px 18px; border-top:1px solid var(--border);">
         <button class="btn-print" onclick="printQuote()">Print / Save as PDF</button>
+        <button class="btn-primary" onclick="saveQuoteToDb()" style="background:linear-gradient(135deg,#16a34a,#15803d); color:#fff;">Save Quote</button>
         <button class="btn-secondary" onclick="document.getElementById('resultsPanel').scrollIntoView()">Back to Top</button>
       </div>
     </div>
@@ -801,7 +836,7 @@
         <div class="sub">(Accepted &amp; Acknowledged)</div>
       </div>
       <div class="box">
-        For Venkata Praneeth Developers Pvt. Ltd.
+        <span id="p_signCompany">For Venkata Praneeth Developers Pvt. Ltd.</span>
         <div class="sub">Authorised Signatory</div>
       </div>
     </div>
@@ -813,6 +848,188 @@
 </div>
 
 <script>
+
+  // ===== PROJECT CONFIGURATION =====
+  const PROJECT_CONFIGS = {
+    arcadia: {
+      name: 'Praneeth Arcadia Premium',
+      developer: 'Venkata Praneeth Developers Pvt. Ltd.',
+      tagline: 'Luxury Living – Premium Villas',
+      saleTypes: ['villa'],
+      prefix: 'V-',
+      refPrefix: 'ARC',
+      defaultRateOtp: 7000,
+      defaultRateGeneral: 9500,
+      defaultPlotRate: 15000,
+      defaultSftRatio: 14,
+      plotAreas: [167, 180, 200, 225, 250, 300],
+      defaultPlotArea: 200,
+      headerTitle: 'Praneeth Arcadia Premium',
+      headerSubtitle: 'Premium Villas | Shamirpet, Hyderabad',
+      footerText: 'Venkata Praneeth Developers Pvt. Ltd. – Praneeth Arcadia Premium – Hyderabad'
+    },
+    kalpavruksha: {
+      name: 'Kalpavruksha Developers',
+      developer: 'Kalpavruksha Developers Pvt. Ltd.',
+      tagline: 'Building Dreams – Premium Living',
+      saleTypes: ['villa', 'plot'],
+      prefix: 'V-',
+      refPrefix: 'KAL',
+      defaultRateOtp: 7000,
+      defaultRateGeneral: 9500,
+      defaultPlotRate: 15000,
+      defaultSftRatio: 14,
+      plotAreas: [150, 167, 180, 200, 225, 250, 267, 300, 333, 400, 500],
+      defaultPlotArea: 200,
+      headerTitle: 'Kalpavruksha Developers',
+      headerSubtitle: 'Premium Villas & Plots',
+      footerText: 'Kalpavruksha Developers Pvt. Ltd. – Hyderabad'
+    },
+    redfern: {
+      name: 'Redfern Square',
+      developer: 'Redfern Square Developers Pvt. Ltd.',
+      tagline: 'Elegance Redefined – Luxury Villas',
+      saleTypes: ['villa'],
+      prefix: 'V-',
+      refPrefix: 'RED',
+      defaultRateOtp: 7000,
+      defaultRateGeneral: 9500,
+      defaultPlotRate: 15000,
+      defaultSftRatio: 14,
+      plotAreas: [167, 180, 200, 225, 250, 300],
+      defaultPlotArea: 200,
+      headerTitle: 'Redfern Square',
+      headerSubtitle: 'Luxury Villas',
+      footerText: 'Redfern Square Developers Pvt. Ltd. – Hyderabad'
+    }
+  };
+
+  function getCurrentProject() {
+    return document.getElementById('projectSelect').value;
+  }
+  function getCurrentSaleType() {
+    const proj = getCurrentProject();
+    if (proj === 'kalpavruksha') {
+      return document.getElementById('saleTypeSelect').value;
+    }
+    return 'villa';
+  }
+  function isPlotMode() {
+    return getCurrentSaleType() === 'plot';
+  }
+  function getProjectConfig() {
+    return PROJECT_CONFIGS[getCurrentProject()];
+  }
+
+  function onProjectChange() {
+    const proj = getCurrentProject();
+    const cfg = PROJECT_CONFIGS[proj];
+
+    // Show/hide sale type selector
+    document.getElementById('saleTypeWrap').style.display =
+      cfg.saleTypes.length > 1 ? '' : 'none';
+
+    // Reset sale type to villa
+    document.getElementById('saleTypeSelect').value = 'villa';
+
+    // Update plot area options
+    const plotAreaSel = document.getElementById('plotArea');
+    plotAreaSel.innerHTML = '';
+    cfg.plotAreas.forEach(function(v) {
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v + ' Sq. Yards';
+      if (v === cfg.defaultPlotArea) opt.selected = true;
+      plotAreaSel.appendChild(opt);
+    });
+
+    // Update default rates
+    document.getElementById('rateOtp').value = cfg.defaultRateOtp;
+    document.getElementById('rateGeneral').value = cfg.defaultRateGeneral;
+    document.getElementById('rate5050_otp').value = cfg.defaultRateOtp;
+    document.getElementById('rate5050_gen').value = cfg.defaultRateGeneral;
+    document.getElementById('plotRatePerSqYd').value = cfg.defaultPlotRate;
+    document.getElementById('sftRatio').value = cfg.defaultSftRatio;
+
+    // Update prefix
+    document.getElementById('plotNoPrefix').textContent = cfg.prefix;
+
+    // Update header if visible
+    updateHeaderDisplay();
+
+    // Apply villa mode (default)
+    applyModeSwitch();
+    updateArea();
+    update5050Display();
+  }
+
+  function onSaleTypeChange() {
+    applyModeSwitch();
+    updateArea();
+  }
+
+  function applyModeSwitch() {
+    var plotMode = isPlotMode();
+    var cfg = getProjectConfig();
+
+    // Villa-specific fields
+    var villaFields = ['sftRatioField', 'totalSftField'];
+    villaFields.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = plotMode ? 'none' : '';
+    });
+
+    // Plot-specific fields
+    var plotFields = ['plotRateField', 'plotTotalValueField'];
+    plotFields.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = plotMode ? '' : 'none';
+    });
+
+    // Pricing panel: hide for plots (plots use simple rate × area)
+    var pricingPanels = document.querySelectorAll('.panel');
+    pricingPanels.forEach(function(p) {
+      var head = p.querySelector('.panel-head');
+      if (head && head.textContent.indexOf('Pricing Option') !== -1) {
+        p.style.display = plotMode ? 'none' : '';
+      }
+    });
+
+    // Update labels
+    var plotNoLabel = document.getElementById('plotNoLabel');
+    var plotNoPrefix = document.getElementById('plotNoPrefix');
+    if (plotMode) {
+      plotNoLabel.textContent = 'Plot No.';
+      plotNoPrefix.textContent = 'P-';
+    } else {
+      plotNoLabel.textContent = 'Villa / Plot No.';
+      plotNoPrefix.textContent = cfg.prefix;
+    }
+
+    // Update panel header
+    var firstPanelHead = document.querySelector('.input-panels > .panel:nth-child(2) .panel-head');
+    if (firstPanelHead) {
+      var headText = firstPanelHead.childNodes;
+      // Update text after the dot span
+      for (var i = 0; i < headText.length; i++) {
+        if (headText[i].nodeType === 3 && headText[i].textContent.trim()) {
+          headText[i].textContent = plotMode ? ' Plot Details' : ' Customer & Villa Details';
+          break;
+        }
+      }
+    }
+  }
+
+  function updateHeaderDisplay() {
+    var cfg = getProjectConfig();
+    // Update the brand meta if exists
+    var titleEl = document.querySelector('.brand-meta .title');
+    var devEl = document.querySelector('.brand-meta .developer');
+    var subEl = document.querySelector('.brand-meta .subtitle');
+    if (titleEl) titleEl.textContent = cfg.headerTitle;
+    if (subEl) subEl.textContent = cfg.headerSubtitle;
+  }
+
   // ========= Utilities =========
   function formatINR(n) {
     n = Math.round(n);
@@ -862,7 +1079,14 @@
     document.getElementById('totalSft').value = sft;
     const rate = parseFloat(document.getElementById('maintRate').value) || 0;
     const months = parseFloat(document.getElementById('maintMonths').value) || 0;
-    document.getElementById('amt_maint').value = Math.round(rate * sft * months);
+    if (isPlotMode()) {
+      document.getElementById('amt_maint').value = 0;
+      // Update plot total value display
+      const plotRate = parseFloat(document.getElementById('plotRatePerSqYd').value) || 0;
+      document.getElementById('plotTotalValue').value = formatINR(plot * plotRate);
+    } else {
+      document.getElementById('amt_maint').value = Math.round(rate * sft * months);
+    }
   }
   document.getElementById('maintRate').addEventListener('input', updateArea);
   document.getElementById('maintMonths').addEventListener('input', updateArea);
@@ -909,62 +1133,73 @@
     const ratio  = parseFloat(document.getElementById('sftRatio').value) || 0;
     const sft    = plot * ratio;
 
-    const opt = document.querySelector('input[name="pricing"]:checked').value;
-    const rateOtp      = parseFloat(document.getElementById('rateOtp').value) || 0;
-    const rateGeneral  = parseFloat(document.getElementById('rateGeneral').value) || 0;
-    // Split plan has its own independent editable percentages and rates
-    const pct5050Otp   = parseFloat(document.getElementById('pct_5050_otp').value) || 0;
-    const pct5050Gen   = parseFloat(document.getElementById('pct_5050_gen').value) || 0;
-    const rate5050Otp  = parseFloat(document.getElementById('rate5050_otp').value) || 0;
-    const rate5050Gen  = parseFloat(document.getElementById('rate5050_gen').value) || 0;
-
-    // Guard: if the Split plan is selected, OTP% + Gen% must not exceed 100.
-    if (opt === '5050' && (pct5050Otp + pct5050Gen) > 100) {
-      alert('OTP % + General % cannot exceed 100%. '
-            + 'Please adjust the percentages in the "OTP + General Split" option.\n\n'
-            + 'Current total: ' + (pct5050Otp + pct5050Gen) + '%');
-      const errEl = document.getElementById('err_5050');
-      if (errEl) errEl.style.display = 'inline';
-      return;
-    }
-
-    // Build sale-value breakdown rows. For the Split plan we allocate the total
-    // construction area per the user-entered percentages and apply each sub-rate.
+    // ===== PLOT MODE (Kalpavruksha Plots) =====
+    let opt, rateOtp, rateGeneral, pct5050Otp, pct5050Gen, rate5050Otp, rate5050Gen;
     let optLabel = '';
     let rateDisplay = 0;
     const saleRows = [];
-    if (opt === 'otp') {
-      optLabel = 'One-Time Payment (OTP)';
-      rateDisplay = rateOtp;
+
+    if (plotMode) {
+      const plotRatePerSqYd = parseFloat(document.getElementById('plotRatePerSqYd').value) || 0;
+      opt = 'plot';
+      optLabel = 'Plot Sale';
+      rateDisplay = plotRatePerSqYd;
+      const plotSaleValue = plot * plotRatePerSqYd;
+      document.getElementById('plotTotalValue').value = formatINR(plotSaleValue);
       saleRows.push({
-        label: 'Construction: ' + sft + ' Sft \u00D7 \u20B9 ' + formatINR(rateOtp) + ' /sft (OTP)',
-        value: sft * rateOtp
-      });
-    } else if (opt === '5050') {
-      optLabel = pct5050Otp + '% OTP + ' + pct5050Gen + '% General';
-      const otpSft = sft * pct5050Otp / 100;
-      const genSft = sft * pct5050Gen / 100;
-      const otpPart = otpSft * rate5050Otp;
-      const genPart = genSft * rate5050Gen;
-      const totalPct = pct5050Otp + pct5050Gen;
-      rateDisplay = totalPct > 0
-        ? Math.round((pct5050Otp * rate5050Otp + pct5050Gen * rate5050Gen) / totalPct)
-        : 0;
-      saleRows.push({
-        label: pct5050Otp + '% Construction: ' + (Math.round(otpSft*100)/100) + ' Sft \u00D7 \u20B9 ' + formatINR(rate5050Otp) + ' /sft (OTP part)',
-        value: otpPart
-      });
-      saleRows.push({
-        label: pct5050Gen + '% Construction: ' + (Math.round(genSft*100)/100) + ' Sft \u00D7 \u20B9 ' + formatINR(rate5050Gen) + ' /sft (General part)',
-        value: genPart
+        label: 'Land: ' + plot + ' Sq.Yd \u00D7 \u20B9 ' + formatINR(plotRatePerSqYd) + ' /Sq.Yd',
+        value: plotSaleValue
       });
     } else {
-      optLabel = 'General Sale';
-      rateDisplay = rateGeneral;
-      saleRows.push({
-        label: 'Construction: ' + sft + ' Sft \u00D7 \u20B9 ' + formatINR(rateGeneral) + ' /sft (General)',
-        value: sft * rateGeneral
-      });
+      // ===== VILLA MODE (all projects) =====
+      opt = document.querySelector('input[name="pricing"]:checked').value;
+      rateOtp      = parseFloat(document.getElementById('rateOtp').value) || 0;
+      rateGeneral  = parseFloat(document.getElementById('rateGeneral').value) || 0;
+      pct5050Otp   = parseFloat(document.getElementById('pct_5050_otp').value) || 0;
+      pct5050Gen   = parseFloat(document.getElementById('pct_5050_gen').value) || 0;
+      rate5050Otp  = parseFloat(document.getElementById('rate5050_otp').value) || 0;
+      rate5050Gen  = parseFloat(document.getElementById('rate5050_gen').value) || 0;
+
+      if (opt === '5050' && (pct5050Otp + pct5050Gen) > 100) {
+        alert('OTP % + General % cannot exceed 100%.\n\nCurrent total: ' + (pct5050Otp + pct5050Gen) + '%');
+        const errEl = document.getElementById('err_5050');
+        if (errEl) errEl.style.display = 'inline';
+        return;
+      }
+
+      if (opt === 'otp') {
+        optLabel = 'One-Time Payment (OTP)';
+        rateDisplay = rateOtp;
+        saleRows.push({
+          label: 'Construction: ' + sft + ' Sft \u00D7 \u20B9 ' + formatINR(rateOtp) + ' /sft (OTP)',
+          value: sft * rateOtp
+        });
+      } else if (opt === '5050') {
+        optLabel = pct5050Otp + '% OTP + ' + pct5050Gen + '% General';
+        const otpSft = sft * pct5050Otp / 100;
+        const genSft = sft * pct5050Gen / 100;
+        const otpPart = otpSft * rate5050Otp;
+        const genPart = genSft * rate5050Gen;
+        const totalPct = pct5050Otp + pct5050Gen;
+        rateDisplay = totalPct > 0
+          ? Math.round((pct5050Otp * rate5050Otp + pct5050Gen * rate5050Gen) / totalPct)
+          : 0;
+        saleRows.push({
+          label: pct5050Otp + '% Construction: ' + (Math.round(otpSft*100)/100) + ' Sft \u00D7 \u20B9 ' + formatINR(rate5050Otp) + ' /sft (OTP part)',
+          value: otpPart
+        });
+        saleRows.push({
+          label: pct5050Gen + '% Construction: ' + (Math.round(genSft*100)/100) + ' Sft \u00D7 \u20B9 ' + formatINR(rate5050Gen) + ' /sft (General part)',
+          value: genPart
+        });
+      } else {
+        optLabel = 'General Sale';
+        rateDisplay = rateGeneral;
+        saleRows.push({
+          label: 'Construction: ' + sft + ' Sft \u00D7 \u20B9 ' + formatINR(rateGeneral) + ' /sft (General)',
+          value: sft * rateGeneral
+        });
+      }
     }
     const saleValue = saleRows.reduce(function (s, r) { return s + r.value; }, 0);
     const rate = rateDisplay;
@@ -1023,22 +1258,32 @@
 
     const today = new Date();
     const dateStr = today.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-    const quoteRef = 'ARC/' + (today.getFullYear().toString().slice(-2)) +
+    const quoteRef = cfg.refPrefix + '/' + (today.getFullYear().toString().slice(-2)) +
                      String(today.getMonth()+1).padStart(2,'0') +
                      String(today.getDate()).padStart(2,'0') + '/' +
                      (plotNo !== '\u2014' ? plotNo : 'Q' + Math.floor(Math.random()*900+100));
 
     // ========= SCREEN RESULTS =========
     document.getElementById('summaryHeader').style.display = 'grid';
-    document.getElementById('summaryHeader').innerHTML =
+    var summaryHtml =
+      '<div class="item">Project<strong>' + cfg.name + '</strong></div>' +
       '<div class="item">Customer<strong>' + name + '</strong></div>' +
-      '<div class="item">Villa / Plot<strong>' + plotNo + '</strong></div>' +
-      '<div class="item">Plot Area<strong>' + plot + ' Sq. Yds</strong></div>' +
-      '<div class="item">Construction<strong>' + sft + ' Sft</strong></div>' +
-      '<div class="item">Pricing Option<strong>' + optLabel + '</strong></div>' +
-      '<div class="item">Rate<strong>\u20B9 ' + formatINR(rate) + ' /sft</strong></div>' +
+      '<div class="item">' + (plotMode ? 'Plot' : 'Villa / Plot') + '<strong>' + plotNo + '</strong></div>' +
+      '<div class="item">Plot Area<strong>' + plot + ' Sq. Yds</strong></div>';
+    if (plotMode) {
+      summaryHtml +=
+        '<div class="item">Sale Type<strong>Plot Sale</strong></div>' +
+        '<div class="item">Rate<strong>\u20B9 ' + formatINR(rate) + ' /Sq.Yd</strong></div>';
+    } else {
+      summaryHtml +=
+        '<div class="item">Construction<strong>' + sft + ' Sft</strong></div>' +
+        '<div class="item">Pricing Option<strong>' + optLabel + '</strong></div>' +
+        '<div class="item">Rate<strong>\u20B9 ' + formatINR(rate) + ' /sft</strong></div>';
+    }
+    summaryHtml +=
       '<div class="item" style="grid-column: span 2; border-top:1px dashed #d1d5db; padding-top:8px;">' +
         'Quotation Date<strong>' + dateStr + '</strong></div>';
+    document.getElementById('summaryHeader').innerHTML = summaryHtml;
 
     let html = '<table class="cost-table"><tbody>';
     html += '<tr class="section"><td>Basic Sale Value</td><td class="amt">Amount (\u20B9)</td></tr>';
@@ -1061,7 +1306,7 @@
       html += '<tr class="section"><td>Taxes &amp; Registration</td><td class="amt"></td></tr>';
       taxes.forEach(t => html += '<tr><td class="desc">' + t.label + '</td><td class="amt">' + formatINR(t.value) + '</td></tr>');
     }
-    html += '<tr class="grand-total"><td>Final Villa Cost (All Inclusive)</td><td class="amt">\u20B9 ' + formatINR(grandTotal) + '</td></tr>';
+    html += '<tr class="grand-total"><td>' + (plotMode ? 'Final Plot Cost (All Inclusive)' : 'Final Villa Cost (All Inclusive)') + '</td><td class="amt">\u20B9 ' + formatINR(grandTotal) + '</td></tr>';
     html += '</tbody></table>';
 
     document.getElementById('resultsBody').innerHTML = html;
@@ -1074,15 +1319,37 @@
     document.getElementById('p_ref').innerHTML =
       'Ref No: <strong>' + quoteRef + '</strong> &nbsp;&middot;&nbsp; Date: <strong>' + dateStr + '</strong>';
 
-    document.getElementById('p_customer').innerHTML =
+    // Update print header for project
+    var qlEl = document.getElementById('p_quoteLabel');
+    if (qlEl) qlEl.textContent = plotMode ? 'PLOT COST QUOTATION' : 'VILLA COST QUOTATION';
+    var pDeveloper = document.querySelector('.p-developer');
+    if (pDeveloper) pDeveloper.textContent = cfg.developer;
+    var pTagline = document.querySelector('.p-tagline');
+    if (pTagline) pTagline.textContent = cfg.tagline;
+    var pFooterEl = document.querySelector('.p-footer');
+    if (pFooterEl) pFooterEl.innerHTML = cfg.footerText;
+    var pSignCo = document.getElementById('p_signCompany');
+    if (pSignCo) pSignCo.textContent = 'For ' + cfg.developer;
+
+    var pCustHtml =
       '<div class="cell"><div class="k">Customer</div><div class="v">' + name + '</div></div>' +
       '<div class="cell"><div class="k">Contact</div><div class="v">' + phone + '</div></div>' +
-      '<div class="cell"><div class="k">Villa / Plot</div><div class="v">' + plotNo + '</div></div>' +
-      '<div class="cell"><div class="k">Plot Area</div><div class="v">' + plot + ' Sq. Yds</div></div>' +
-      '<div class="cell"><div class="k">Built-up Area</div><div class="v">' + sft + ' Sft</div></div>' +
-      '<div class="cell"><div class="k">Payment Plan</div><div class="v">' + optLabel + '</div></div>' +
-      '<div class="cell"><div class="k">Rate</div><div class="v">\u20B9 ' + formatINR(rate) + ' / sft</div></div>' +
-      '<div class="cell"><div class="k">Quote Valid</div><div class="v">15 Days</div></div>';
+      '<div class="cell"><div class="k">' + (plotMode ? 'Plot No.' : 'Villa / Plot') + '</div><div class="v">' + plotNo + '</div></div>' +
+      '<div class="cell"><div class="k">Plot Area</div><div class="v">' + plot + ' Sq. Yds</div></div>';
+    if (plotMode) {
+      pCustHtml +=
+        '<div class="cell"><div class="k">Sale Type</div><div class="v">Plot Sale</div></div>' +
+        '<div class="cell"><div class="k">Rate</div><div class="v">\u20B9 ' + formatINR(rate) + ' / Sq.Yd</div></div>' +
+        '<div class="cell"><div class="k">Project</div><div class="v">' + cfg.name + '</div></div>' +
+        '<div class="cell"><div class="k">Quote Valid</div><div class="v">15 Days</div></div>';
+    } else {
+      pCustHtml +=
+        '<div class="cell"><div class="k">Built-up Area</div><div class="v">' + sft + ' Sft</div></div>' +
+        '<div class="cell"><div class="k">Payment Plan</div><div class="v">' + optLabel + '</div></div>' +
+        '<div class="cell"><div class="k">Rate</div><div class="v">\u20B9 ' + formatINR(rate) + ' / sft</div></div>' +
+        '<div class="cell"><div class="k">Quote Valid</div><div class="v">15 Days</div></div>';
+    }
+    document.getElementById('p_customer').innerHTML = pCustHtml;
 
     let p = '';
     p += '<div class="p-section-head">Basic Sale Value</div>';
@@ -1122,7 +1389,7 @@
     document.getElementById('p_content').innerHTML = p;
 
     document.getElementById('p_total').innerHTML =
-      '<div><div class="tl-label">Final Villa Cost</div><div class="tl-sub">All-inclusive, including taxes &amp; registration</div></div>' +
+      '<div><div class="tl-label">' + (plotMode ? 'Final Plot Cost' : 'Final Villa Cost') + '</div><div class="tl-sub">All-inclusive, including taxes &amp; registration</div></div>' +
       '<div class="tl-amt">\u20B9 ' + formatINR(grandTotal) + '</div>';
 
     document.getElementById('p_words').style.display = 'block';
@@ -1131,6 +1398,134 @@
 
     if (window.innerWidth < 960) {
       document.getElementById('resultsPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+  }
+
+  function saveQuoteToDb() {
+    const saveCfg = getProjectConfig();
+    const savePlotMode = isPlotMode();
+    const name = (document.getElementById('customerName').value || '').trim();
+    if (!name) { alert('Please enter customer name and calculate first.'); return; }
+
+    const plotNoRaw = (document.getElementById('plotNo').value || '').trim().replace(/^[vp]-?/i, '');
+    const savePrefix = savePlotMode ? 'P-' : saveCfg.prefix;
+    const plotNo = plotNoRaw ? (savePrefix + plotNoRaw) : '';
+    const phone = (document.getElementById('customerPhone').value || '').trim();
+    const plotArea = parseInt(document.getElementById('plotArea').value) || 0;
+    const ratio = parseFloat(document.getElementById('sftRatio').value) || 0;
+    const sft = savePlotMode ? 0 : plotArea * ratio;
+
+    let pricingOption, ratePerSft, saleValue = 0;
+    let splitOtpPercent = null, splitGeneralPercent = null, splitOtpRate = null, splitGeneralRate = null;
+
+    if (savePlotMode) {
+      // Plot mode: simple area × rate
+      const plotRatePerSqYd = parseFloat(document.getElementById('plotRatePerSqYd').value) || 0;
+      pricingOption = 'PLOT';
+      ratePerSft = plotRatePerSqYd; // store rate per sq.yd in ratePerSft field
+      saleValue = plotArea * plotRatePerSqYd;
+    } else {
+      // Villa mode
+      const opt = document.querySelector('input[name="pricing"]:checked').value;
+      const rateOtp = parseFloat(document.getElementById('rateOtp').value) || 0;
+      const rateGeneral = parseFloat(document.getElementById('rateGeneral').value) || 0;
+
+      pricingOption = 'OTP';
+      ratePerSft = rateOtp;
+
+      if (opt === 'general') {
+        pricingOption = 'GENERAL';
+        ratePerSft = rateGeneral;
+      } else if (opt === '5050') {
+        pricingOption = 'SPLIT';
+        splitOtpPercent = parseFloat(document.getElementById('pct_5050_otp').value) || 0;
+        splitGeneralPercent = parseFloat(document.getElementById('pct_5050_gen').value) || 0;
+        splitOtpRate = parseFloat(document.getElementById('rate5050_otp').value) || 0;
+        splitGeneralRate = parseFloat(document.getElementById('rate5050_gen').value) || 0;
+        ratePerSft = null;
+      }
+
+      if (opt === 'otp') saleValue = sft * rateOtp;
+      else if (opt === 'general') saleValue = sft * rateGeneral;
+      else if (opt === '5050') {
+        saleValue = (sft * splitOtpPercent / 100) * splitOtpRate + (sft * splitGeneralPercent / 100) * splitGeneralRate;
+      }
+    }
+
+    // Additional charges
+    const getCharge = (chkId, amtId) => document.getElementById(chkId).checked ? (parseFloat(document.getElementById(amtId).value) || 0) : 0;
+    const clubHouse = getCharge('chk_club', 'amt_club');
+    const corpus = getCharge('chk_corpus', 'amt_corpus');
+    const legal = getCharge('chk_legal', 'amt_legal');
+    const caution = getCharge('chk_wes', 'amt_wes');
+    let maintenance = 0;
+    if (document.getElementById('chk_maint').checked) {
+      const mr = parseFloat(document.getElementById('maintRate').value) || 0;
+      const mm = parseFloat(document.getElementById('maintMonths').value) || 0;
+      const maintSft = savePlotMode ? 0 : (plotArea * ratio);
+      maintenance = Math.round(mr * maintSft * mm);
+    }
+    const additionalTotal = clubHouse + corpus + legal + caution + maintenance;
+
+    // PLC charges
+    let plcTotal = 0;
+    let plcDetails = [];
+    const addPLCSave = (chkId, label, amtId) => {
+      const chkEl = document.getElementById(chkId);
+      if (chkEl && chkEl.checked) {
+        const v = parseFloat(document.getElementById(amtId).value) || 0;
+        if (v > 0) { plcTotal += v; plcDetails.push(label + ': ₹' + v.toLocaleString('en-IN')); }
+      }
+    };
+    addPLCSave('chk_east', 'East Facing', 'amt_east');
+    addPLCSave('chk_west', 'West Facing', 'amt_west');
+    addPLCSave('chk_ne', 'North-East Corner', 'amt_ne');
+    addPLCSave('chk_other', 'Any Other Corner', 'amt_other');
+
+    const grandTotal = saleValue + additionalTotal + plcTotal;
+
+    // Get amount in words from the results (if displayed)
+    const wordsEl = document.getElementById('resultsWords');
+    const amountInWords = wordsEl ? wordsEl.textContent.replace('In Words:', '').trim() : '';
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const payload = {
+      quoteDate: today,
+      customerName: name,
+      customerPhone: phone || null,
+      plotNo: plotNo || null,
+      plotAreaSqYards: plotArea,
+      constructionRatio: ratio,
+      totalConstructionSft: Math.round(sft),
+      pricingOption: pricingOption,
+      ratePerSft: ratePerSft,
+      splitOtpPercent: splitOtpPercent,
+      splitGeneralPercent: splitGeneralPercent,
+      splitOtpRate: splitOtpRate,
+      splitGeneralRate: splitGeneralRate,
+      saleValue: Math.round(saleValue),
+      clubHouseCharges: clubHouse || null,
+      corpusFund: corpus || null,
+      legalCharges: legal || null,
+      cautionDeposit: caution || null,
+      advanceMaintenance: maintenance || null,
+      additionalChargesTotal: additionalTotal || null,
+      plcTotal: plcTotal || null,
+      plcDetails: plcDetails.length > 0 ? plcDetails.join('; ') : null,
+      grandTotal: Math.round(grandTotal),
+      amountInWords: amountInWords || null,
+      projectName: saveCfg.name,
+      saleType: savePlotMode ? 'PLOT' : 'VILLA',
+      salesPerson: null,
+      notes: null
+    };
+
+    // Post to parent React app
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'SAVE_SALE_QUOTE', payload: payload }, '*');
+    } else {
+      alert('Save feature only works when embedded in the application.');
     }
   }
 
@@ -1189,6 +1584,8 @@
     }, 120);
   }
 
+  // Initialize project state
+  onProjectChange();
   updateArea();
 </script>
 </body>

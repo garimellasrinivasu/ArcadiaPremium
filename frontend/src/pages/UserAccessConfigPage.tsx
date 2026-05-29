@@ -36,6 +36,79 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "PROJECT_DOCUMENTS", label: "Project Documents", path: "/activities/documents" },
       { key: "PARTNER_INVESTMENT", label: "Partner Investment", path: "/activities/partner-investment" },
       { key: "WALK_INS", label: "Walk-Ins", path: "/activities/walk-ins" },
+      { key: "LAND_CONVERTER", label: "Land Converter", path: "/activities/land-converter" },
+    ],
+  },
+  {
+    section: "Subcontracting",
+    pages: [
+      { key: "SUBCONTRACTING_DASHBOARD", label: "Dashboard", path: "/subcontracting/dashboard" },
+      { key: "CONTRACTORS", label: "Contractors", path: "/subcontracting/contractors" },
+      { key: "ACTIVITY_MASTER", label: "Activity Master", path: "/subcontracting/activity-master" },
+      { key: "JOBS_WBS", label: "Jobs / WBS", path: "/subcontracting/jobs" },
+      { key: "JOB_ESTIMATION", label: "Job Estimation", path: "/subcontracting/estimation" },
+      { key: "WORK_ORDERS", label: "Work Orders", path: "/subcontracting/work-orders" },
+    ],
+  },
+  {
+    section: "Subcontracting (Billing)",
+    pages: [
+      { key: "MEASUREMENT_BOOK", label: "Measurement Books", path: "/subcontracting/measurement-books" },
+      { key: "RA_BILLS", label: "RA Bills", path: "/subcontracting/ra-bills" },
+      { key: "RA_BILL_PAYMENT_CERT", label: "RA Bill Payments", path: "/subcontracting/ra-payments" },
+    ],
+  },
+  {
+    section: "Subcontracting (Costing & Config)",
+    pages: [
+      { key: "COSTING_STANDARD_HEAD", label: "Costing - Standard Head", path: "/subcontracting/costing-standard" },
+      { key: "COSTING_CUSTOM_HEAD", label: "Costing - Custom Head", path: "/subcontracting/costing-custom" },
+      { key: "MAP_COST_HEAD", label: "Map Cost Head", path: "/subcontracting/map-cost-head" },
+      { key: "WO_TEMPLATE_SETTING", label: "WO Template Setting", path: "/subcontracting/wo-templates" },
+    ],
+  },
+  {
+    section: "Subcontracting (Reports)",
+    pages: [
+      { key: "WO_REPORTS", label: "Work Order Reports", path: "/subcontracting/wo-reports" },
+      { key: "CONTRACTOR_BILL_REPORT", label: "Contractor Bill Report", path: "/subcontracting/contractor-bill-report" },
+      { key: "WO_REPORT_BY_UNIT", label: "WO Report By Unit", path: "/subcontracting/wo-report-unit" },
+      { key: "WO_REPORT_BY_ACTIVITY", label: "WO Report By Activity", path: "/subcontracting/wo-report-activity" },
+      { key: "MB_REPORT_BY_ACTIVITY", label: "MB Report By Activity", path: "/subcontracting/mb-report-activity" },
+      { key: "BILL_APPROVAL_HISTORY", label: "Bill Approval History", path: "/subcontracting/bill-approval-history" },
+      { key: "RATE_ANALYSIS", label: "Rate Analysis", path: "/subcontracting/rate-analysis" },
+    ],
+  },
+  {
+    section: "Project Execution",
+    pages: [
+      { key: "PROJ_EXECUTION_TEMPLATE", label: "Execution Templates", path: "/execution/templates" },
+      { key: "DAILY_EXECUTION_UPDATE", label: "Daily Execution Update", path: "/execution/daily-update" },
+    ],
+  },
+  {
+    section: "Material Management",
+    pages: [
+      { key: "VENDOR_LIST", label: "Vendors", path: "/material/vendors" },
+      { key: "MATERIAL_MASTER", label: "Material Groups", path: "/material/groups" },
+      { key: "VENDOR_MATERIAL_MAP", label: "Vendor-Material Mapping", path: "/material/vendor-mapping" },
+      { key: "MATERIAL_RATE", label: "Material Rates", path: "/material/rates" },
+      { key: "WAREHOUSE", label: "Warehouses", path: "/material/warehouses" },
+      { key: "MATERIAL_BOQ", label: "Material BOQ", path: "/material/boq" },
+    ],
+  },
+  {
+    section: "Supply Chain",
+    pages: [
+      { key: "MATERIAL_REQUISITION", label: "Requisitions", path: "/supply-chain/requisitions" },
+      { key: "MATERIAL_INDENT", label: "Indents", path: "/supply-chain/indents" },
+      { key: "PURCHASE_ORDER", label: "Purchase Orders", path: "/supply-chain/purchase-orders" },
+      { key: "MRN", label: "MRN", path: "/supply-chain/mrn" },
+      { key: "GRN", label: "GRN", path: "/supply-chain/grn" },
+      { key: "MATERIAL_ISSUE", label: "Material Issues", path: "/supply-chain/issues" },
+      { key: "PURCHASE_BILL", label: "Purchase Bills", path: "/supply-chain/purchase-bills" },
+      { key: "PO_PAYMENT_CERT", label: "PO Payments", path: "/supply-chain/po-payments" },
+      { key: "STOCK_TRANSFER", label: "Stock Transfers", path: "/supply-chain/stock-transfers" },
     ],
   },
   {

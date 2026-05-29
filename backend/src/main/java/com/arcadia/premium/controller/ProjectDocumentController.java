@@ -3,6 +3,9 @@ package com.arcadia.premium.controller;
 import com.arcadia.premium.dto.ProjectDocumentDto;
 import com.arcadia.premium.model.ProjectDocument;
 import com.arcadia.premium.service.ProjectDocumentService;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,10 +15,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.Principal;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
@@ -155,6 +164,96 @@ public class ProjectDocumentController {
         }
         boolean isAdminOrPartner = isCurrentUserAdminOrPartner();
         return ResponseEntity.ok(service.searchDocuments(query.trim(), principal.getName(), isAdminOrPartner));
+    }
+
+    /**
+     * Preview PPTX files as slide images.
+     * Returns JSON array of base64-encoded PNG images (one per slide).
+     */
+    /**
+     * Get slide count for a PPTX file (lightweight — just opens and counts).
+     */
+    @GetMapping("/{id}/slides")
+    public ResponseEntity<?> getSlideCount(@PathVariable Long id) {
+        try {
+            ProjectDocument doc = service.getById(id);
+            String ct = doc.getContentType().toLowerCase();
+            if (!ct.contains("presentation") && !ct.contains("powerpoint")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Not a PowerPoint file"));
+            }
+            ZipSecureFile.setMinInflateRatio(0.0);
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(doc.getFileData());
+                 XMLSlideShow ppt = new XMLSlideShow(bis)) {
+                return ResponseEntity.ok(Map.of("totalSlides", ppt.getSlides().size()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to read presentation: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Render a single slide as a JPEG image (on demand).
+     * Returns raw image bytes — much more efficient than base64 JSON.
+     */
+    @GetMapping("/{id}/slides/{slideIndex}")
+    public ResponseEntity<?> getSlideImage(@PathVariable Long id,
+                                            @PathVariable int slideIndex,
+                                            @RequestParam(value = "width", defaultValue = "960") int width) {
+        try {
+            ProjectDocument doc = service.getById(id);
+            String ct = doc.getContentType().toLowerCase();
+            if (!ct.contains("presentation") && !ct.contains("powerpoint")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Not a PowerPoint file"));
+            }
+            ZipSecureFile.setMinInflateRatio(0.0);
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(doc.getFileData());
+                 XMLSlideShow ppt = new XMLSlideShow(bis)) {
+
+                List<XSLFSlide> slides = ppt.getSlides();
+                if (slideIndex < 0 || slideIndex >= slides.size()) {
+                    return ResponseEntity.badRequest().body(Map.of("error",
+                            "Slide index out of range. Total slides: " + slides.size()));
+                }
+
+                Dimension pgSize = ppt.getPageSize();
+                double scale = (double) width / pgSize.getWidth();
+                int imgW = width;
+                int imgH = (int) (pgSize.getHeight() * scale);
+
+                BufferedImage img = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2 = img.createGraphics();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setPaint(Color.WHITE);
+                g2.fill(new Rectangle2D.Double(0, 0, imgW, imgH));
+                g2.transform(AffineTransform.getScaleInstance(scale, scale));
+
+                try {
+                    slides.get(slideIndex).draw(g2);
+                } catch (Exception drawErr) {
+                    g2.setPaint(Color.LIGHT_GRAY);
+                    g2.setFont(new Font("Arial", Font.PLAIN, 14));
+                    g2.drawString("Slide " + (slideIndex + 1) + " (partial render)", 20, 30);
+                }
+                g2.dispose();
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                // Use JPEG for smaller file size
+                ImageIO.write(img, "jpg", baos);
+                byte[] imageBytes = baos.toByteArray();
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.IMAGE_JPEG);
+                headers.setContentLength(imageBytes.length);
+                headers.setCacheControl("public, max-age=3600");
+                return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to render slide: " + e.getMessage()));
+        }
     }
 
     private ResponseEntity<byte[]> buildFileResponse(ProjectDocument doc) {
