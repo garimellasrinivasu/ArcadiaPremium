@@ -15,9 +15,21 @@ public interface FinanceSpentRepository extends JpaRepository<FinanceSpent, Long
 
     List<FinanceSpent> findBySubmittedByEmailOrderBySpentDateDesc(String email);
 
+    List<FinanceSpent> findBySubmittedByEmailOrderByCreatedAtDesc(String email);
+
     List<FinanceSpent> findByStatusOrderBySpentDateDesc(String status);
 
+    List<FinanceSpent> findByStatusOrderByCreatedAtDesc(String status);
+
+    List<FinanceSpent> findByStatusInOrderByCreatedAtDesc(List<String> statuses);
+
     List<FinanceSpent> findAllByOrderBySpentDateDesc();
+
+    List<FinanceSpent> findAllByOrderByCreatedAtDesc();
+
+    /** Count for generating next request number */
+    @Query("SELECT COUNT(f) FROM FinanceSpent f WHERE f.requestNumber LIKE ?1")
+    long countByRequestNumberPrefix(String prefix);
 
     @Query("SELECT DISTINCT f.paidBy FROM FinanceSpent f WHERE f.paidBy IS NOT NULL ORDER BY f.paidBy")
     List<String> findDistinctPaidBy();

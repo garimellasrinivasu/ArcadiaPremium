@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 public class FinanceSpentDto {
     private Long id;
+    private String requestNumber;
     private String projectName;
     private LocalDate spentDate;
     private BigDecimal amount;
@@ -19,6 +20,8 @@ public class FinanceSpentDto {
     private String description;
     private String remarks;
     private String status;
+    private LocalDate paymentDate;
+    private String paymentRemarks;
     private Long submittedById;
     private String submittedByName;
     private Long approvedById;
@@ -35,6 +38,7 @@ public class FinanceSpentDto {
     public static FinanceSpentDto fromEntity(FinanceSpent e, boolean includeImage) {
         FinanceSpentDto d = new FinanceSpentDto();
         d.id = e.getId();
+        d.requestNumber = e.getRequestNumber();
         d.projectName = e.getProjectName();
         d.spentDate = e.getSpentDate();
         d.amount = e.getAmount();
@@ -48,6 +52,8 @@ public class FinanceSpentDto {
         d.description = e.getDescription();
         d.remarks = e.getRemarks();
         d.status = e.getStatus();
+        d.paymentDate = e.getPaymentDate();
+        d.paymentRemarks = e.getPaymentRemarks();
         if (e.getSubmittedBy() != null) {
             d.submittedById = e.getSubmittedBy().getId();
             d.submittedByName = e.getSubmittedBy().getFirstName() + " " + e.getSubmittedBy().getLastName();
@@ -66,6 +72,8 @@ public class FinanceSpentDto {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getRequestNumber() { return requestNumber; }
+    public void setRequestNumber(String requestNumber) { this.requestNumber = requestNumber; }
     public String getProjectName() { return projectName; }
     public void setProjectName(String projectName) { this.projectName = projectName; }
     public LocalDate getSpentDate() { return spentDate; }
@@ -88,6 +96,10 @@ public class FinanceSpentDto {
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public LocalDate getPaymentDate() { return paymentDate; }
+    public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
+    public String getPaymentRemarks() { return paymentRemarks; }
+    public void setPaymentRemarks(String paymentRemarks) { this.paymentRemarks = paymentRemarks; }
     public Long getSubmittedById() { return submittedById; }
     public void setSubmittedById(Long submittedById) { this.submittedById = submittedById; }
     public String getSubmittedByName() { return submittedByName; }

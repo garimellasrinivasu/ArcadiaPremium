@@ -60,6 +60,7 @@ public class FinanceSpentController {
                 LocalDate.parse(from), LocalDate.parse(to), project));
     }
 
+    /** STAGE 2: Authority approves or rejects a payment request */
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN','PARTNER') or @pageAccess.hasAccess(authentication, 'FINANCE_SPENT')")
     public ResponseEntity<FinanceSpentDto> approve(
@@ -69,6 +70,27 @@ public class FinanceSpentController {
         String action = body.get("action");
         String remarks = body.get("remarks");
         return ResponseEntity.ok(service.approve(id, action, remarks, auth.getName()));
+    }
+
+    /** Get approved requests ready for the current user to pay */
+    @GetMapping("/approved-for-payment")
+    public ResponseEntity<List<FinanceSpentDto>> approvedForPayment(Authentication auth) {
+        return ResponseEntity.ok(service.getApprovedForPayment(auth.getName()));
+    }
+
+    /** STAGE 3: User marks an approved request as paid with receipt */
+    @PutMapping("/{id}/mark-paid")
+    public ResponseEntity<FinanceSpentDto> markPaid(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        return ResponseEntity.ok(service.markPaid(
+                id,
+                body.get("receiptImageBase64"),
+                body.get("paymentDate"),
+                body.get("paymentRemarks"),
+                body.get("vendorAcknowledgement"),
+                auth.getName()));
     }
 
     @DeleteMapping("/{id}")

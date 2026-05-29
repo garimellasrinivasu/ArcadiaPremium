@@ -16,6 +16,10 @@ public class FinanceSpent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Auto-generated unique request number: FIN-2026-0001 */
+    @Column(unique = true)
+    private String requestNumber;
+
     @Column(nullable = false)
     private String projectName;
 
@@ -40,9 +44,15 @@ public class FinanceSpent {
 
     private String remarks;
 
-    /** Status: PENDING, IN_APPROVAL, APPROVED, REJECTED */
+    /** Status: PENDING_APPROVAL, APPROVED, REJECTED, PAID */
     @Column(nullable = false)
-    private String status = "PENDING";
+    private String status = "PENDING_APPROVAL";
+
+    /** Date the payment was actually made (set when marking as PAID) */
+    private LocalDate paymentDate;
+
+    /** Remarks entered when making payment */
+    private String paymentRemarks;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "submitted_by", nullable = false)
@@ -67,6 +77,8 @@ public class FinanceSpent {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getRequestNumber() { return requestNumber; }
+    public void setRequestNumber(String requestNumber) { this.requestNumber = requestNumber; }
     public String getProjectName() { return projectName; }
     public void setProjectName(String projectName) { this.projectName = projectName; }
     public LocalDate getSpentDate() { return spentDate; }
@@ -87,6 +99,10 @@ public class FinanceSpent {
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public LocalDate getPaymentDate() { return paymentDate; }
+    public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
+    public String getPaymentRemarks() { return paymentRemarks; }
+    public void setPaymentRemarks(String paymentRemarks) { this.paymentRemarks = paymentRemarks; }
     public User getSubmittedBy() { return submittedBy; }
     public void setSubmittedBy(User submittedBy) { this.submittedBy = submittedBy; }
     public User getApprovedBy() { return approvedBy; }

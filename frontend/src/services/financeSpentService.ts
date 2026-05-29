@@ -2,6 +2,7 @@ import api from "./api";
 
 export interface FinanceSpentDto {
   id: number;
+  requestNumber?: string;
   projectName: string;
   spentDate: string;
   amount: number;
@@ -13,6 +14,8 @@ export interface FinanceSpentDto {
   description?: string;
   remarks?: string;
   status: string;
+  paymentDate?: string;
+  paymentRemarks?: string;
   submittedById: number;
   submittedByName: string;
   approvedById?: number;
@@ -35,12 +38,20 @@ export interface CreateFinanceSpentRequest {
   remarks?: string;
 }
 
+export interface MarkPaidRequest {
+  receiptImageBase64?: string;
+  paymentDate?: string;
+  paymentRemarks?: string;
+  vendorAcknowledgement?: string;
+}
+
 export interface UserName {
   id: number;
   name: string;
 }
 
 export const financeSpentService = {
+  /** Stage 1: Create a payment request (no receipt needed) */
   create: (req: CreateFinanceSpentRequest) =>
     api.post<FinanceSpentDto>("/finance-spent", req).then((r) => r.data),
 
@@ -53,16 +64,26 @@ export const financeSpentService = {
   mySubmissions: () =>
     api.get<FinanceSpentDto[]>("/finance-spent/my-submissions").then((r) => r.data),
 
+  /** Stage 2: Get pending approval requests (for authority users) */
   pendingApprovals: () =>
     api.get<FinanceSpentDto[]>("/finance-spent/pending").then((r) => r.data),
+
+  /** Stage 2: Approve or reject a request */
+  approve: (id: number, action: string, remarks?: string) =>
+    api.put<FinanceSpentDto>(`/finance-spent/${id}/approve`, { action, remarks }).then((r) => r.data),
+
+  /** Stage 3: Get approved requests ready for the current user to pay */
+  approvedForPayment: () =>
+    api.get<FinanceSpentDto[]>("/finance-spent/approved-for-payment").then((r) => r.data),
+
+  /** Stage 3: Mark an approved request as paid with receipt */
+  markPaid: (id: number, req: MarkPaidRequest) =>
+    api.put<FinanceSpentDto>(`/finance-spent/${id}/mark-paid`, req).then((r) => r.data),
 
   reports: (from: string, to: string, project?: string) =>
     api.get<FinanceSpentDto[]>("/finance-spent/reports", {
       params: { from, to, ...(project ? { project } : {}) },
     }).then((r) => r.data),
-
-  approve: (id: number, action: string, remarks?: string) =>
-    api.put<FinanceSpentDto>(`/finance-spent/${id}/approve`, { action, remarks }).then((r) => r.data),
 
   delete: (id: number) =>
     api.delete(`/finance-spent/${id}`),
