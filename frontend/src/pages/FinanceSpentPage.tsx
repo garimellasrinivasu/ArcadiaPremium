@@ -321,6 +321,7 @@ type TabKey = "newRequest" | "makePayment" | "myRequests" | "approvals" | "repor
    ═══════════════════════════════════════════ */
 export default function FinanceSpentPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("newRequest");
+  const [payNowId, setPayNowId] = useState<number | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userNames, setUserNames] = useState<UserName[]>([]);
@@ -390,9 +391,15 @@ export default function FinanceSpentPage() {
           onSuccess={() => { refreshDropdownOptions(); setActiveTab("myRequests"); }}
         />
       )}
-      {activeTab === "makePayment" && <MakePaymentTab />}
+      {activeTab === "makePayment" && (
+        <MakePaymentTab
+          key={payNowId ? `pay-${payNowId}` : "pay"}
+          autoSelectId={payNowId}
+          onClearAutoSelect={() => setPayNowId(null)}
+        />
+      )}
       {activeTab === "myRequests" && (
-        <MyRequestsTab onGoToPayment={() => setActiveTab("makePayment")} />
+        <MyRequestsTab onGoToPayment={(id: number) => { setPayNowId(id); setActiveTab("makePayment"); }} />
       )}
       {activeTab === "approvals" && <ApprovalsTab />}
       {activeTab === "reports" && <ReportsTab projects={projects} />}
@@ -510,10 +517,15 @@ function NewRequestTab({
    STAGE 3: MAKE PAYMENT TAB
    Shows approved requests; user pays & uploads receipt
    ═══════════════════════════════════════════ */
-function MakePaymentTab() {
+function MakePaymentTab({
+  autoSelectId, onClearAutoSelect,
+}: {
+  autoSelectId?: number | null;
+  onClearAutoSelect?: () => void;
+}) {
   const [entries, setEntries] = useState<FinanceSpentDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(autoSelectId ?? null);
   const [receiptImage, setReceiptImage] = useState("");
   const [paymentDate, setPaymentDate] = useState(toISODate(new Date()));
   const [paymentRemarks, setPaymentRemarks] = useState("");
@@ -597,7 +609,7 @@ function MakePaymentTab() {
           </label>
           <select
             value={selectedId ?? ""}
-            onChange={(e) => { setSelectedId(e.target.value ? Number(e.target.value) : null); setReceiptImage(""); setError(""); }}
+            onChange={(e) => { setSelectedId(e.target.value ? Number(e.target.value) : null); setReceiptImage(""); setError(""); onClearAutoSelect?.(); }}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           >
             <option value="">-- Select Transaction --</option>
@@ -676,7 +688,7 @@ function MakePaymentTab() {
 /* ═══════════════════════════════════════════
    MY REQUESTS TAB — all statuses
    ═══════════════════════════════════════════ */
-function MyRequestsTab({ onGoToPayment }: { onGoToPayment: () => void }) {
+function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void }) {
   const [entries, setEntries] = useState<FinanceSpentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewImage, setViewImage] = useState<string | null>(null);
@@ -754,7 +766,7 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: () => void }) {
                   {e.hasReceipt ? (
                     <button onClick={() => showReceipt(e.id)} className="text-arcadia-600 hover:underline text-xs">View</button>
                   ) : e.status === "APPROVED" ? (
-                    <button onClick={onGoToPayment} className="text-green-600 hover:underline text-xs font-semibold">Pay Now →</button>
+                    <button onClick={() => onGoToPayment(e.id)} className="text-green-600 hover:underline text-xs font-semibold">Pay Now →</button>
                   ) : (
                     <span className="text-gray-300 text-xs">N/A</span>
                   )}
