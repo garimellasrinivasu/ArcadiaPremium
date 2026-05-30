@@ -21,6 +21,12 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function formatDateTime(d: string) {
+  const dt = new Date(d);
+  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    + " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
+
 function statusBadge(status: string) {
   const cls: Record<string, string> = {
     PENDING_APPROVAL: "bg-yellow-100 text-yellow-700",
@@ -632,7 +638,8 @@ function MakePaymentTab({
               <p className="font-semibold text-gray-800">{selected.projectName} — {formatCurrency(selected.amount)}</p>
               <p className="text-sm text-gray-500 mt-1">Paid By: {selected.paidBy} → To: {selected.paidTo}</p>
               {selected.description && <p className="text-sm text-gray-600 mt-1">{selected.description}</p>}
-              <p className="text-xs text-gray-500 mt-2">Approved by {selected.approvedByName} on {selected.approvedAt ? formatDate(selected.approvedAt) : "—"}</p>
+              <p className="text-xs text-gray-500 mt-2">Requested: {selected.createdAt ? formatDateTime(selected.createdAt) : "—"}</p>
+              <p className="text-xs text-gray-500">Approved by {selected.approvedByName} on {selected.approvedAt ? formatDate(selected.approvedAt) : "—"}</p>
             </div>
 
             {/* Payment form — only visible after selecting a transaction */}
@@ -737,7 +744,8 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
           <thead className="bg-gray-100">
             <tr>
               <th className="px-3 py-2 text-left">Req #</th>
-              <th className="px-3 py-2 text-left">Date</th>
+              <th className="px-3 py-2 text-left">Requested At</th>
+              <th className="px-3 py-2 text-left">Spent Date</th>
               <th className="px-3 py-2 text-left">Project</th>
               <th className="px-3 py-2 text-right">Amount</th>
               <th className="px-3 py-2 text-left">Paid By</th>
@@ -751,6 +759,7 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
             {entries.map((e) => (
               <tr key={e.id} className="border-t hover:bg-gray-50">
                 <td className="px-3 py-2 font-mono text-xs text-arcadia-700">{e.requestNumber || "—"}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">{e.createdAt ? formatDateTime(e.createdAt) : "—"}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{formatDate(e.spentDate)}</td>
                 <td className="px-3 py-2">{e.projectName}</td>
                 <td className="px-3 py-2 text-right font-medium">{formatCurrency(e.amount)}</td>
@@ -830,6 +839,7 @@ function ApprovalsTab() {
                 <p className="text-sm font-bold text-arcadia-700">{e.requestNumber || "—"}</p>
                 <p className="font-semibold text-gray-800 mt-1">{e.projectName} — {formatCurrency(e.amount)}</p>
                 <p className="text-sm text-gray-500 mt-1">{formatDate(e.spentDate)} &middot; Submitted by {e.submittedByName}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Requested: {e.createdAt ? formatDateTime(e.createdAt) : "—"}</p>
                 {e.description && <p className="text-sm text-gray-600 mt-1">{e.description}</p>}
                 {e.remarks && <p className="text-xs text-gray-500 mt-1 italic">Remarks: {e.remarks}</p>}
               </div>
@@ -918,9 +928,9 @@ function ReportsTab({ projects }: { projects: Project[] }) {
   }
 
   function exportCSV() {
-    const header = ["Req #", "Date", "Project", "Amount", "Paid By", "Paid To", "Description", "Vendor Ack", "Status", "Payment Date", "Submitted By", "Approved By"];
+    const header = ["Req #", "Requested At", "Spent Date", "Project", "Amount", "Paid By", "Paid To", "Description", "Vendor Ack", "Status", "Payment Date", "Submitted By", "Approved By"];
     const rows = entries.map((e) => [
-      e.requestNumber || "", e.spentDate, e.projectName, e.amount, e.paidBy, e.paidTo,
+      e.requestNumber || "", e.createdAt ? formatDateTime(e.createdAt) : "", e.spentDate, e.projectName, e.amount, e.paidBy, e.paidTo,
       e.description || "", e.vendorAcknowledgement || "", e.status, e.paymentDate || "", e.submittedByName, e.approvedByName || "",
     ]);
     const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
@@ -1008,7 +1018,8 @@ function ReportsTab({ projects }: { projects: Project[] }) {
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-3 py-2 text-left">Req #</th>
-                <th className="px-3 py-2 text-left">Date</th>
+                <th className="px-3 py-2 text-left">Requested At</th>
+                <th className="px-3 py-2 text-left">Spent Date</th>
                 <th className="px-3 py-2 text-left">Project</th>
                 <th className="px-3 py-2 text-right">Amount</th>
                 <th className="px-3 py-2 text-left">Paid By</th>
@@ -1023,6 +1034,7 @@ function ReportsTab({ projects }: { projects: Project[] }) {
               {entries.map((e) => (
                 <tr key={e.id} className="border-t hover:bg-gray-50">
                   <td className="px-3 py-2 font-mono text-xs text-arcadia-700">{e.requestNumber || "—"}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">{e.createdAt ? formatDateTime(e.createdAt) : "—"}</td>
                   <td className="px-3 py-2 whitespace-nowrap">{formatDate(e.spentDate)}</td>
                   <td className="px-3 py-2">{e.projectName}</td>
                   <td className="px-3 py-2 text-right font-medium">{formatCurrency(e.amount)}</td>
@@ -1044,7 +1056,7 @@ function ReportsTab({ projects }: { projects: Project[] }) {
             </tbody>
             <tfoot className="bg-gray-50 font-semibold">
               <tr>
-                <td className="px-3 py-2" colSpan={3}>Total ({entries.length} entries)</td>
+                <td className="px-3 py-2" colSpan={4}>Total ({entries.length} entries)</td>
                 <td className="px-3 py-2 text-right">{formatCurrency(totalAmount)}</td>
                 <td colSpan={6}></td>
               </tr>
