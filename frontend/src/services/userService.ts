@@ -32,8 +32,8 @@ export const userService = {
     await api.delete(`/users/${id}`);
   },
 
-  async updatePageAccess(id: number, allowedPages: string[]): Promise<User> {
-    const { data } = await api.put<User>(`/users/${id}/page-access`, { allowedPages });
+  async updatePageAccess(id: number, allowedPages: string[], viewOnlyPages: string[] = []): Promise<User> {
+    const { data } = await api.put<User>(`/users/${id}/page-access`, { allowedPages, viewOnlyPages });
     return data;
   },
 

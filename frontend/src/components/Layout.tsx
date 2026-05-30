@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
+import ViewOnlyWrapper from "./ViewOnlyWrapper";
 
 interface MenuItem {
   label: string;
@@ -136,19 +137,21 @@ function CollapsibleSection({
   currentPath,
   isAdmin,
   allowedPages,
+  viewOnlyPages,
 }: {
   section: MenuSection;
   currentPath: string;
   isAdmin: boolean;
   allowedPages: Set<string>;
+  viewOnlyPages: Set<string>;
 }) {
   const visibleItems = section.items.filter((item) => {
     // Always-visible items (e.g. Change Password) shown to everyone
     if (item.alwaysVisible) return true;
     // Admin users see everything
     if (isAdmin) return true;
-    // Per-user page access check
-    if (item.pageKey) return allowedPages.has(item.pageKey);
+    // Per-user page access check — show if full access OR view-only
+    if (item.pageKey) return allowedPages.has(item.pageKey) || viewOnlyPages.has(item.pageKey);
     // No pageKey = hidden for non-admin (should not happen after migration)
     return false;
   });
@@ -183,17 +186,27 @@ function CollapsibleSection({
         <ul className="ml-6 mt-0.5 space-y-0.5">
           {visibleItems.map((item) => {
             const active = currentPath === item.path;
+            const isViewOnly = !isAdmin && item.pageKey ? viewOnlyPages.has(item.pageKey) && !allowedPages.has(item.pageKey) : false;
             return (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`block px-3 py-2 text-sm rounded-lg transition ${
+                  className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg transition ${
                     active
                       ? "bg-arcadia-600 text-white font-medium"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      : isViewOnly
+                        ? "text-gray-400 hover:bg-gray-50"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
                   {item.label}
+                  {isViewOnly && (
+                    <span className={`text-[9px] font-semibold px-1 py-0.5 rounded ${
+                      active ? "bg-white/20 text-white/80" : "bg-amber-50 text-amber-500"
+                    }`} title="View Only">
+                      VIEW
+                    </span>
+                  )}
                 </Link>
               </li>
             );
@@ -230,6 +243,7 @@ export default function Layout() {
     : false;
 
   const allowedPages = new Set<string>(currentUser?.allowedPages || []);
+  const viewOnlyPages = new Set<string>(currentUser?.viewOnlyPages || []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -301,6 +315,7 @@ export default function Layout() {
                 currentPath={location.pathname}
                 isAdmin={isAdmin}
                 allowedPages={allowedPages}
+                viewOnlyPages={viewOnlyPages}
               />
             ))}
           </nav>
@@ -318,7 +333,9 @@ export default function Layout() {
 
         {/* ===== MAIN CONTENT ===== */}
         <main className="flex-1 p-4 md:p-8 bg-gray-50 overflow-auto">
-          <Outlet />
+          <ViewOnlyWrapper>
+            <Outlet />
+          </ViewOnlyWrapper>
         </main>
       </div>
     </div>

@@ -10,6 +10,7 @@ public class UpdateUserRequest {
     private Long roleId;
     private Boolean active;
     private Set<String> allowedPages;
+    private Set<String> viewOnlyPages;
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -25,4 +26,6 @@ public class UpdateUserRequest {
     public void setActive(Boolean active) { this.active = active; }
     public Set<String> getAllowedPages() { return allowedPages; }
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
+    public Set<String> getViewOnlyPages() { return viewOnlyPages; }
+    public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
 }

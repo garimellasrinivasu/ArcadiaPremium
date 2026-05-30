@@ -47,6 +47,12 @@ public class User {
     @Column(name = "page_key")
     private Set<String> allowedPages = new HashSet<>();
 
+    /** Per-user view-only page keys. Pages listed here are visible in sidebar but all interactions disabled. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_view_only_pages", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "page_key")
+    private Set<String> viewOnlyPages = new HashSet<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -77,6 +83,8 @@ public class User {
     public Set<Role> getRoles() { return role != null ? Set.of(role) : Collections.emptySet(); }
     public Set<String> getAllowedPages() { return allowedPages; }
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
+    public Set<String> getViewOnlyPages() { return viewOnlyPages; }
+    public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

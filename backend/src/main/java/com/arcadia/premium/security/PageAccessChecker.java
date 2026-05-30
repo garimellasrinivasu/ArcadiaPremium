@@ -23,16 +23,14 @@ public class PageAccessChecker {
 
     /**
      * Returns true if the user identified by {@code authentication} has been
-     * granted access to the page identified by {@code pageKey}.
+     * granted full access to the page identified by {@code pageKey}.
      * Admin users always return true (they bypass page-level access).
      */
     public boolean hasAccess(Authentication authentication, String pageKey) {
         if (authentication == null || pageKey == null) return false;
 
         // If user already has ADMIN role, allow everything
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(a -> a.equals("ROLE_ADMIN"));
+        boolean isAdmin = isAdminUser(authentication);
         if (isAdmin) return true;
 
         // Look up user from DB to check allowedPages
@@ -40,5 +38,30 @@ public class PageAccessChecker {
         return userRepository.findByEmail(email)
                 .map(user -> user.getAllowedPages() != null && user.getAllowedPages().contains(pageKey))
                 .orElse(false);
+    }
+
+    /**
+     * Returns true if the user has either full access OR view-only access
+     * to the page identified by {@code pageKey}.
+     * Used by controllers that want to allow view-only users to read data.
+     */
+    public boolean hasAnyAccess(Authentication authentication, String pageKey) {
+        if (authentication == null || pageKey == null) return false;
+        if (isAdminUser(authentication)) return true;
+
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    boolean fullAccess = user.getAllowedPages() != null && user.getAllowedPages().contains(pageKey);
+                    boolean viewOnly = user.getViewOnlyPages() != null && user.getViewOnlyPages().contains(pageKey);
+                    return fullAccess || viewOnly;
+                })
+                .orElse(false);
+    }
+
+    private boolean isAdminUser(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> a.equals("ROLE_ADMIN"));
     }
 }

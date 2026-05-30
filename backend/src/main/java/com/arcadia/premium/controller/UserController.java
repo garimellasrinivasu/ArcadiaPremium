@@ -61,12 +61,13 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Update only page access for a user */
+    /** Update page access for a user (full access + view-only) */
     @PutMapping("/{id}/page-access")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> updatePageAccess(@PathVariable Long id,
                                                      @RequestBody Map<String, Set<String>> body) {
-        Set<String> pages = body.getOrDefault("allowedPages", Set.of());
-        return ResponseEntity.ok(userService.updatePageAccess(id, pages));
+        Set<String> allowedPages = body.getOrDefault("allowedPages", Set.of());
+        Set<String> viewOnlyPages = body.getOrDefault("viewOnlyPages", Set.of());
+        return ResponseEntity.ok(userService.updatePageAccess(id, allowedPages, viewOnlyPages));
     }
 }

@@ -15,6 +15,7 @@ public class UserDto {
     private boolean mustChangePassword;
     private RoleDto role;
     private Set<String> allowedPages;
+    private Set<String> viewOnlyPages;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -31,6 +32,7 @@ public class UserDto {
         dto.updatedAt = user.getUpdatedAt();
         dto.role = user.getRole() != null ? RoleDto.fromEntity(user.getRole()) : null;
         dto.allowedPages = user.getAllowedPages();
+        dto.viewOnlyPages = user.getViewOnlyPages();
         return dto;
     }
 
@@ -64,6 +66,8 @@ public class UserDto {
     public void setRole(RoleDto role) { this.role = role; }
     public Set<String> getAllowedPages() { return allowedPages; }
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
+    public Set<String> getViewOnlyPages() { return viewOnlyPages; }
+    public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

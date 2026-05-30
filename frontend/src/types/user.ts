@@ -6,6 +6,7 @@ export interface User {
   phone?: string;
   role: Role | null;
   allowedPages?: string[];
+  viewOnlyPages?: string[];
   active: boolean;
   createdAt: string;
   updatedAt: string;

@@ -100,15 +100,19 @@ public class UserService {
         if (request.getAllowedPages() != null) {
             user.setAllowedPages(request.getAllowedPages());
         }
+        if (request.getViewOnlyPages() != null) {
+            user.setViewOnlyPages(request.getViewOnlyPages());
+        }
 
         return UserDto.fromEntity(userRepository.save(user));
     }
 
     @Transactional
-    public UserDto updatePageAccess(Long id, Set<String> allowedPages) {
+    public UserDto updatePageAccess(Long id, Set<String> allowedPages, Set<String> viewOnlyPages) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         user.setAllowedPages(allowedPages != null ? allowedPages : new HashSet<>());
+        user.setViewOnlyPages(viewOnlyPages != null ? viewOnlyPages : new HashSet<>());
         return UserDto.fromEntity(userRepository.save(user));
     }
 

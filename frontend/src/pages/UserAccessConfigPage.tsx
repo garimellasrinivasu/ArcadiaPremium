@@ -142,6 +142,7 @@ export default function UserAccessConfigPage() {
   // Selected user for editing
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [editPages, setEditPages] = useState<Set<string>>(new Set());
+  const [editViewOnlyPages, setEditViewOnlyPages] = useState<Set<string>>(new Set());
 
   // Create user modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -187,39 +188,51 @@ export default function UserAccessConfigPage() {
   function selectUser(user: User) {
     setSelectedUserId(user.id);
     setEditPages(new Set(user.allowedPages || []));
+    setEditViewOnlyPages(new Set(user.viewOnlyPages || []));
     setSuccessMsg("");
     setError("");
   }
 
-  function togglePage(key: string) {
+  /** Get page access state: "none" | "view" | "full" */
+  function getPageState(key: string): "none" | "view" | "full" {
+    if (editPages.has(key)) return "full";
+    if (editViewOnlyPages.has(key)) return "view";
+    return "none";
+  }
+
+  /** Set page access state — ensures mutual exclusion between full and view-only */
+  function setPageState(key: string, state: "none" | "view" | "full") {
     setEditPages((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (state === "full") next.add(key); else next.delete(key);
+      return next;
+    });
+    setEditViewOnlyPages((prev) => {
+      const next = new Set(prev);
+      if (state === "view") next.add(key); else next.delete(key);
       return next;
     });
   }
 
-  function toggleSection(sectionPages: PageDef[]) {
+  function toggleSectionFull(sectionPages: PageDef[]) {
     const keys = sectionPages.map((p) => p.key);
-    const allSelected = keys.every((k) => editPages.has(k));
-    setEditPages((prev) => {
-      const next = new Set(prev);
-      if (allSelected) {
-        keys.forEach((k) => next.delete(k));
-      } else {
-        keys.forEach((k) => next.add(k));
-      }
-      return next;
-    });
+    const allFull = keys.every((k) => editPages.has(k));
+    keys.forEach((k) => setPageState(k, allFull ? "none" : "full"));
   }
 
   function selectAllPages() {
     setEditPages(new Set(ALL_PAGE_KEYS));
+    setEditViewOnlyPages(new Set());
   }
 
   function deselectAllPages() {
     setEditPages(new Set());
+    setEditViewOnlyPages(new Set());
+  }
+
+  function viewAllPages() {
+    setEditPages(new Set());
+    setEditViewOnlyPages(new Set(ALL_PAGE_KEYS));
   }
 
   async function savePageAccess() {
@@ -227,7 +240,11 @@ export default function UserAccessConfigPage() {
     setSaving(selectedUserId);
     setError("");
     try {
-      const updated = await userService.updatePageAccess(selectedUserId, Array.from(editPages));
+      const updated = await userService.updatePageAccess(
+        selectedUserId,
+        Array.from(editPages),
+        Array.from(editViewOnlyPages),
+      );
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       setSuccessMsg("Page access saved successfully!");
       setTimeout(() => setSuccessMsg(""), 3000);
@@ -368,7 +385,8 @@ export default function UserAccessConfigPage() {
             {filteredUsers.map((user) => {
               const selected = selectedUserId === user.id;
               const adminUser = isAdmin(user);
-              const pageCount = user.allowedPages?.length || 0;
+              const fullCount = user.allowedPages?.length || 0;
+              const viewCount = user.viewOnlyPages?.length || 0;
               return (
                 <div key={user.id}
                   onClick={() => selectUser(user)}
@@ -393,7 +411,11 @@ export default function UserAccessConfigPage() {
                       </span>
                     )}
                     <span className="text-[9px] text-gray-400 ml-auto">
-                      {adminUser ? "All pages" : `${pageCount} page${pageCount !== 1 ? "s" : ""}`}
+                      {adminUser ? "All pages" : (
+                        <>
+                          {fullCount} full{viewCount > 0 && <>, {viewCount} view</>}
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -460,58 +482,112 @@ export default function UserAccessConfigPage() {
                 </div>
               ) : (
                 <>
-                  {/* Page Access Grid */}
+                  {/* Page Access Grid — 3-state: None / View Only / Full Access */}
                   <div className="px-4 sm:px-6 py-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-semibold text-gray-700">Page Access</h3>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button onClick={selectAllPages}
                           className="text-[10px] sm:text-xs text-arcadia-600 hover:text-arcadia-800 font-medium">
-                          Select All
+                          All Full
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={viewAllPages}
+                          className="text-[10px] sm:text-xs text-amber-600 hover:text-amber-800 font-medium">
+                          All View
                         </button>
                         <span className="text-gray-300">|</span>
                         <button onClick={deselectAllPages}
                           className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700 font-medium">
-                          Deselect All
+                          All None
                         </button>
                         <span className="text-gray-300 hidden sm:inline">|</span>
                         <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">
-                          {editPages.size} of {ALL_PAGE_KEYS.length} selected
+                          {editPages.size} full, {editViewOnlyPages.size} view
                         </span>
                       </div>
                     </div>
 
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mb-3 text-[10px] text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-100 border border-red-300" /> No Access (hidden)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-400" /> View Only (read-only)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-100 border border-green-400" /> Full Access
+                      </span>
+                    </div>
+
                     <div className="space-y-4">
                       {PAGE_SECTIONS.map((section) => {
-                        const allChecked = section.pages.every((p) => editPages.has(p.key));
-                        const someChecked = section.pages.some((p) => editPages.has(p.key));
+                        const fullCount = section.pages.filter((p) => editPages.has(p.key)).length;
+                        const viewCount = section.pages.filter((p) => editViewOnlyPages.has(p.key)).length;
+                        const allFull = section.pages.every((p) => editPages.has(p.key));
                         return (
                           <div key={section.section} className="border border-gray-200 rounded-lg overflow-hidden">
-                            {/* Section header with toggle all */}
-                            <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-3 cursor-pointer"
-                              onClick={() => toggleSection(section.pages)}>
+                            {/* Section header */}
+                            <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
                               <input type="checkbox"
-                                checked={allChecked}
-                                ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
-                                onChange={() => toggleSection(section.pages)}
+                                checked={allFull}
+                                onChange={() => toggleSectionFull(section.pages)}
+                                title="Toggle all to Full Access"
                                 className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
                               <span className="text-xs sm:text-sm font-semibold text-gray-700">{section.section}</span>
                               <span className="text-[10px] text-gray-400 ml-auto">
-                                {section.pages.filter((p) => editPages.has(p.key)).length}/{section.pages.length}
+                                {fullCount} full{viewCount > 0 && `, ${viewCount} view`} / {section.pages.length}
                               </span>
                             </div>
-                            {/* Page checkboxes */}
-                            <div className="px-3 sm:px-4 py-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
-                              {section.pages.map((page) => (
-                                <label key={page.key}
-                                  className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                                  <input type="checkbox"
-                                    checked={editPages.has(page.key)}
-                                    onChange={() => togglePage(page.key)}
-                                    className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
-                                  <span className="text-xs sm:text-sm text-gray-700">{page.label}</span>
-                                </label>
-                              ))}
+                            {/* Page access rows */}
+                            <div className="px-3 sm:px-4 py-2 space-y-1">
+                              {section.pages.map((page) => {
+                                const state = getPageState(page.key);
+                                return (
+                                  <div key={page.key} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 min-w-0 truncate">{page.label}</span>
+                                    <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => setPageState(page.key, "none")}
+                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                          state === "none"
+                                            ? "bg-red-100 text-red-700 shadow-sm"
+                                            : "text-gray-400 hover:text-gray-600"
+                                        }`}
+                                        title="No Access"
+                                      >
+                                        None
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setPageState(page.key, "view")}
+                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                          state === "view"
+                                            ? "bg-amber-100 text-amber-700 shadow-sm"
+                                            : "text-gray-400 hover:text-gray-600"
+                                        }`}
+                                        title="View Only — page visible but all actions disabled"
+                                      >
+                                        View
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setPageState(page.key, "full")}
+                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                          state === "full"
+                                            ? "bg-green-100 text-green-700 shadow-sm"
+                                            : "text-gray-400 hover:text-gray-600"
+                                        }`}
+                                        title="Full Access"
+                                      >
+                                        Full
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );
@@ -521,7 +597,9 @@ export default function UserAccessConfigPage() {
 
                   {/* Save button */}
                   <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <span className="text-xs text-gray-400">{editPages.size} page(s) selected</span>
+                    <span className="text-xs text-gray-400">
+                      {editPages.size} full, {editViewOnlyPages.size} view-only
+                    </span>
                     <button onClick={savePageAccess} disabled={saving === selectedUserId}
                       className="bg-arcadia-600 text-white px-5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
                       {saving === selectedUserId ? "Saving..." : "Save Access"}
