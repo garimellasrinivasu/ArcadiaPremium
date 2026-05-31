@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
 import ViewOnlyWrapper from "./ViewOnlyWrapper";
+import { useProject, PROJECTS } from "../contexts/ProjectContext";
 
 interface MenuItem {
   label: string;
@@ -132,6 +133,116 @@ function CurrentDate() {
   );
 }
 
+function AnalogClock() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [timeStr, setTimeStr] = useState("");
+
+  useEffect(() => {
+    function draw() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const size = canvas.width;
+      const center = size / 2;
+      const radius = center - 4;
+      const now = new Date();
+
+      setTimeStr(
+        now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+      );
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Clock face
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#1e3a5f";
+      ctx.stroke();
+
+      // Hour markers
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const isMajor = i % 3 === 0;
+        const outerR = radius - 2;
+        const innerR = isMajor ? radius - 10 : radius - 6;
+        ctx.beginPath();
+        ctx.moveTo(center + outerR * Math.cos(angle), center + outerR * Math.sin(angle));
+        ctx.lineTo(center + innerR * Math.cos(angle), center + innerR * Math.sin(angle));
+        ctx.lineWidth = isMajor ? 2.5 : 1;
+        ctx.strokeStyle = isMajor ? "#1e3a5f" : "#6b7280";
+        ctx.stroke();
+      }
+
+      // Hour numbers
+      ctx.fillStyle = "#1e3a5f";
+      ctx.font = "bold 13px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 1; i <= 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const numR = radius - 18;
+        ctx.fillText(String(i), center + numR * Math.cos(angle), center + numR * Math.sin(angle));
+      }
+
+      const hours = now.getHours() % 12;
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      // Hour hand
+      const hAngle = ((hours + minutes / 60) * Math.PI) / 6 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(center + (radius * 0.5) * Math.cos(hAngle), center + (radius * 0.5) * Math.sin(hAngle));
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#1e3a5f";
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Minute hand
+      const mAngle = ((minutes + seconds / 60) * Math.PI) / 30 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(center + (radius * 0.7) * Math.cos(mAngle), center + (radius * 0.7) * Math.sin(mAngle));
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#2d6aa0";
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Second hand
+      const sAngle = (seconds * Math.PI) / 30 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(center + (radius * 0.78) * Math.cos(sAngle), center + (radius * 0.78) * Math.sin(sAngle));
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#c0392b";
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(center, center, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#1e3a5f";
+      ctx.fill();
+    }
+
+    draw();
+    const interval = setInterval(draw, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <canvas ref={canvasRef} width={116} height={116} className="hidden lg:block" />
+      <span className="text-sm font-bold text-gray-700 tracking-wide">{timeStr}</span>
+    </div>
+  );
+}
+
 function CollapsibleSection({
   section,
   currentPath,
@@ -221,6 +332,7 @@ export default function Layout() {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { selectedProject, setSelectedProject } = useProject();
 
   useEffect(() => {
     authService
@@ -249,8 +361,8 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen">
       {/* ===== TOP HEADER ===== */}
       <header className="px-4 lg:px-6 py-5 flex items-center border-b border-arcadia-200" style={{ background: "linear-gradient(135deg, #e0effe 0%, #f0f7ff 40%, #fdf9ef 100%)" }}>
-        {/* Left — Hamburger (mobile only) */}
-        <div className="flex-1 flex items-center">
+        {/* Left — Clock + Hamburger (mobile) */}
+        <div className="flex-1 flex items-center gap-3">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -262,17 +374,37 @@ export default function Layout() {
               <span className="text-2xl leading-none">☰</span>
             )}
           </button>
+          <AnalogClock />
         </div>
 
-        {/* Center — Logo */}
+        {/* Center — Project Logos */}
         <div className="flex-shrink-0">
-          <Link to="/" className="flex items-center justify-center">
-            <img
-              src="/arcadia-logo.png"
-              alt="Arcadia Premium"
-              className="h-12 lg:h-20 object-contain transition-all"
-            />
-          </Link>
+          <div className="flex items-center gap-2 lg:gap-3">
+            {PROJECTS.map((proj) => {
+              const isSelected = selectedProject.key === proj.key;
+              return (
+                <button
+                  key={proj.key}
+                  onClick={() => setSelectedProject(proj)}
+                  title={proj.name}
+                  className={`relative rounded-lg transition-all duration-200 p-1 lg:p-1.5 ${
+                    isSelected
+                      ? "scale-105"
+                      : "opacity-50 hover:opacity-80"
+                  }`}
+                >
+                  <img
+                    src={proj.logo}
+                    alt={proj.name}
+                    className="h-8 lg:h-14 w-auto object-contain"
+                  />
+                  {isSelected && (
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-gray-600 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right — Date & User */}

@@ -4,6 +4,23 @@ import { partnerInvestmentService } from "../services/partnerInvestmentService";
 import type { PartnerInvestmentDto, CreatePartnerInvestmentRequest } from "../services/partnerInvestmentService";
 import type { User } from "../types/user";
 import api from "../services/api";
+import { getLogoByName } from "../utils/projectLogo";
+
+/** Project-specific branding for printed documents */
+function getProjectBranding(projectName: string) {
+  const lower = projectName.toLowerCase();
+  if (lower.includes("redfern")) {
+    return { developer: "A Venture by Venkata Praneeth Developers Pvt. Ltd.", tagline: "Premium Living · Modern Spaces" };
+  }
+  if (lower.includes("aalaya")) {
+    return { developer: "Aalaya Arvindham", tagline: "Crafting Homes · Building Trust" };
+  }
+  if (lower.includes("kalpavruksha")) {
+    return { developer: "Kalpavruksha Developers", tagline: "Building Dreams · Delivering Excellence" };
+  }
+  // Default: Arcadia Premium
+  return { developer: "A Venture by Venkata Praneeth Developers Pvt. Ltd.", tagline: "Luxury Living · Premium Villas" };
+}
 
 /* ═══════════════════════════════════════════
    CONSTANTS & HELPERS
@@ -393,16 +410,22 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
 
         {/* Document */}
         <div ref={printRef} className="p-8" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
-          {/* Header */}
-          <div className="p-header" style={{ textAlign: "center", paddingBottom: "12px", borderBottom: "2px double #c9a961", marginBottom: "12px" }}>
-            <img className="p-logo" src="/arcadia-logo.png" alt="Logo" style={{ maxWidth: "140px", height: "auto", margin: "0 auto 4px", display: "block" }} />
-            <div style={{ fontSize: "8px", letterSpacing: "2px", color: "#a68845", textTransform: "uppercase", fontWeight: 700 }}>
-              A Venture by Venkata Praneeth Developers Pvt. Ltd.
-            </div>
-            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "9px", color: "#6b7280", marginTop: "2px" }}>
-              Luxury Living &middot; Premium Villas
-            </div>
-          </div>
+          {/* Header — dynamic logo per project */}
+          {(() => {
+            const branding = getProjectBranding(entry.projectName);
+            const logoSrc = getLogoByName(entry.projectName);
+            return (
+              <div className="p-header" style={{ textAlign: "center", paddingBottom: "12px", borderBottom: "2px double #c9a961", marginBottom: "12px" }}>
+                <img className="p-logo" src={logoSrc} alt={entry.projectName} style={{ maxWidth: "160px", height: "auto", margin: "0 auto 4px", display: "block" }} />
+                <div style={{ fontSize: "8px", letterSpacing: "2px", color: "#a68845", textTransform: "uppercase", fontWeight: 700 }}>
+                  {branding.developer}
+                </div>
+                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "9px", color: "#6b7280", marginTop: "2px" }}>
+                  {branding.tagline}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Title Bar */}
           <div style={{ textAlign: "center", margin: "10px 0" }}>
@@ -570,7 +593,7 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
 
           {/* Footer */}
           <div style={{ marginTop: "20px", textAlign: "center", fontSize: "8px", color: "#6b7280", letterSpacing: "0.4px", borderTop: "0.5px solid #c9a961", paddingTop: "6px" }}>
-            <strong style={{ color: "#0a2540" }}>ArcadiaPremium</strong> &mdash; Partner Investment Management System &middot; Generated on {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
+            <strong style={{ color: "#0a2540" }}>{entry.projectName}</strong> &mdash; Partner Investment Management System &middot; Generated on {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
           </div>
         </div>
       </div>

@@ -1123,12 +1123,15 @@
   function calculate() {
     updateArea();
 
+    const plotMode = isPlotMode();
+    const cfg = getProjectConfig();
+
     const name   = document.getElementById('customerName').value || '\u2014';
     const phone  = document.getElementById('customerPhone').value || '\u2014';
     // The "V-" prefix is displayed as a label next to the input. Prepend it here
     // (stripping any accidental "V-"/"v-" the user typed so it never doubles up).
     const plotNoRaw = (document.getElementById('plotNo').value || '').trim().replace(/^v-?/i, '');
-    const plotNo = plotNoRaw ? ('V-' + plotNoRaw) : '\u2014';
+    const plotNo = plotNoRaw ? (cfg.prefix + plotNoRaw) : '\u2014';
     const plot   = parseFloat(document.getElementById('plotArea').value) || 0;
     const ratio  = parseFloat(document.getElementById('sftRatio').value) || 0;
     const sft    = plot * ratio;
