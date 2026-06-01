@@ -39,4 +39,12 @@ public interface FinanceSpentRepository extends JpaRepository<FinanceSpent, Long
 
     @Query("SELECT DISTINCT f.description FROM FinanceSpent f WHERE f.description IS NOT NULL AND f.description <> '' ORDER BY f.description")
     List<String> findDistinctDescriptions();
+
+    /** Fetch only the receipt image for a specific entry (avoids loading full entity) */
+    @Query("SELECT f.receiptImageBase64 FROM FinanceSpent f WHERE f.id = :id")
+    String findReceiptImageById(@org.springframework.data.repository.query.Param("id") Long id);
+
+    /** Lightweight query for backfill — only loads id and requestNumber, NOT images */
+    @Query("SELECT f FROM FinanceSpent f WHERE f.requestNumber IS NULL OR f.requestNumber = ''")
+    List<FinanceSpent> findByRequestNumberIsNullOrEmpty();
 }

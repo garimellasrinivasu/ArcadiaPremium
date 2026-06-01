@@ -708,8 +708,8 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
   async function showReceipt(id: number) {
     setImageError("");
     try {
-      const full = await financeSpentService.getById(id);
-      if (full.receiptImageBase64) setViewImage(full.receiptImageBase64);
+      const image = await financeSpentService.getReceipt(id);
+      if (image) setViewImage(image);
       else { setImageError("No receipt image available."); setTimeout(() => setImageError(""), 3000); }
     } catch { setImageError("Failed to load receipt."); setTimeout(() => setImageError(""), 3000); }
   }
@@ -920,8 +920,8 @@ function ReportsTab({ projects }: { projects: Project[] }) {
     setImageError("");
     setLoadingReceipt(id);
     try {
-      const full = await financeSpentService.getById(id);
-      if (full.receiptImageBase64) setViewImage(full.receiptImageBase64);
+      const image = await financeSpentService.getReceipt(id);
+      if (image) setViewImage(image);
       else { setImageError("No receipt image available."); setTimeout(() => setImageError(""), 3000); }
     } catch { setImageError("Failed to load receipt."); setTimeout(() => setImageError(""), 3000); }
     finally { setLoadingReceipt(null); }

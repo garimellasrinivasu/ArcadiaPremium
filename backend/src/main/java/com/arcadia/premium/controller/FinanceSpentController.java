@@ -39,6 +39,13 @@ public class FinanceSpentController {
         return ResponseEntity.ok(service.getById(id));
     }
 
+    /** Lightweight endpoint — returns ONLY the receipt image, not the full entity */
+    @GetMapping("/{id}/receipt")
+    public ResponseEntity<Map<String, String>> getReceipt(@PathVariable Long id) {
+        String image = service.getReceiptImage(id);
+        return ResponseEntity.ok(Map.of("receiptImageBase64", image));
+    }
+
     @GetMapping("/my-submissions")
     public ResponseEntity<List<FinanceSpentDto>> mySubmissions(Authentication auth) {
         return ResponseEntity.ok(service.getMySubmissions(auth.getName()));

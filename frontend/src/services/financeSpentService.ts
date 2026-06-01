@@ -61,6 +61,10 @@ export const financeSpentService = {
   getById: (id: number) =>
     api.get<FinanceSpentDto>(`/finance-spent/${id}`).then((r) => r.data),
 
+  /** Lightweight — fetches only the receipt image, not the full entity */
+  getReceipt: (id: number) =>
+    api.get<{ receiptImageBase64: string }>(`/finance-spent/${id}/receipt`).then((r) => r.data.receiptImageBase64),
+
   mySubmissions: () =>
     api.get<FinanceSpentDto[]>("/finance-spent/my-submissions").then((r) => r.data),
 

@@ -36,9 +36,7 @@ public class FinanceSpentService {
     @PostConstruct
     @Transactional
     public void backfillRequestNumbers() {
-        List<FinanceSpent> noReqNum = repo.findAll().stream()
-                .filter(f -> f.getRequestNumber() == null || f.getRequestNumber().isBlank())
-                .collect(Collectors.toList());
+        List<FinanceSpent> noReqNum = repo.findByRequestNumberIsNullOrEmpty();
         if (!noReqNum.isEmpty()) {
             log.info("Backfilling request numbers for {} finance entries", noReqNum.size());
             for (FinanceSpent fs : noReqNum) {
@@ -47,6 +45,15 @@ public class FinanceSpentService {
             }
             log.info("Backfill complete");
         }
+    }
+
+    /** Fetch only the receipt image (lightweight — avoids loading full entity) */
+    public String getReceiptImage(Long id) {
+        String image = repo.findReceiptImageById(id);
+        if (image == null || image.isEmpty()) {
+            throw new RuntimeException("No receipt image found for entry: " + id);
+        }
+        return image;
     }
 
     /** Generate next request number like FIN-2026-0001 */
@@ -100,7 +107,7 @@ public class FinanceSpentService {
 
     public FinanceSpentDto getById(Long id) {
         return repo.findById(id)
-                .map(FinanceSpentDto::fromEntity)
+                .map(e -> FinanceSpentDto.fromEntity(e, false))
                 .orElseThrow(() -> new RuntimeException("Finance entry not found: " + id));
     }
 
