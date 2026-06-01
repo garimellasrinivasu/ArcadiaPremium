@@ -81,8 +81,8 @@ jobs:
             # Cleanup old unused images to save space
             docker image prune -f
             
-            # Make the backup script executable
-            chmod +x ~/arcadia-app/scripts/backup.sh
+            # Make scripts executable
+            chmod +x ~/arcadia-app/scripts/*.sh
             
             # Ensure the backup directory exists
             mkdir -p ~/arcadia-backups

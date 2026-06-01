@@ -7,6 +7,14 @@ spring:
     username: ${DB_USER:arcadia}
     password: ${DB_PASS:arcadia123}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000       # 30s to wait for a connection from pool
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000             # 5 min idle before connection is removed
+      max-lifetime: 600000             # 10 min max connection lifetime
+      keepalive-time: 300000           # 5 min keepalive ping to prevent stale connections
+      validation-timeout: 5000        # 5s to validate a connection
 
   jpa:
     hibernate:

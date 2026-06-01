@@ -11,21 +11,38 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - arcadia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d arcadia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     image: ghcr.io/garimellasrinivasu/arcadiapremium-backend:main
     container_name: backend
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/arcadia
       - SPRING_DATASOURCE_USERNAME=dev_user
       - SPRING_DATASOURCE_PASSWORD=dev_password
+      - SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=30000
+      - SPRING_DATASOURCE_HIKARI_VALIDATION_TIMEOUT=5000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=600000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=300000
     ports:
       - "3001:8080"
     networks:
       - arcadia-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/auth/login 2>&1 | grep -q '405\\|200' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     image: ghcr.io/garimellasrinivasu/arcadiapremium-frontend:main
@@ -34,7 +51,8 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - arcadia-network
 
