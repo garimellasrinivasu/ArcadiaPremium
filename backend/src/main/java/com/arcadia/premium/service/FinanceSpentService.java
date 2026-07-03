@@ -32,10 +32,11 @@ public class FinanceSpentService {
         this.userRepo = userRepo;
     }
 
-    /** On startup, backfill request numbers for any old entries that don't have one */
+    /** On startup, backfill request numbers and hasReceipt flag for entries that need it */
     @PostConstruct
     @Transactional
-    public void backfillRequestNumbers() {
+    public void backfillOnStartup() {
+        // Backfill request numbers
         List<FinanceSpent> noReqNum = repo.findByRequestNumberIsNullOrEmpty();
         if (!noReqNum.isEmpty()) {
             log.info("Backfilling request numbers for {} finance entries", noReqNum.size());
@@ -43,7 +44,12 @@ public class FinanceSpentService {
                 fs.setRequestNumber(generateRequestNumber());
                 repo.save(fs);
             }
-            log.info("Backfill complete");
+            log.info("Request number backfill complete");
+        }
+        // Backfill hasReceipt flag for existing entries that have receipt images
+        int updated = repo.backfillHasReceiptFlag();
+        if (updated > 0) {
+            log.info("Backfilled hasReceipt flag for {} finance entries", updated);
         }
     }
 

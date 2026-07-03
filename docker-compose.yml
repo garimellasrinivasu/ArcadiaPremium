@@ -26,8 +26,8 @@ services:
       db:
         condition: service_healthy
     environment:
-      # JVM heap limits — CRITICAL for 3.7GB server
-      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+      # JVM heap limits — sized for 3.7GB server with large base64 receipt images
+      - JAVA_TOOL_OPTIONS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/arcadia
       - SPRING_DATASOURCE_USERNAME=dev_user
       - SPRING_DATASOURCE_PASSWORD=dev_password
@@ -44,7 +44,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 1536M
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/ 2>/dev/null; exit 0"]
       interval: 60s

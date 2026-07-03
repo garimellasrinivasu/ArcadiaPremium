@@ -2,7 +2,9 @@ package com.arcadia.premium.repository;
 
 import com.arcadia.premium.model.FinanceSpent;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,4 +49,10 @@ public interface FinanceSpentRepository extends JpaRepository<FinanceSpent, Long
     /** Lightweight query for backfill — only loads id and requestNumber, NOT images */
     @Query("SELECT f FROM FinanceSpent f WHERE f.requestNumber IS NULL OR f.requestNumber = ''")
     List<FinanceSpent> findByRequestNumberIsNullOrEmpty();
+
+    /** Backfill hasReceipt flag for existing entries (runs once on startup) */
+    @Transactional
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE finance_spent SET has_receipt = true WHERE has_receipt = false AND receipt_image_base64 IS NOT NULL AND receipt_image_base64 != ''", nativeQuery = true)
+    int backfillHasReceiptFlag();
 }

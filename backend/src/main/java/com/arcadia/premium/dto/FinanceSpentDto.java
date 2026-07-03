@@ -45,7 +45,8 @@ public class FinanceSpentDto {
         d.paidBy = e.getPaidBy();
         d.paidTo = e.getPaidTo();
         d.vendorAcknowledgement = e.getVendorAcknowledgement();
-        d.hasReceipt = e.getReceiptImageBase64() != null && !e.getReceiptImageBase64().isEmpty();
+        // Use the lightweight boolean flag — does NOT trigger lazy loading of the large TEXT column
+        d.hasReceipt = e.isHasReceipt();
         if (includeImage) {
             d.receiptImageBase64 = e.getReceiptImageBase64();
         }

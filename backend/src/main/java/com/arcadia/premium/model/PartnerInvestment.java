@@ -46,6 +46,7 @@ public class PartnerInvestment {
     /** LAND, CONSTRUCTION, MATERIAL, LABOUR, LEGAL, REGISTRATION, OTHER */
     private String purpose;
 
+    @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String receiptImageBase64;
 

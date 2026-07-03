@@ -114,6 +114,24 @@
 
     <build>
         <plugins>
+            <!-- Hibernate bytecode enhancement — enables @Basic(fetch = LAZY) on columns
+                 so large TEXT columns (like receipt images) are NOT loaded in list queries -->
+            <plugin>
+                <groupId>org.hibernate.orm.tooling</groupId>
+                <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                <version>6.5.2.Final</version>
+                <executions>
+                    <execution>
+                        <id>enhance</id>
+                        <goals><goal>enhance</goal></goals>
+                        <configuration>
+                            <enableLazyInitialization>true</enableLazyInitialization>
+                            <enableDirtyTracking>false</enableDirtyTracking>
+                            <enableAssociationManagement>false</enableAssociationManagement>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

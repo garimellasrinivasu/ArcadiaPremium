@@ -1,6 +1,7 @@
 package com.arcadia.premium.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -37,8 +38,14 @@ public class FinanceSpent {
 
     private String vendorAcknowledgement; // YES, NO, PENDING
 
+    @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String receiptImageBase64;
+
+    /** Lightweight flag — avoids loading the large receipt column just to check existence */
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean hasReceipt = false;
 
     private String description;
 
@@ -92,7 +99,12 @@ public class FinanceSpent {
     public String getVendorAcknowledgement() { return vendorAcknowledgement; }
     public void setVendorAcknowledgement(String vendorAcknowledgement) { this.vendorAcknowledgement = vendorAcknowledgement; }
     public String getReceiptImageBase64() { return receiptImageBase64; }
-    public void setReceiptImageBase64(String receiptImageBase64) { this.receiptImageBase64 = receiptImageBase64; }
+    public void setReceiptImageBase64(String receiptImageBase64) {
+        this.receiptImageBase64 = receiptImageBase64;
+        this.hasReceipt = receiptImageBase64 != null && !receiptImageBase64.isEmpty();
+    }
+    public boolean isHasReceipt() { return hasReceipt; }
+    public void setHasReceipt(boolean hasReceipt) { this.hasReceipt = hasReceipt; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getRemarks() { return remarks; }

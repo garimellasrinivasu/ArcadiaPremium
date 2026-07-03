@@ -12,6 +12,10 @@ import RolesPage from "./pages/RolesPage";
 import SaleQuotePage from "./pages/SaleQuotePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import FinanceSpentPage from "./pages/FinanceSpentPage";
+import PujaExpensesPage from "./pages/PujaExpensesPage";
+import ExpensesSummaryPage from "./pages/ExpensesSummaryPage";
+import WeeklyExpensesPage from "./pages/WeeklyExpensesPage";
+import PetrolExpensesPage from "./pages/PetrolExpensesPage";
 import SaleEntryPage from "./pages/SaleEntryPage";
 import MasterPlanPage from "./pages/MasterPlanPage";
 import SiteAttendancePage from "./pages/SiteAttendancePage";
@@ -102,6 +106,11 @@ export default function App() {
         <Route path="activities/sale-entry" element={<SaleEntryPage />} />
         <Route path="activities/sale-quote" element={<SaleQuotePage />} />
         <Route path="activities/finance-spent" element={<FinanceSpentPage />} />
+        <Route path="activities/expenses" element={<ExpensesSummaryPage />} />
+        <Route path="activities/expenses/puja" element={<PujaExpensesPage />} />
+        <Route path="activities/expenses/weekly" element={<WeeklyExpensesPage />} />
+        <Route path="activities/expenses/petrol" element={<PetrolExpensesPage />} />
+        <Route path="activities/puja-expenses" element={<PujaExpensesPage />} />
         <Route path="activities/master-plan" element={<MasterPlanPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
         <Route path="activities/documents" element={<ProjectDocumentsPage />} />

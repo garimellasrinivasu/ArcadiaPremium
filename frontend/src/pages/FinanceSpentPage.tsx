@@ -700,18 +700,36 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
   const [loading, setLoading] = useState(true);
   const [viewImage, setViewImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
+  const [loadingReceipt, setLoadingReceipt] = useState<number | null>(null);
 
   useEffect(() => {
     financeSpentService.mySubmissions().then(setEntries).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
+  function closeViewer() {
+    if (viewImage && viewImage.startsWith("blob:")) URL.revokeObjectURL(viewImage);
+    setViewImage(null);
+  }
+
   async function showReceipt(id: number) {
     setImageError("");
+    setLoadingReceipt(id);
     try {
-      const image = await financeSpentService.getReceipt(id);
-      if (image) setViewImage(image);
-      else { setImageError("No receipt image available."); setTimeout(() => setImageError(""), 3000); }
-    } catch { setImageError("Failed to load receipt."); setTimeout(() => setImageError(""), 3000); }
+      // Primary: fetch as binary blob (efficient, avoids JSON overhead)
+      const blobUrl = await financeSpentService.getReceiptBlob(id);
+      setViewImage(blobUrl);
+    } catch {
+      // Fallback: try the JSON endpoint
+      try {
+        const image = await financeSpentService.getReceipt(id);
+        if (image) setViewImage(image);
+        else setImageError("No receipt image available.");
+      } catch {
+        setImageError("Failed to load receipt image. Please try again.");
+      }
+    } finally {
+      setLoadingReceipt(null);
+    }
   }
 
   if (loading) return <p className="text-gray-400 text-center py-12">Loading...</p>;
@@ -773,7 +791,10 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
                 </td>
                 <td className="px-3 py-2 text-center">
                   {e.hasReceipt ? (
-                    <button onClick={() => showReceipt(e.id)} className="text-arcadia-600 hover:underline text-xs">View</button>
+                    <button onClick={() => showReceipt(e.id)} disabled={loadingReceipt === e.id}
+                      className="text-arcadia-600 hover:underline text-xs disabled:opacity-50">
+                      {loadingReceipt === e.id ? "..." : "View"}
+                    </button>
                   ) : e.status === "APPROVED" ? (
                     <button onClick={() => onGoToPayment(e.id)} className="text-green-600 hover:underline text-xs font-semibold">Pay Now →</button>
                   ) : (
@@ -787,8 +808,11 @@ function MyRequestsTab({ onGoToPayment }: { onGoToPayment: (id: number) => void 
       </div>
 
       {viewImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setViewImage(null)}>
-          <img src={viewImage} alt="Receipt" className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-xl" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={closeViewer}>
+          <div className="relative">
+            <img src={viewImage} alt="Receipt" className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-xl" />
+            <button onClick={closeViewer} className="absolute top-2 right-2 bg-white/80 rounded-full w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-white font-bold text-lg">&times;</button>
+          </div>
         </div>
       )}
     </>
@@ -916,15 +940,30 @@ function ReportsTab({ projects }: { projects: Project[] }) {
   const pendingCount = entries.filter((e) => e.status === "PENDING_APPROVAL").length;
   const rejectedCount = entries.filter((e) => e.status === "REJECTED").length;
 
+  function closeViewer() {
+    if (viewImage && viewImage.startsWith("blob:")) URL.revokeObjectURL(viewImage);
+    setViewImage(null);
+  }
+
   async function showReceipt(id: number) {
     setImageError("");
     setLoadingReceipt(id);
     try {
-      const image = await financeSpentService.getReceipt(id);
-      if (image) setViewImage(image);
-      else { setImageError("No receipt image available."); setTimeout(() => setImageError(""), 3000); }
-    } catch { setImageError("Failed to load receipt."); setTimeout(() => setImageError(""), 3000); }
-    finally { setLoadingReceipt(null); }
+      // Primary: fetch as binary blob (efficient, avoids JSON overhead)
+      const blobUrl = await financeSpentService.getReceiptBlob(id);
+      setViewImage(blobUrl);
+    } catch {
+      // Fallback: try the JSON endpoint
+      try {
+        const image = await financeSpentService.getReceipt(id);
+        if (image) setViewImage(image);
+        else setImageError("No receipt image available.");
+      } catch {
+        setImageError("Failed to load receipt image. Please try again.");
+      }
+    } finally {
+      setLoadingReceipt(null);
+    }
   }
 
   function exportCSV() {
@@ -1066,8 +1105,11 @@ function ReportsTab({ projects }: { projects: Project[] }) {
       )}
 
       {viewImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setViewImage(null)}>
-          <img src={viewImage} alt="Receipt" className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-xl" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={closeViewer}>
+          <div className="relative">
+            <img src={viewImage} alt="Receipt" className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-xl" />
+            <button onClick={closeViewer} className="absolute top-2 right-2 bg-white/80 rounded-full w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-white font-bold text-lg">&times;</button>
+          </div>
         </div>
       )}
     </div>
