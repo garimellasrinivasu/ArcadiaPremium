@@ -89,3 +89,4 @@ jobs:
             
             # Setup daily backup cron job at 2:00 AM (removes any old backup job first to avoid duplicates)
             (crontab -l 2>/dev/null | grep -v "scripts/backup.sh"; echo "0 2 * * * /bin/bash ~/arcadia-app/scripts/backup.sh >> ~/arcadia-backups/backup.log 2>&1") | crontab -
+
