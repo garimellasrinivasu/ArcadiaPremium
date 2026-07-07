@@ -26,12 +26,6 @@ export const PROJECTS: ProjectInfo[] = [
     shortName: "Aalaya Arvindham",
     logo: "/logo-aalaya-arvindham.svg",
   },
-  {
-    key: "KALPAVRUKSHA",
-    name: "Kalpavruksha Developers",
-    shortName: "Kalpavruksha",
-    logo: "/logo-kalpavruksha.svg",
-  },
 ];
 
 interface ProjectContextValue {

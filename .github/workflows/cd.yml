@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       # Verify BOTH CI workflows passed before deploying
       - name: Check all CI workflows passed
@@ -48,7 +48,7 @@ jobs:
 
       - name: Copy Docker Compose to Server
         if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
@@ -66,27 +66,43 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: ZOHO_SMTP_PASSWORD
+          command_timeout: 5m
           script: |
+            set -e
+
             # Securely inject SMTP password
             echo "export SMTP_PASS=\"$ZOHO_SMTP_PASSWORD\"" > ~/.backup_secrets
             chmod 600 ~/.backup_secrets
-            
+
             cd ~/arcadia-app
+
             # Login to registry
+            echo "Logging into GHCR..."
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
             # Pull latest images
+            echo "Pulling latest images..."
             docker compose pull
+
             # Restart containers with the new images
+            echo "Starting containers..."
             docker compose up -d --remove-orphans
+
+            # Wait and verify containers are running
+            echo "Waiting for containers to start..."
+            sleep 10
+            docker compose ps
+
             # Cleanup old unused images to save space
             docker image prune -f
-            
+
             # Make scripts executable
-            chmod +x ~/arcadia-app/scripts/*.sh
-            
+            chmod +x ~/arcadia-app/scripts/*.sh 2>/dev/null || true
+
             # Ensure the backup directory exists
             mkdir -p ~/arcadia-backups
-            
+
             # Setup daily backup cron job at 2:00 AM (removes any old backup job first to avoid duplicates)
             (crontab -l 2>/dev/null | grep -v "scripts/backup.sh"; echo "0 2 * * * /bin/bash ~/arcadia-app/scripts/backup.sh >> ~/arcadia-backups/backup.log 2>&1") | crontab -
 
+            echo "Deployment complete!"

@@ -380,7 +380,7 @@ export default function Layout() {
 
         {/* Center — Project Logos */}
         <div className="flex-shrink-0">
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-3 lg:gap-5">
             {PROJECTS.map((proj) => {
               const isSelected = selectedProject.key === proj.key;
               return (
@@ -388,7 +388,7 @@ export default function Layout() {
                   key={proj.key}
                   onClick={() => setSelectedProject(proj)}
                   title={proj.name}
-                  className={`relative rounded-lg transition-all duration-200 p-1 lg:p-1.5 ${
+                  className={`relative rounded-lg transition-all duration-200 p-1 lg:p-2 ${
                     isSelected
                       ? "scale-105"
                       : "opacity-50 hover:opacity-80"
@@ -397,7 +397,7 @@ export default function Layout() {
                   <img
                     src={proj.logo}
                     alt={proj.name}
-                    className="h-8 lg:h-14 w-auto object-contain"
+                    className="h-9 lg:h-16 w-auto object-contain"
                   />
                   {isSelected && (
                     <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-gray-600 rounded-full" />
