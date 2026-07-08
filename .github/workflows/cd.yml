@@ -53,7 +53,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,scripts/"
+          source: "docker-compose.yml,Caddyfile,scripts/"
           target: "~/arcadia-app"
 
       - name: Deploy via SSH

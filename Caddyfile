@@ -1,0 +1,7 @@
+arcadiapremium.duckdns.org {
+    # Proxy all /api requests to Spring Boot backend
+    reverse_proxy /api/* backend:8080
+
+    # Proxy everything else to Apache frontend
+    reverse_proxy frontend:80
+}

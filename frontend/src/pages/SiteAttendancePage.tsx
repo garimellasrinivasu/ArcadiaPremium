@@ -193,13 +193,35 @@ function CaptureTab({
   /* Start camera */
   const startCamera = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+      // Check if mediaDevices API is available (requires HTTPS)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Camera API not available. Make sure you are using HTTPS.");
+        return;
+      }
+      // Try rear camera first (mobile), fall back to any camera (desktop/Mac)
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+      } catch {
+        // Fallback: request any available camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       streamRef.current = stream;
       setCameraActive(true);
-    } catch {
-      alert("Could not access camera. Please allow camera permissions.");
+    } catch (err: any) {
+      const name = err?.name || "Unknown";
+      if (name === "NotAllowedError") {
+        alert("Camera permission denied. Please go to your browser settings and allow camera access for this site, then reload the page.");
+      } else if (name === "NotFoundError") {
+        alert("No camera found on this device.");
+      } else if (name === "NotReadableError") {
+        alert("Camera is in use by another application. Please close other apps using the camera and try again.");
+      } else {
+        alert(`Camera error (${name}): ${err?.message || "Unknown error"}`);
+      }
+      console.error("Camera access error:", name, err);
     }
   }, []);
 

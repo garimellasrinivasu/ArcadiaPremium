@@ -16,6 +16,7 @@ import PujaExpensesPage from "./pages/PujaExpensesPage";
 import ExpensesSummaryPage from "./pages/ExpensesSummaryPage";
 import WeeklyExpensesPage from "./pages/WeeklyExpensesPage";
 import PetrolExpensesPage from "./pages/PetrolExpensesPage";
+import InitialSalesPage from "./pages/InitialSalesPage";
 import SaleEntryPage from "./pages/SaleEntryPage";
 import MasterPlanPage from "./pages/MasterPlanPage";
 import SiteAttendancePage from "./pages/SiteAttendancePage";
@@ -111,6 +112,7 @@ export default function App() {
         <Route path="activities/expenses/weekly" element={<WeeklyExpensesPage />} />
         <Route path="activities/expenses/petrol" element={<PetrolExpensesPage />} />
         <Route path="activities/puja-expenses" element={<PujaExpensesPage />} />
+        <Route path="activities/initial-sales" element={<InitialSalesPage />} />
         <Route path="activities/master-plan" element={<MasterPlanPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
         <Route path="activities/documents" element={<ProjectDocumentsPage />} />

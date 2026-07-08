@@ -34,6 +34,7 @@ const menuSections: MenuSection[] = [
   {
     label: "Activities",
     items: [
+      { label: "Initial Sales", path: "/activities/initial-sales", pageKey: "INITIAL_SALES" },
       { label: "Sale Entry", path: "/activities/sale-entry", pageKey: "SALE_ENTRY" },
       { label: "Sale Quote", path: "/activities/sale-quote", pageKey: "SALE_QUOTE" },
       { label: "Finance Spent", path: "/activities/finance-spent", pageKey: "FINANCE_SPENT" },

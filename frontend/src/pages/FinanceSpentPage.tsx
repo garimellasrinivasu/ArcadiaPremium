@@ -187,20 +187,33 @@ function ReceiptCapture({
   async function startCamera() {
     setCameraError("");
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError("Camera API not available. Make sure you are using HTTPS.");
+        return;
+      }
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 960 } },
         });
       } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 960 } },
-        });
+        // Fallback: request any available camera (for desktop/Mac)
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
       streamRef.current = stream;
       setCameraActive(true);
-    } catch {
-      setCameraError("Camera access denied or not available. Please allow camera access or use Upload mode.");
+    } catch (err: any) {
+      const name = err?.name || "Unknown";
+      if (name === "NotAllowedError") {
+        setCameraError("Camera permission denied. Please allow camera access in browser settings, then reload.");
+      } else if (name === "NotFoundError") {
+        setCameraError("No camera found on this device.");
+      } else if (name === "NotReadableError") {
+        setCameraError("Camera is in use by another app. Close other apps and try again.");
+      } else {
+        setCameraError(`Camera error (${name}): ${err?.message || "Unknown"}`);
+      }
+      console.error("Camera access error:", name, err);
     }
   }
 
