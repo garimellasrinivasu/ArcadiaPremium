@@ -37,6 +37,8 @@ services:
       - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=300000
       - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
       - SPRING_JPA_OPEN_IN_VIEW=false
+    ports:
+      - "3001:8080"
     networks:
       - arcadia-network
     deploy:
@@ -54,26 +56,11 @@ services:
     image: ghcr.io/garimellasrinivasu/arcadiapremium-frontend:main
     container_name: frontend
     restart: always
+    ports:
+      - "3000:80"
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - arcadia-network
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - frontend
-      - backend
     networks:
       - arcadia-network
 
@@ -84,5 +71,3 @@ networks:
 
 volumes:
   postgres_data:
-  caddy_data:
-  caddy_config:
