@@ -663,6 +663,12 @@
                 <input type="number" id="rate5050_gen" value="9500" step="50" style="width:70px; text-align:right;">
                 <span style="color:var(--muted);">/sft</span>
               </div>
+              <div style="display:flex; align-items:center; gap:4px; font-size:12px; margin-top:4px; padding-top:4px; border-top:1px dashed #e5e7eb;">
+                <span style="color:var(--muted);min-width:28px;font-size:11px;">OTP&#8377;:</span>
+                <span>&#8377;</span>
+                <input type="number" id="otpFixedAmount" value="" placeholder="Fixed OTP Amount" step="100000" min="0" style="width:120px; text-align:right; padding:6px 4px;">
+                <span style="color:var(--muted); font-size:10px;">(auto-adjust %)</span>
+              </div>
             </div>
           </label>
           <label class="pricing-card" data-opt="general">
@@ -673,6 +679,24 @@
             </div>
             <div class="rate-wrap"><span>&#8377;</span><input type="number" id="rateGeneral" value="9500" step="50"><span>/sft</span></div>
           </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="landCostPanel" style="margin-bottom:20px;">
+      <div class="panel-head" style="background:linear-gradient(135deg,#0d9488,#0f766e);"><span class="dot" style="background:#5eead4;"></span> Extra Land Cost</div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Extra Sq. Yards <span class="hint">Additional land area</span></label>
+          <input type="number" id="extraLandSqYards2" value="0" step="1" min="0" oninput="calculate()">
+        </div>
+        <div class="field">
+          <label>Sq. Yard Rate <span class="hint">Price per square yard</span></label>
+          <input type="number" id="landRatePerSqYard" value="0" step="100" min="0" oninput="calculate()">
+        </div>
+        <div class="field">
+          <label>Total Land Cost <span class="hint">Auto = Extra SqYards × Rate</span></label>
+          <input type="text" id="totalLandCost" readonly value="₹ 0" style="background:#f0fdfa; font-weight:700; color:#0d9488;">
         </div>
       </div>
     </div>
@@ -1114,10 +1138,54 @@
     const errEl = document.getElementById('err_5050');
     if (errEl) errEl.style.display = totalPct > 100 ? 'inline' : 'none';
   }
-  document.getElementById('pct_5050_otp').addEventListener('input', update5050Display);
-  document.getElementById('pct_5050_gen').addEventListener('input', update5050Display);
-  document.getElementById('rate5050_otp').addEventListener('input', update5050Display);
-  document.getElementById('rate5050_gen').addEventListener('input', update5050Display);
+  // Auto-adjust: when OTP% changes, Gen% = 100 - OTP%
+  document.getElementById('pct_5050_otp').addEventListener('input', function() {
+    const otpPct = parseFloat(this.value) || 0;
+    document.getElementById('pct_5050_gen').value = Math.max(0, 100 - otpPct);
+    document.getElementById('otpFixedAmount').value = '';  // clear fixed amount
+    update5050Display();
+  });
+  // Auto-adjust: when Gen% changes, OTP% = 100 - Gen%
+  document.getElementById('pct_5050_gen').addEventListener('input', function() {
+    const genPct = parseFloat(this.value) || 0;
+    document.getElementById('pct_5050_otp').value = Math.max(0, 100 - genPct);
+    document.getElementById('otpFixedAmount').value = '';  // clear fixed amount
+    update5050Display();
+  });
+  // When OTP rate changes, recalculate from fixed OTP amount if present
+  document.getElementById('rate5050_otp').addEventListener('input', function() {
+    recalcFromOtpAmount();
+    update5050Display();
+  });
+  document.getElementById('rate5050_gen').addEventListener('input', function() {
+    update5050Display();
+  });
+
+  // ─── Fixed OTP Amount → auto-adjust OTP% / Gen% ───
+  // If user enters a fixed OTP amount, calculate how many SFT that covers
+  // at OTP rate, derive OTP%, and set Gen% = remainder.
+  function recalcFromOtpAmount() {
+    const otpAmount = parseFloat(document.getElementById('otpFixedAmount').value) || 0;
+    if (otpAmount <= 0) return;
+    const otpRate = parseFloat(document.getElementById('rate5050_otp').value) || 0;
+    const plot = parseFloat(document.getElementById('plotArea').value) || 0;
+    const ratio = parseFloat(document.getElementById('ratio').value) || 0;
+    const totalSft = plot * ratio;
+    if (otpRate > 0 && totalSft > 0) {
+      const otpSft = otpAmount / otpRate;
+      const otpPct = Math.min(100, Math.round((otpSft / totalSft) * 100));
+      document.getElementById('pct_5050_otp').value = otpPct;
+      document.getElementById('pct_5050_gen').value = Math.max(0, 100 - otpPct);
+      update5050Display();
+    }
+  }
+  document.getElementById('otpFixedAmount').addEventListener('input', function() {
+    recalcFromOtpAmount();
+  });
+  // Also recalculate when plot area or ratio changes (affects total SFT)
+  document.getElementById('plotArea').addEventListener('input', recalcFromOtpAmount);
+  document.getElementById('ratio').addEventListener('input', recalcFromOtpAmount);
+
   update5050Display();
 
   function calculate() {
@@ -1207,6 +1275,13 @@
     const saleValue = saleRows.reduce(function (s, r) { return s + r.value; }, 0);
     const rate = rateDisplay;
 
+    // ─── Extra Land Cost ───
+    const extraLandSqYards2 = parseFloat(document.getElementById('extraLandSqYards2').value) || 0;
+    const landRate = parseFloat(document.getElementById('landRatePerSqYard').value) || 0;
+    const totalLandCost = extraLandSqYards2 * landRate;
+    const basicSaleValue = saleValue + totalLandCost;
+    document.getElementById('totalLandCost').value = '₹ ' + formatINR(totalLandCost);
+
     const addl = [];
     const addItem = (chk, label, amtId) => {
       if (document.getElementById(chk).checked) {
@@ -1242,7 +1317,7 @@
     addPLC('chk_other', 'Any Other Corner',   'amt_other');
     const plcTotal = plc.reduce((s, x) => s + x.value, 0);
 
-    const subtotal = saleValue + addlTotal + plcTotal;
+    const subtotal = saleValue + totalLandCost + addlTotal + plcTotal;
 
     const taxes = [];
     if (document.getElementById('chk_gst').checked) {
@@ -1294,8 +1369,18 @@
       html += '<tr><td class="desc">' + r.label + '</td><td class="amt">' + formatINR(r.value) + '</td></tr>';
     });
     if (saleRows.length > 1) {
-      html += '<tr class="subtotal"><td>Basic Sale Value (combined)</td><td class="amt">' + formatINR(saleValue) + '</td></tr>';
+      html += '<tr class="subtotal"><td>Construction Value (combined)</td><td class="amt">' + formatINR(saleValue) + '</td></tr>';
     }
+    if (totalLandCost > 0) {
+      html += '<tr class="section" style="background:#f0fdfa;color:#0d9488;"><td>Extra Land Cost</td><td class="amt"></td></tr>';
+      html += '<tr><td class="desc">Extra Land: ' + formatINR(extraLandSqYards2) + ' Sq.Yds × ₹ ' + formatINR(landRate) + ' /Sq.Yd</td><td class="amt">' + formatINR(totalLandCost) + '</td></tr>';
+    }
+    html += '<tr class="section" style="background:#e0f2f1;color:#0d9488;font-weight:700;"><td>Basic Sale Value</td><td class="amt"></td></tr>';
+    html += '<tr><td class="desc" style="padding-left:24px;">Construction</td><td class="amt">' + formatINR(saleValue) + '</td></tr>';
+    if (totalLandCost > 0) {
+      html += '<tr><td class="desc" style="padding-left:24px;">Land Cost</td><td class="amt">' + formatINR(totalLandCost) + '</td></tr>';
+    }
+    html += '<tr class="subtotal" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">' + formatINR(basicSaleValue) + '</td></tr>';
     if (addl.length) {
       html += '<tr class="section"><td>Additional Charges</td><td class="amt"></td></tr>';
       addl.forEach(a => html += '<tr><td class="desc">' + a.label + '</td><td class="amt">' + formatINR(a.value) + '</td></tr>');
@@ -1355,14 +1440,30 @@
     document.getElementById('p_customer').innerHTML = pCustHtml;
 
     let p = '';
-    p += '<div class="p-section-head">Basic Sale Value</div>';
+    p += '<div class="p-section-head">Construction Value</div>';
     p += '<table class="p-table"><tbody>';
     saleRows.forEach(function (r) {
       p += '<tr><td class="desc">' + r.label + '</td><td class="amt">\u20B9 ' + formatINR(r.value) + '</td></tr>';
     });
     if (saleRows.length > 1) {
-      p += '<tr class="sub"><td>Basic Sale Value (combined) &nbsp;<em>(' + optLabel + ')</em></td><td class="amt">\u20B9 ' + formatINR(saleValue) + '</td></tr>';
+      p += '<tr class="sub"><td>Construction Value (combined) &nbsp;<em>(' + optLabel + ')</em></td><td class="amt">\u20B9 ' + formatINR(saleValue) + '</td></tr>';
     }
+    p += '</tbody></table>';
+
+    if (totalLandCost > 0) {
+      p += '<div class="p-section-head" style="background:#0d9488;">Extra Land Cost</div>';
+      p += '<table class="p-table"><tbody>';
+      p += '<tr><td class="desc">Extra Land: ' + formatINR(extraLandSqYards2) + ' Sq.Yds \u00D7 \u20B9 ' + formatINR(landRate) + ' /Sq.Yd</td><td class="amt">\u20B9 ' + formatINR(totalLandCost) + '</td></tr>';
+      p += '</tbody></table>';
+    }
+
+    p += '<div class="p-section-head" style="background:#0f766e;">Basic Sale Value</div>';
+    p += '<table class="p-table"><tbody>';
+    p += '<tr><td class="desc">Construction</td><td class="amt">\u20B9 ' + formatINR(saleValue) + '</td></tr>';
+    if (totalLandCost > 0) {
+      p += '<tr><td class="desc">Land Cost</td><td class="amt">\u20B9 ' + formatINR(totalLandCost) + '</td></tr>';
+    }
+    p += '<tr class="sub" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">\u20B9 ' + formatINR(basicSaleValue) + '</td></tr>';
     p += '</tbody></table>';
 
     if (addl.length) {
@@ -1485,7 +1586,12 @@
     addPLCSave('chk_ne', 'North-East Corner', 'amt_ne');
     addPLCSave('chk_other', 'Any Other Corner', 'amt_other');
 
-    const grandTotal = saleValue + additionalTotal + plcTotal;
+    // Extra Land cost
+    const saveExtraLandSqYards = parseFloat(document.getElementById('extraLandSqYards2').value) || 0;
+    const saveLandRate = parseFloat(document.getElementById('landRatePerSqYard').value) || 0;
+    const saveTotalLandCost = saveExtraLandSqYards * saveLandRate;
+
+    const grandTotal = saleValue + saveTotalLandCost + additionalTotal + plcTotal;
 
     // Get amount in words from the results (if displayed)
     const wordsEl = document.getElementById('resultsWords');
@@ -1516,6 +1622,10 @@
       additionalChargesTotal: additionalTotal || null,
       plcTotal: plcTotal || null,
       plcDetails: plcDetails.length > 0 ? plcDetails.join('; ') : null,
+      extraLandSqYards: saveExtraLandSqYards || null,
+      landRatePerSqYard: saveLandRate || null,
+      totalLandCost: Math.round(saveTotalLandCost) || null,
+      basicSaleValue: Math.round(saleValue + saveTotalLandCost) || null,
       grandTotal: Math.round(grandTotal),
       amountInWords: amountInWords || null,
       projectName: saveCfg.name,

@@ -43,6 +43,10 @@ public class SaleQuoteService {
         e.setAdditionalChargesTotal(req.getAdditionalChargesTotal());
         e.setPlcTotal(req.getPlcTotal());
         e.setPlcDetails(req.getPlcDetails());
+        e.setExtraLandSqYards(req.getExtraLandSqYards());
+        e.setLandRatePerSqYard(req.getLandRatePerSqYard());
+        e.setTotalLandCost(req.getTotalLandCost());
+        e.setBasicSaleValue(req.getBasicSaleValue());
         e.setGrandTotal(req.getGrandTotal());
         e.setAmountInWords(req.getAmountInWords());
         e.setSalesPerson(req.getSalesPerson());

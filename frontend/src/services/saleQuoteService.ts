@@ -24,6 +24,10 @@ export interface SaleQuoteDto {
   additionalChargesTotal?: number;
   plcTotal?: number;
   plcDetails?: string;
+  extraLandSqYards?: number;
+  landRatePerSqYard?: number;
+  totalLandCost?: number;
+  basicSaleValue?: number;
   grandTotal: number;
   amountInWords?: string;
   createdBy?: string;
@@ -56,6 +60,10 @@ export interface CreateSaleQuoteRequest {
   additionalChargesTotal?: number;
   plcTotal?: number;
   plcDetails?: string;
+  extraLandSqYards?: number;
+  landRatePerSqYard?: number;
+  totalLandCost?: number;
+  basicSaleValue?: number;
   grandTotal: number;
   amountInWords?: string;
   salesPerson?: string;

@@ -27,6 +27,10 @@ public class CreateSaleQuoteRequest {
     private BigDecimal additionalChargesTotal;
     private BigDecimal plcTotal;
     private String plcDetails;
+    private BigDecimal extraLandSqYards;
+    private BigDecimal landRatePerSqYard;
+    private BigDecimal totalLandCost;
+    private BigDecimal basicSaleValue;
     private BigDecimal grandTotal;
     private String amountInWords;
     private String salesPerson;
@@ -98,6 +102,18 @@ public class CreateSaleQuoteRequest {
 
     public String getPlcDetails() { return plcDetails; }
     public void setPlcDetails(String plcDetails) { this.plcDetails = plcDetails; }
+
+    public BigDecimal getExtraLandSqYards() { return extraLandSqYards; }
+    public void setExtraLandSqYards(BigDecimal extraLandSqYards) { this.extraLandSqYards = extraLandSqYards; }
+
+    public BigDecimal getLandRatePerSqYard() { return landRatePerSqYard; }
+    public void setLandRatePerSqYard(BigDecimal landRatePerSqYard) { this.landRatePerSqYard = landRatePerSqYard; }
+
+    public BigDecimal getTotalLandCost() { return totalLandCost; }
+    public void setTotalLandCost(BigDecimal totalLandCost) { this.totalLandCost = totalLandCost; }
+
+    public BigDecimal getBasicSaleValue() { return basicSaleValue; }
+    public void setBasicSaleValue(BigDecimal basicSaleValue) { this.basicSaleValue = basicSaleValue; }
 
     public BigDecimal getGrandTotal() { return grandTotal; }
     public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }

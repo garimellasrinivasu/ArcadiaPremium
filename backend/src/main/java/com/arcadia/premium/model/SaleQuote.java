@@ -66,6 +66,19 @@ public class SaleQuote {
     @Column(length = 500)
     private String plcDetails;
 
+    // Extra Land Cost
+    @Column(name = "extra_land_sq_yards")
+    private BigDecimal extraLandSqYards;
+
+    @Column(name = "land_rate_per_sq_yard")
+    private BigDecimal landRatePerSqYard;
+
+    @Column(name = "total_land_cost")
+    private BigDecimal totalLandCost;
+
+    @Column(name = "basic_sale_value")
+    private BigDecimal basicSaleValue;
+
     // Grand total
     @Column(nullable = false)
     private BigDecimal grandTotal;
@@ -157,6 +170,18 @@ public class SaleQuote {
 
     public String getPlcDetails() { return plcDetails; }
     public void setPlcDetails(String plcDetails) { this.plcDetails = plcDetails; }
+
+    public BigDecimal getExtraLandSqYards() { return extraLandSqYards; }
+    public void setExtraLandSqYards(BigDecimal extraLandSqYards) { this.extraLandSqYards = extraLandSqYards; }
+
+    public BigDecimal getLandRatePerSqYard() { return landRatePerSqYard; }
+    public void setLandRatePerSqYard(BigDecimal landRatePerSqYard) { this.landRatePerSqYard = landRatePerSqYard; }
+
+    public BigDecimal getTotalLandCost() { return totalLandCost; }
+    public void setTotalLandCost(BigDecimal totalLandCost) { this.totalLandCost = totalLandCost; }
+
+    public BigDecimal getBasicSaleValue() { return basicSaleValue; }
+    public void setBasicSaleValue(BigDecimal basicSaleValue) { this.basicSaleValue = basicSaleValue; }
 
     public BigDecimal getGrandTotal() { return grandTotal; }
     public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
