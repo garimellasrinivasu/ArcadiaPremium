@@ -173,6 +173,26 @@ public class InitialSale {
     @Column(name = "new_stamp_duty_amount")
     private Double newStampDutyAmount;
 
+    // --- Land Cost ---
+
+    @Column(name = "land_rate_per_sq_yard")
+    private Double landRatePerSqYard;
+
+    @Column(name = "new_land_rate_per_sq_yard")
+    private Double newLandRatePerSqYard;
+
+    @Column(name = "total_land_cost")
+    private Double totalLandCost;
+
+    @Column(name = "new_total_land_cost")
+    private Double newTotalLandCost;
+
+    @Column(name = "basic_sale_value")
+    private Double basicSaleValue;
+
+    @Column(name = "new_basic_sale_value")
+    private Double newBasicSaleValue;
+
     @Column(name = "sale_price_rows_json", columnDefinition = "TEXT")
     private String salePriceRowsJson;
 
@@ -339,6 +359,24 @@ public class InitialSale {
 
     public Double getNewStampDutyAmount() { return newStampDutyAmount; }
     public void setNewStampDutyAmount(Double newStampDutyAmount) { this.newStampDutyAmount = newStampDutyAmount; }
+
+    public Double getLandRatePerSqYard() { return landRatePerSqYard; }
+    public void setLandRatePerSqYard(Double landRatePerSqYard) { this.landRatePerSqYard = landRatePerSqYard; }
+
+    public Double getNewLandRatePerSqYard() { return newLandRatePerSqYard; }
+    public void setNewLandRatePerSqYard(Double newLandRatePerSqYard) { this.newLandRatePerSqYard = newLandRatePerSqYard; }
+
+    public Double getTotalLandCost() { return totalLandCost; }
+    public void setTotalLandCost(Double totalLandCost) { this.totalLandCost = totalLandCost; }
+
+    public Double getNewTotalLandCost() { return newTotalLandCost; }
+    public void setNewTotalLandCost(Double newTotalLandCost) { this.newTotalLandCost = newTotalLandCost; }
+
+    public Double getBasicSaleValue() { return basicSaleValue; }
+    public void setBasicSaleValue(Double basicSaleValue) { this.basicSaleValue = basicSaleValue; }
+
+    public Double getNewBasicSaleValue() { return newBasicSaleValue; }
+    public void setNewBasicSaleValue(Double newBasicSaleValue) { this.newBasicSaleValue = newBasicSaleValue; }
 
     public String getSalePriceRowsJson() { return salePriceRowsJson; }
     public void setSalePriceRowsJson(String salePriceRowsJson) { this.salePriceRowsJson = salePriceRowsJson; }

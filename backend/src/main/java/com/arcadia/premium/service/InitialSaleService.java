@@ -126,6 +126,12 @@ public class InitialSaleService {
         entity.setStampDutyPercentage(req.getStampDutyPercentage());
         entity.setStampDutyAmount(req.getStampDutyAmount());
         entity.setNewStampDutyAmount(req.getNewStampDutyAmount());
+        entity.setLandRatePerSqYard(req.getLandRatePerSqYard());
+        entity.setNewLandRatePerSqYard(req.getNewLandRatePerSqYard());
+        entity.setTotalLandCost(req.getTotalLandCost());
+        entity.setNewTotalLandCost(req.getNewTotalLandCost());
+        entity.setBasicSaleValue(req.getBasicSaleValue());
+        entity.setNewBasicSaleValue(req.getNewBasicSaleValue());
         entity.setSalePriceRowsJson(req.getSalePriceRowsJson());
     }
 }

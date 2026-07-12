@@ -55,6 +55,12 @@ public class InitialSaleDto {
     private Double stampDutyPercentage;
     private Double stampDutyAmount;
     private Double newStampDutyAmount;
+    private Double landRatePerSqYard;
+    private Double newLandRatePerSqYard;
+    private Double totalLandCost;
+    private Double newTotalLandCost;
+    private Double basicSaleValue;
+    private Double newBasicSaleValue;
     private String salePriceRowsJson;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -209,6 +215,24 @@ public class InitialSaleDto {
     public Double getNewStampDutyAmount() { return newStampDutyAmount; }
     public void setNewStampDutyAmount(Double newStampDutyAmount) { this.newStampDutyAmount = newStampDutyAmount; }
 
+    public Double getLandRatePerSqYard() { return landRatePerSqYard; }
+    public void setLandRatePerSqYard(Double landRatePerSqYard) { this.landRatePerSqYard = landRatePerSqYard; }
+
+    public Double getNewLandRatePerSqYard() { return newLandRatePerSqYard; }
+    public void setNewLandRatePerSqYard(Double newLandRatePerSqYard) { this.newLandRatePerSqYard = newLandRatePerSqYard; }
+
+    public Double getTotalLandCost() { return totalLandCost; }
+    public void setTotalLandCost(Double totalLandCost) { this.totalLandCost = totalLandCost; }
+
+    public Double getNewTotalLandCost() { return newTotalLandCost; }
+    public void setNewTotalLandCost(Double newTotalLandCost) { this.newTotalLandCost = newTotalLandCost; }
+
+    public Double getBasicSaleValue() { return basicSaleValue; }
+    public void setBasicSaleValue(Double basicSaleValue) { this.basicSaleValue = basicSaleValue; }
+
+    public Double getNewBasicSaleValue() { return newBasicSaleValue; }
+    public void setNewBasicSaleValue(Double newBasicSaleValue) { this.newBasicSaleValue = newBasicSaleValue; }
+
     public String getSalePriceRowsJson() { return salePriceRowsJson; }
     public void setSalePriceRowsJson(String salePriceRowsJson) { this.salePriceRowsJson = salePriceRowsJson; }
 
@@ -270,6 +294,12 @@ public class InitialSaleDto {
         dto.stampDutyPercentage = entity.getStampDutyPercentage();
         dto.stampDutyAmount = entity.getStampDutyAmount();
         dto.newStampDutyAmount = entity.getNewStampDutyAmount();
+        dto.landRatePerSqYard = entity.getLandRatePerSqYard();
+        dto.newLandRatePerSqYard = entity.getNewLandRatePerSqYard();
+        dto.totalLandCost = entity.getTotalLandCost();
+        dto.newTotalLandCost = entity.getNewTotalLandCost();
+        dto.basicSaleValue = entity.getBasicSaleValue();
+        dto.newBasicSaleValue = entity.getNewBasicSaleValue();
         dto.salePriceRowsJson = entity.getSalePriceRowsJson();
         dto.createdAt = entity.getCreatedAt();
         dto.updatedAt = entity.getUpdatedAt();

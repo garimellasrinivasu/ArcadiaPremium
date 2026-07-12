@@ -58,6 +58,12 @@ public class CreateInitialSaleRequest {
     private Double stampDutyPercentage;
     private Double stampDutyAmount;
     private Double newStampDutyAmount;
+    private Double landRatePerSqYard;
+    private Double newLandRatePerSqYard;
+    private Double totalLandCost;
+    private Double newTotalLandCost;
+    private Double basicSaleValue;
+    private Double newBasicSaleValue;
     private String salePriceRowsJson;
 
     // --- Getters & Setters ---
@@ -159,6 +165,18 @@ public class CreateInitialSaleRequest {
     public void setStampDutyAmount(Double stampDutyAmount) { this.stampDutyAmount = stampDutyAmount; }
     public Double getNewStampDutyAmount() { return newStampDutyAmount; }
     public void setNewStampDutyAmount(Double newStampDutyAmount) { this.newStampDutyAmount = newStampDutyAmount; }
+    public Double getLandRatePerSqYard() { return landRatePerSqYard; }
+    public void setLandRatePerSqYard(Double landRatePerSqYard) { this.landRatePerSqYard = landRatePerSqYard; }
+    public Double getNewLandRatePerSqYard() { return newLandRatePerSqYard; }
+    public void setNewLandRatePerSqYard(Double newLandRatePerSqYard) { this.newLandRatePerSqYard = newLandRatePerSqYard; }
+    public Double getTotalLandCost() { return totalLandCost; }
+    public void setTotalLandCost(Double totalLandCost) { this.totalLandCost = totalLandCost; }
+    public Double getNewTotalLandCost() { return newTotalLandCost; }
+    public void setNewTotalLandCost(Double newTotalLandCost) { this.newTotalLandCost = newTotalLandCost; }
+    public Double getBasicSaleValue() { return basicSaleValue; }
+    public void setBasicSaleValue(Double basicSaleValue) { this.basicSaleValue = basicSaleValue; }
+    public Double getNewBasicSaleValue() { return newBasicSaleValue; }
+    public void setNewBasicSaleValue(Double newBasicSaleValue) { this.newBasicSaleValue = newBasicSaleValue; }
     public String getSalePriceRowsJson() { return salePriceRowsJson; }
     public void setSalePriceRowsJson(String salePriceRowsJson) { this.salePriceRowsJson = salePriceRowsJson; }
 }

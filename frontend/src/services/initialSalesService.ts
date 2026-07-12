@@ -51,6 +51,12 @@ export interface InitialSaleDto {
   stampDutyPercentage: number;
   stampDutyAmount: number;
   newStampDutyAmount: number;
+  landRatePerSqYard: number;
+  newLandRatePerSqYard: number;
+  totalLandCost: number;
+  newTotalLandCost: number;
+  basicSaleValue: number;
+  newBasicSaleValue: number;
   salePriceRowsJson?: string;
   createdAt: string;
   updatedAt: string;
@@ -106,6 +112,12 @@ export interface CreateInitialSaleRequest {
   stampDutyPercentage?: number;
   stampDutyAmount?: number;
   newStampDutyAmount?: number;
+  landRatePerSqYard?: number;
+  newLandRatePerSqYard?: number;
+  totalLandCost?: number;
+  newTotalLandCost?: number;
+  basicSaleValue?: number;
+  newBasicSaleValue?: number;
   salePriceRowsJson?: string;
 }
 
