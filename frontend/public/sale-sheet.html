@@ -632,11 +632,22 @@
               <div class="label-text">One-Time Payment (OTP)</div>
               <div class="sub">Full payment upfront – best rate</div>
             </div>
-            <div class="rate-wrap"><span>&#8377;</span><input type="number" id="rateOtp" value="7000" step="50"><span>/sft</span></div>
+            <div class="rate-wrap"><span>&#8377;</span><input type="number" id="rateOtp" value="7500" step="50"><span>/sft</span></div>
           </label>
           <label class="pricing-card" data-opt="5050">
             <input type="radio" name="pricing" value="5050" onchange="selectPricing(this)">
             <div>
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:12px;">
+                <span style="color:var(--muted); white-space:nowrap;">Available Amount:</span>
+                <span style="font-weight:600;">&#8377;</span>
+                <input type="number" id="otpFixedAmount" value="" placeholder="Enter OTP amount" step="100000" min="0"
+                  style="width:140px; text-align:right; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; font-weight:600; color:#0d9488;"
+                  onclick="event.stopPropagation();">
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; font-size:11px; font-weight:600;" id="sftSplitRow">
+                <span style="color:#0d9488; white-space:nowrap;" id="otpSftDisplay"></span>
+                <span style="color:#6366f1; white-space:nowrap;" id="genSftDisplay"></span>
+              </div>
               <div class="label-text">OTP + General Split</div>
               <div class="sub">
                 <span id="split5050Display">50% OTP + 50% General</span>
@@ -651,7 +662,7 @@
                 <span style="color:var(--muted);">%</span>
                 <span style="color:var(--muted);">@</span>
                 <span>&#8377;</span>
-                <input type="number" id="rate5050_otp" value="7000" step="50" style="width:70px; text-align:right;">
+                <input type="number" id="rate5050_otp" value="7500" step="50" style="width:70px; text-align:right;">
                 <span style="color:var(--muted);">/sft</span>
               </div>
               <div style="display:flex; align-items:center; gap:4px; font-size:12px;">
@@ -662,12 +673,6 @@
                 <span>&#8377;</span>
                 <input type="number" id="rate5050_gen" value="9500" step="50" style="width:70px; text-align:right;">
                 <span style="color:var(--muted);">/sft</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:4px; font-size:12px; margin-top:4px; padding-top:4px; border-top:1px dashed #e5e7eb;">
-                <span style="color:var(--muted);min-width:28px;font-size:11px;">OTP&#8377;:</span>
-                <span>&#8377;</span>
-                <input type="number" id="otpFixedAmount" value="" placeholder="Fixed OTP Amount" step="100000" min="0" style="width:120px; text-align:right; padding:6px 4px;">
-                <span style="color:var(--muted); font-size:10px;">(auto-adjust %)</span>
               </div>
             </div>
           </label>
@@ -702,43 +707,6 @@
     </div>
 
     <div class="panel" style="margin-bottom:20px;">
-      <div class="panel-head"><span class="dot"></span> Additional Charges (toggle to include)</div>
-      <div class="panel-body">
-        <div class="charge-row">
-          <input type="checkbox" id="chk_club" checked>
-          <label for="chk_club">Club House / Amenities Charges</label>
-          <div class="amount-wrap"><input type="number" id="amt_club" value="1000000" step="10000"></div>
-        </div>
-        <div class="charge-row">
-          <input type="checkbox" id="chk_corpus" checked>
-          <label for="chk_corpus">Corpus Fund (one-time, non-refundable)</label>
-          <div class="amount-wrap"><input type="number" id="amt_corpus" value="100000" step="5000"></div>
-        </div>
-        <div class="charge-row">
-          <input type="checkbox" id="chk_legal" checked>
-          <label for="chk_legal">Legal &amp; Documentation Charges</label>
-          <div class="amount-wrap"><input type="number" id="amt_legal" value="25000" step="1000"></div>
-        </div>
-        <div class="charge-row">
-          <input type="checkbox" id="chk_wes" checked>
-          <label for="chk_wes">Refundable Caution Deposit <span class="hint" style="font-size:11px;color:var(--muted);">(After due adjustments)</span></label>
-          <div class="amount-wrap"><input type="number" id="amt_wes" value="50000" step="1000"></div>
-        </div>
-        <div class="charge-row">
-          <input type="checkbox" id="chk_maint" checked>
-          <label for="chk_maint">
-            Advance Maintenance
-            <span class="hint" style="font-size:11px;color:var(--muted);">
-              &#8377;<input type="number" id="maintRate" value="3.5" step="0.5" style="width:50px;padding:2px 4px;font-size:11px;"> /sft &times;
-              <input type="number" id="maintMonths" value="24" step="1" style="width:50px;padding:2px 4px;font-size:11px;"> months
-            </span>
-          </label>
-          <div class="amount-wrap"><input type="number" id="amt_maint" value="235200" readonly></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel" style="margin-bottom:20px;">
       <div class="panel-head"><span class="dot"></span> Preferential Location Charges (PLC)</div>
       <div class="panel-body">
         <div class="plc-group">
@@ -766,6 +734,51 @@
             <label for="chk_other">Any Other Corner</label>
             <div class="amount-wrap"><input type="number" id="amt_other" value="1500000" step="50000"></div>
           </div>
+        </div>
+        <div class="plc-group">
+          <h4>Amenities</h4>
+          <div class="charge-row">
+            <input type="checkbox" id="chk_club" checked>
+            <label for="chk_club">Club House / Amenities Charges</label>
+            <div class="amount-wrap"><input type="number" id="amt_club" value="1000000" step="10000"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><span class="dot"></span> Additional Charges (toggle to include)</div>
+      <div class="panel-body">
+        <div class="charge-row">
+          <input type="checkbox" id="chk_corpus" checked>
+          <label for="chk_corpus">Corpus Fund (one-time, non-refundable)</label>
+          <div class="amount-wrap"><input type="number" id="amt_corpus" value="100000" step="5000"></div>
+        </div>
+        <div class="charge-row">
+          <input type="checkbox" id="chk_legal" checked>
+          <label for="chk_legal">Legal &amp; Documentation Charges</label>
+          <div class="amount-wrap"><input type="number" id="amt_legal" value="25000" step="1000"></div>
+        </div>
+        <div class="charge-row">
+          <input type="checkbox" id="chk_wes" checked>
+          <label for="chk_wes">Refundable Caution Deposit <span class="hint" style="font-size:11px;color:var(--muted);">(After due adjustments)</span></label>
+          <div class="amount-wrap"><input type="number" id="amt_wes" value="50000" step="1000"></div>
+        </div>
+        <div class="charge-row">
+          <input type="checkbox" id="chk_nrcd" checked>
+          <label for="chk_nrcd">Non-Refundable Caution Deposit</label>
+          <div class="amount-wrap"><input type="number" id="amt_nrcd" value="20000" step="1000"></div>
+        </div>
+        <div class="charge-row">
+          <input type="checkbox" id="chk_maint" checked>
+          <label for="chk_maint">
+            Advance Maintenance
+            <span class="hint" style="font-size:11px;color:var(--muted);">
+              &#8377;<input type="number" id="maintRate" value="3.5" step="0.5" style="width:50px;padding:2px 4px;font-size:11px;"> /sft &times;
+              <input type="number" id="maintMonths" value="24" step="1" style="width:50px;padding:2px 4px;font-size:11px;"> months
+            </span>
+          </label>
+          <div class="amount-wrap"><input type="number" id="amt_maint" value="235200" readonly></div>
         </div>
       </div>
     </div>
@@ -882,7 +895,7 @@
       saleTypes: ['villa'],
       prefix: 'V-',
       refPrefix: 'ARC',
-      defaultRateOtp: 7000,
+      defaultRateOtp: 7500,
       defaultRateGeneral: 9500,
       defaultPlotRate: 15000,
       defaultSftRatio: 14,
@@ -899,7 +912,7 @@
       saleTypes: ['villa', 'plot'],
       prefix: 'V-',
       refPrefix: 'KAL',
-      defaultRateOtp: 7000,
+      defaultRateOtp: 7500,
       defaultRateGeneral: 9500,
       defaultPlotRate: 15000,
       defaultSftRatio: 14,
@@ -916,7 +929,7 @@
       saleTypes: ['villa'],
       prefix: 'V-',
       refPrefix: 'RED',
-      defaultRateOtp: 7000,
+      defaultRateOtp: 7500,
       defaultRateGeneral: 9500,
       defaultPlotRate: 15000,
       defaultSftRatio: 14,
@@ -1137,6 +1150,17 @@
 
     const errEl = document.getElementById('err_5050');
     if (errEl) errEl.style.display = totalPct > 100 ? 'inline' : 'none';
+
+    // Show OTP SFT and Gen SFT (must add up to Total Construction SFT)
+    const plot = parseFloat(document.getElementById('plotArea').value) || 0;
+    const ratio = parseFloat(document.getElementById('sftRatio').value) || 0;
+    const totalSft = plot * ratio;
+    const otpSft = Math.round((pctOtp / 100) * totalSft * 100) / 100;
+    const genSft = Math.round((pctGen / 100) * totalSft * 100) / 100;
+    const otpSftEl = document.getElementById('otpSftDisplay');
+    if (otpSftEl) otpSftEl.textContent = totalSft > 0 ? 'OTP SFT: ' + otpSft.toLocaleString('en-IN') : '';
+    const genSftEl = document.getElementById('genSftDisplay');
+    if (genSftEl) genSftEl.textContent = totalSft > 0 ? 'Gen SFT: ' + genSft.toLocaleString('en-IN') : '';
   }
   // Auto-adjust: when OTP% changes, Gen% = 100 - OTP%
   document.getElementById('pct_5050_otp').addEventListener('input', function() {
@@ -1169,7 +1193,7 @@
     if (otpAmount <= 0) return;
     const otpRate = parseFloat(document.getElementById('rate5050_otp').value) || 0;
     const plot = parseFloat(document.getElementById('plotArea').value) || 0;
-    const ratio = parseFloat(document.getElementById('ratio').value) || 0;
+    const ratio = parseFloat(document.getElementById('sftRatio').value) || 0;
     const totalSft = plot * ratio;
     if (otpRate > 0 && totalSft > 0) {
       const otpSft = otpAmount / otpRate;
@@ -1182,9 +1206,9 @@
   document.getElementById('otpFixedAmount').addEventListener('input', function() {
     recalcFromOtpAmount();
   });
-  // Also recalculate when plot area or ratio changes (affects total SFT)
-  document.getElementById('plotArea').addEventListener('input', recalcFromOtpAmount);
-  document.getElementById('ratio').addEventListener('input', recalcFromOtpAmount);
+  // Also recalculate when plot area or ratio changes (affects total SFT + SFT display)
+  document.getElementById('plotArea').addEventListener('input', function() { recalcFromOtpAmount(); update5050Display(); });
+  document.getElementById('sftRatio').addEventListener('input', function() { recalcFromOtpAmount(); update5050Display(); });
 
   update5050Display();
 
@@ -1293,6 +1317,7 @@
     addItem('chk_corpus',  'Corpus Fund (one-time)',          'amt_corpus');
     addItem('chk_legal',   'Legal & Documentation Charges',   'amt_legal');
     addItem('chk_wes',     'Refundable Caution Deposit (After due adjustments)', 'amt_wes');
+    addItem('chk_nrcd',    'Non-Refundable Caution Deposit',                     'amt_nrcd');
     if (document.getElementById('chk_maint').checked) {
       const mr = parseFloat(document.getElementById('maintRate').value) || 0;
       const mm = parseFloat(document.getElementById('maintMonths').value) || 0;
@@ -1562,6 +1587,7 @@
     const corpus = getCharge('chk_corpus', 'amt_corpus');
     const legal = getCharge('chk_legal', 'amt_legal');
     const caution = getCharge('chk_wes', 'amt_wes');
+    const nrCaution = getCharge('chk_nrcd', 'amt_nrcd');
     let maintenance = 0;
     if (document.getElementById('chk_maint').checked) {
       const mr = parseFloat(document.getElementById('maintRate').value) || 0;
@@ -1569,7 +1595,7 @@
       const maintSft = savePlotMode ? 0 : (plotArea * ratio);
       maintenance = Math.round(mr * maintSft * mm);
     }
-    const additionalTotal = clubHouse + corpus + legal + caution + maintenance;
+    const additionalTotal = clubHouse + corpus + legal + caution + nrCaution + maintenance;
 
     // PLC charges
     let plcTotal = 0;
@@ -1618,6 +1644,7 @@
       corpusFund: corpus || null,
       legalCharges: legal || null,
       cautionDeposit: caution || null,
+      nonRefundableCautionDeposit: nrCaution || null,
       advanceMaintenance: maintenance || null,
       additionalChargesTotal: additionalTotal || null,
       plcTotal: plcTotal || null,
