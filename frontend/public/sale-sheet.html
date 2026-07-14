@@ -1313,7 +1313,6 @@
         if (v > 0) addl.push({ label, value: v });
       }
     };
-    addItem('chk_club',    'Club House / Amenities Charges',  'amt_club');
     addItem('chk_corpus',  'Corpus Fund (one-time)',          'amt_corpus');
     addItem('chk_legal',   'Legal & Documentation Charges',   'amt_legal');
     addItem('chk_wes',     'Refundable Caution Deposit (After due adjustments)', 'amt_wes');
@@ -1340,6 +1339,7 @@
     addPLC('chk_west',  'West Facing',        'amt_west');
     addPLC('chk_ne',    'North-East Corner',  'amt_ne');
     addPLC('chk_other', 'Any Other Corner',   'amt_other');
+    addPLC('chk_club',  'Club House / Amenities Charges', 'amt_club');
     const plcTotal = plc.reduce((s, x) => s + x.value, 0);
 
     const subtotal = saleValue + totalLandCost + addlTotal + plcTotal;
@@ -1406,13 +1406,13 @@
       html += '<tr><td class="desc" style="padding-left:24px;">Land Cost</td><td class="amt">' + formatINR(totalLandCost) + '</td></tr>';
     }
     html += '<tr class="subtotal" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">' + formatINR(basicSaleValue) + '</td></tr>';
-    if (addl.length) {
-      html += '<tr class="section"><td>Additional Charges</td><td class="amt"></td></tr>';
-      addl.forEach(a => html += '<tr><td class="desc">' + a.label + '</td><td class="amt">' + formatINR(a.value) + '</td></tr>');
-    }
     if (plc.length) {
       html += '<tr class="section"><td>Preferential Location Charges</td><td class="amt"></td></tr>';
       plc.forEach(p => html += '<tr><td class="desc">' + p.label + '</td><td class="amt">' + formatINR(p.value) + '</td></tr>');
+    }
+    if (addl.length) {
+      html += '<tr class="section"><td>Additional Charges</td><td class="amt"></td></tr>';
+      addl.forEach(a => html += '<tr><td class="desc">' + a.label + '</td><td class="amt">' + formatINR(a.value) + '</td></tr>');
     }
     html += '<tr class="subtotal"><td>Sub-Total (before taxes)</td><td class="amt">' + formatINR(subtotal) + '</td></tr>';
     if (taxes.length) {
@@ -1491,16 +1491,16 @@
     p += '<tr class="sub" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">\u20B9 ' + formatINR(basicSaleValue) + '</td></tr>';
     p += '</tbody></table>';
 
-    if (addl.length) {
-      p += '<div class="p-section-head">Additional Charges</div>';
-      p += '<table class="p-table"><tbody>';
-      addl.forEach(a => p += '<tr><td class="desc">' + a.label + '</td><td class="amt">\u20B9 ' + formatINR(a.value) + '</td></tr>');
-      p += '</tbody></table>';
-    }
     if (plc.length) {
       p += '<div class="p-section-head">Preferential Location Charges</div>';
       p += '<table class="p-table"><tbody>';
       plc.forEach(x => p += '<tr><td class="desc">' + x.label + '</td><td class="amt">\u20B9 ' + formatINR(x.value) + '</td></tr>');
+      p += '</tbody></table>';
+    }
+    if (addl.length) {
+      p += '<div class="p-section-head">Additional Charges</div>';
+      p += '<table class="p-table"><tbody>';
+      addl.forEach(a => p += '<tr><td class="desc">' + a.label + '</td><td class="amt">\u20B9 ' + formatINR(a.value) + '</td></tr>');
       p += '</tbody></table>';
     }
 
@@ -1595,9 +1595,9 @@
       const maintSft = savePlotMode ? 0 : (plotArea * ratio);
       maintenance = Math.round(mr * maintSft * mm);
     }
-    const additionalTotal = clubHouse + corpus + legal + caution + nrCaution + maintenance;
+    const additionalTotal = corpus + legal + caution + nrCaution + maintenance;
 
-    // PLC charges
+    // PLC charges (includes Club House / Amenities)
     let plcTotal = 0;
     let plcDetails = [];
     const addPLCSave = (chkId, label, amtId) => {
@@ -1611,6 +1611,7 @@
     addPLCSave('chk_west', 'West Facing', 'amt_west');
     addPLCSave('chk_ne', 'North-East Corner', 'amt_ne');
     addPLCSave('chk_other', 'Any Other Corner', 'amt_other');
+    addPLCSave('chk_club', 'Club House / Amenities Charges', 'amt_club');
 
     // Extra Land cost
     const saveExtraLandSqYards = parseFloat(document.getElementById('extraLandSqYards2').value) || 0;
