@@ -79,7 +79,6 @@ export default function InitialSalesPage() {
   const [extraLandSqYards, setExtraLandSqYards] = useState<number>(0);
   const [extraLandPricePerSqYard, setExtraLandPricePerSqYard] = useState<number>(0);
   const [paymentTillNow, setPaymentTillNow] = useState<number>(0);
-  const [landRatePerSqYard, setLandRatePerSqYard] = useState<number>(0);
 
   // ─── New Values ───
   const [newSftPerSqYard, setNewSftPerSqYard] = useState<number>(DEFAULT_NEW_SFT_PER_SQYARD);
@@ -88,7 +87,6 @@ export default function InitialSalesPage() {
   const [newExtraLandSqYards, setNewExtraLandSqYards] = useState<number>(0);
   const [newExtraLandPricePerSqYard, setNewExtraLandPricePerSqYard] = useState<number>(0);
   const [newPaymentTillNow, setNewPaymentTillNow] = useState<number>(0);
-  const [newLandRatePerSqYard, setNewLandRatePerSqYard] = useState<number>(0);
 
   // ─── Total SFT per Villa (editable for customization) ───
   const [totalSftPerVilla, setTotalSftPerVilla] = useState<number>(200 * DEFAULT_SFT_PER_SQYARD);
@@ -122,12 +120,6 @@ export default function InitialSalesPage() {
   const newExtraLandTotal = newExtraLandSqYards * newExtraLandPricePerSqYard;
   const newBasePriceAmount = newTotalSftPrice + newExtraLandTotal + newFacingCharges;
   const newBalanceInBasePrice = newBasePriceAmount - newPaymentTillNow;
-
-  // ─── Land Cost ───
-  const totalLandCost = sqYardsVilla * landRatePerSqYard;
-  const newTotalLandCost = sqYardsVilla * newLandRatePerSqYard;
-  const basicSaleValue = basePriceAmount + totalLandCost;
-  const newBasicSaleValue = newBasePriceAmount + newTotalLandCost;
 
   // ─── Advance Maintenance ───
   const advanceMaintenanceAmount = advanceMaintenanceApplicable
@@ -324,12 +316,6 @@ export default function InitialSalesPage() {
       stampDutyPercentage,
       stampDutyAmount,
       newStampDutyAmount,
-      landRatePerSqYard,
-      newLandRatePerSqYard,
-      totalLandCost,
-      newTotalLandCost,
-      basicSaleValue,
-      newBasicSaleValue,
       salePriceRowsJson: JSON.stringify(salePriceRows),
     };
 
@@ -387,7 +373,6 @@ export default function InitialSalesPage() {
     setExtraLandSqYards(rec.extraLandSqYards);
     setExtraLandPricePerSqYard(rec.extraLandPricePerSqYard);
     setPaymentTillNow(rec.paymentTillNow);
-    setLandRatePerSqYard(rec.landRatePerSqYard || 0);
     setTotalSftPerVilla(rec.totalSftPerVilla);
     setNewSftPerSqYard(rec.newSftPerSqYard);
     setNewDefaultFacing(rec.newDefaultFacing);
@@ -395,7 +380,6 @@ export default function InitialSalesPage() {
     setNewExtraLandSqYards(rec.newExtraLandSqYards);
     setNewExtraLandPricePerSqYard(rec.newExtraLandPricePerSqYard);
     setNewPaymentTillNow(rec.newPaymentTillNow);
-    setNewLandRatePerSqYard(rec.newLandRatePerSqYard || 0);
     setNewTotalSftPerVilla(rec.newTotalSftPerVilla);
     setClubHouseApplicable(rec.clubHouseApplicable);
     setClubHouseAmount(rec.clubHouseAmount);
@@ -474,20 +458,16 @@ export default function InitialSalesPage() {
     rows += buildRow("14", "Base Price Amount", "SFT + Extra + Facing", formatINR(basePriceAmount), formatINR(newBasePriceAmount), true, true);
     rows += buildRow("15", "Payment Till Now", "", formatINR(paymentTillNow), formatINR(newPaymentTillNow));
     rows += buildRow("16", "Balance in Base Price", "= Base − Paid", formatINR(balanceInBasePrice), formatINR(newBalanceInBasePrice), true, true);
-    rows += `<tr style="background:#e0f2f1;"><td colspan="2" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;color:#00695c;">Land Cost</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">Data/Input</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">Old Value</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">New Value</td></tr>`;
-    rows += buildRow("17", "Land Rate per SqYard", "", formatINR(landRatePerSqYard), formatINR(newLandRatePerSqYard));
-    rows += buildRow("18", "Total Land Cost", "= SqYds × Rate", formatINR(totalLandCost), formatINR(newTotalLandCost), true);
-    rows += buildRow("19", "Basic Sale Value", "= Base Price + Land Cost", formatINR(basicSaleValue), formatINR(newBasicSaleValue), true, true);
     rows += `<tr style="background:#f0f0f0;"><td colspan="5" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;">++ Additional Charges at the time of Registration</td></tr>`;
-    rows += buildRow("20", "Club House / Amenities Charges", clubHouseApplicable ? "Applicable" : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A");
-    rows += buildRow("21", "Corpus Fund (one-time, non-refundable)", corpusFundApplicable ? "Applicable" : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A");
-    rows += buildRow("22", "Legal & Documentation Charges", legalChargesApplicable ? "Applicable" : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A");
-    rows += buildRow("23", "Refundable Caution Deposit", cautionDepositApplicable ? "Applicable" : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A");
-    rows += buildRow("24", `Advance Maintenance (${advanceMaintenanceRate}/sft × ${advanceMaintenanceMonths} months)`, advanceMaintenanceApplicable ? "Applicable" : "N/A", advanceMaintenanceApplicable ? formatINR(advanceMaintenanceAmount) : "N/A", advanceMaintenanceApplicable ? formatINR(newAdvanceMaintenanceAmount) : "N/A", true);
-    rows += buildRow("25", "Payment at the time of Registration", "Sum of above", formatINR(registrationPaymentOld), formatINR(registrationPaymentNew), true, true);
+    rows += buildRow("17", "Club House / Amenities Charges", clubHouseApplicable ? "Applicable" : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A");
+    rows += buildRow("18", "Corpus Fund (one-time, non-refundable)", corpusFundApplicable ? "Applicable" : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A");
+    rows += buildRow("19", "Legal & Documentation Charges", legalChargesApplicable ? "Applicable" : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A");
+    rows += buildRow("20", "Refundable Caution Deposit", cautionDepositApplicable ? "Applicable" : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A");
+    rows += buildRow("21", `Advance Maintenance (${advanceMaintenanceRate}/sft × ${advanceMaintenanceMonths} months)`, advanceMaintenanceApplicable ? "Applicable" : "N/A", advanceMaintenanceApplicable ? formatINR(advanceMaintenanceAmount) : "N/A", advanceMaintenanceApplicable ? formatINR(newAdvanceMaintenanceAmount) : "N/A", true);
+    rows += buildRow("22", "Payment at the time of Registration", "Sum of above", formatINR(registrationPaymentOld), formatINR(registrationPaymentNew), true, true);
     rows += `<tr style="background:#f0f0f0;"><td colspan="5" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;">Registration Charges</td></tr>`;
-    rows += buildRow("26", `GST (${gstPercentage}%) on Base Price`, "auto", formatINR(gstAmount), formatINR(newGstAmount), true);
-    rows += buildRow("27", `Stamp Duty & Registration (${stampDutyPercentage}%) on Base Price`, "auto", formatINR(stampDutyAmount), formatINR(newStampDutyAmount), true);
+    rows += buildRow("23", `GST (${gstPercentage}%) on Base Price`, "auto", formatINR(gstAmount), formatINR(newGstAmount), true);
+    rows += buildRow("24", `Stamp Duty & Registration (${stampDutyPercentage}%) on Base Price`, "auto", formatINR(stampDutyAmount), formatINR(newStampDutyAmount), true);
 
     const html = `<!DOCTYPE html>
 <html><head><title>${fileName}</title>
@@ -587,20 +567,16 @@ export default function InitialSalesPage() {
     rows += buildRow("14", "Base Price Amount", "SFT + Extra + Facing", formatINR(basePriceAmount), formatINR(newBasePriceAmount), true, true);
     rows += buildRow("15", "Payment Till Now", "", formatINR(paymentTillNow), formatINR(newPaymentTillNow));
     rows += buildRow("16", "Balance in Base Price", "= Base − Paid", formatINR(balanceInBasePrice), formatINR(newBalanceInBasePrice), true, true);
-    rows += `<tr style="background:#e0f2f1;"><td colspan="2" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;color:#00695c;">Land Cost</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">Data/Input</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">Old Value</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:11px;">New Value</td></tr>`;
-    rows += buildRow("17", "Land Rate per SqYard", "", formatINR(landRatePerSqYard), formatINR(newLandRatePerSqYard));
-    rows += buildRow("18", "Total Land Cost", "= SqYds × Rate", formatINR(totalLandCost), formatINR(newTotalLandCost), true);
-    rows += buildRow("19", "Basic Sale Value", "= Base Price + Land Cost", formatINR(basicSaleValue), formatINR(newBasicSaleValue), true, true);
     rows += `<tr style="background:#f0f0f0;"><td colspan="5" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;">++ Additional Charges at the time of Registration</td></tr>`;
-    rows += buildRow("20", "Club House / Amenities Charges", clubHouseApplicable ? "Applicable" : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A");
-    rows += buildRow("21", "Corpus Fund (one-time, non-refundable)", corpusFundApplicable ? "Applicable" : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A");
-    rows += buildRow("22", "Legal & Documentation Charges", legalChargesApplicable ? "Applicable" : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A");
-    rows += buildRow("23", "Refundable Caution Deposit", cautionDepositApplicable ? "Applicable" : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A");
-    rows += buildRow("24", `Advance Maintenance (${advanceMaintenanceRate}/sft × ${advanceMaintenanceMonths} months)`, advanceMaintenanceApplicable ? "Applicable" : "N/A", advanceMaintenanceApplicable ? formatINR(advanceMaintenanceAmount) : "N/A", advanceMaintenanceApplicable ? formatINR(newAdvanceMaintenanceAmount) : "N/A", true);
-    rows += buildRow("25", "Payment at the time of Registration", "Sum of above", formatINR(registrationPaymentOld), formatINR(registrationPaymentNew), true, true);
+    rows += buildRow("17", "Club House / Amenities Charges", clubHouseApplicable ? "Applicable" : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A", clubHouseApplicable ? formatINR(clubHouseAmount) : "N/A");
+    rows += buildRow("18", "Corpus Fund (one-time, non-refundable)", corpusFundApplicable ? "Applicable" : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A", corpusFundApplicable ? formatINR(corpusFundAmount) : "N/A");
+    rows += buildRow("19", "Legal & Documentation Charges", legalChargesApplicable ? "Applicable" : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A", legalChargesApplicable ? formatINR(legalChargesAmount) : "N/A");
+    rows += buildRow("20", "Refundable Caution Deposit", cautionDepositApplicable ? "Applicable" : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A", cautionDepositApplicable ? formatINR(cautionDepositAmount) : "N/A");
+    rows += buildRow("21", `Advance Maintenance (${advanceMaintenanceRate}/sft × ${advanceMaintenanceMonths} months)`, advanceMaintenanceApplicable ? "Applicable" : "N/A", advanceMaintenanceApplicable ? formatINR(advanceMaintenanceAmount) : "N/A", advanceMaintenanceApplicable ? formatINR(newAdvanceMaintenanceAmount) : "N/A", true);
+    rows += buildRow("22", "Payment at the time of Registration", "Sum of above", formatINR(registrationPaymentOld), formatINR(registrationPaymentNew), true, true);
     rows += `<tr style="background:#f0f0f0;"><td colspan="5" style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;">Registration Charges</td></tr>`;
-    rows += buildRow("26", `GST (${gstPercentage}%) on Base Price`, "auto", formatINR(gstAmount), formatINR(newGstAmount), true);
-    rows += buildRow("27", `Stamp Duty & Registration (${stampDutyPercentage}%) on Base Price`, "auto", formatINR(stampDutyAmount), formatINR(newStampDutyAmount), true);
+    rows += buildRow("23", `GST (${gstPercentage}%) on Base Price`, "auto", formatINR(gstAmount), formatINR(newGstAmount), true);
+    rows += buildRow("24", `Stamp Duty & Registration (${stampDutyPercentage}%) on Base Price`, "auto", formatINR(stampDutyAmount), formatINR(newStampDutyAmount), true);
 
     const pdfHtml = `<!DOCTYPE html><html><head>
       <title>${fileName}</title>
@@ -985,46 +961,6 @@ export default function InitialSalesPage() {
                 </td>
               </tr>
 
-              {/* ── Section Header: Land Cost ── */}
-              <tr className="bg-teal-50">
-                <td colSpan={2} className="px-3 py-2 font-bold text-teal-700 text-sm">Land Cost</td>
-                <td className="px-3 py-2 text-center font-semibold text-teal-600 text-xs">Data / Input</td>
-                <td className="px-3 py-2 text-center font-semibold text-teal-600 text-xs">Old Value</td>
-                <td className="px-3 py-2 text-center font-semibold text-teal-600 text-xs">New Value</td>
-              </tr>
-              {/* Land Rate per SqYard */}
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">17</td>
-                <td className="px-3 py-2 font-medium">Land Rate per SqYard</td>
-                <td className="px-3 py-2"></td>
-                <td className="px-3 py-2">{numInput(landRatePerSqYard, setLandRatePerSqYard)}</td>
-                <td className="px-3 py-2">{numInput(newLandRatePerSqYard, setNewLandRatePerSqYard)}</td>
-              </tr>
-              {/* Total Land Cost (AUTO) */}
-              <tr className="border-b border-gray-100 bg-blue-50/30 hover:bg-blue-50/50">
-                <td className="px-3 py-2 text-center text-gray-500">18</td>
-                <td className="px-3 py-2 font-medium text-blue-700">Total Land Cost <span className="text-xs text-blue-400 ml-1">(auto)</span></td>
-                <td className="px-3 py-2 text-center text-xs text-gray-400">= SqYds × Rate</td>
-                <td className="px-3 py-2">{autoField(totalLandCost)}</td>
-                <td className="px-3 py-2">{autoField(newTotalLandCost)}</td>
-              </tr>
-              {/* Basic Sale Value (AUTO, BOLD) */}
-              <tr className="border-b-2 border-teal-200 bg-teal-50 hover:bg-teal-100">
-                <td className="px-3 py-2.5 text-center font-bold text-teal-800">19</td>
-                <td className="px-3 py-2.5 font-bold text-teal-800">Basic Sale Value <span className="text-xs font-normal text-teal-500 ml-1">(auto)</span></td>
-                <td className="px-3 py-2.5 text-center text-xs text-teal-500">= Base Price + Land Cost</td>
-                <td className="px-3 py-2.5">
-                  <span className="block w-full bg-teal-100 border border-teal-300 rounded px-2 py-1.5 text-sm text-right font-bold text-teal-900">
-                    {formatINR(basicSaleValue)}
-                  </span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <span className="block w-full bg-teal-100 border border-teal-300 rounded px-2 py-1.5 text-sm text-right font-bold text-teal-900">
-                    {formatINR(newBasicSaleValue)}
-                  </span>
-                </td>
-              </tr>
-
               {/* ── Section Header: Additional Charges ── */}
               <tr className="bg-arcadia-50">
                 <td colSpan={5} className="px-3 py-2 font-bold text-arcadia-700 text-sm">++ Additional Charges at the time of Registration</td>
@@ -1032,7 +968,7 @@ export default function InitialSalesPage() {
 
               {/* Club House */}
               <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">20</td>
+                <td className="px-3 py-2 text-center text-gray-500">17</td>
                 <td className="px-3 py-2">
                   <label className="flex items-center gap-2">
                     <input
@@ -1052,7 +988,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Corpus Fund */}
               <tr className="border-b border-gray-100 bg-gray-50/40 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">21</td>
+                <td className="px-3 py-2 text-center text-gray-500">18</td>
                 <td className="px-3 py-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" checked={corpusFundApplicable} onChange={(e) => setCorpusFundApplicable(e.target.checked)}
@@ -1067,7 +1003,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Legal Charges */}
               <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">22</td>
+                <td className="px-3 py-2 text-center text-gray-500">19</td>
                 <td className="px-3 py-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" checked={legalChargesApplicable} onChange={(e) => setLegalChargesApplicable(e.target.checked)}
@@ -1082,7 +1018,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Caution Deposit */}
               <tr className="border-b border-gray-100 bg-gray-50/40 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">23</td>
+                <td className="px-3 py-2 text-center text-gray-500">20</td>
                 <td className="px-3 py-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" checked={cautionDepositApplicable} onChange={(e) => setCautionDepositApplicable(e.target.checked)}
@@ -1097,7 +1033,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Advance Maintenance */}
               <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-3 py-2 text-center text-gray-500">24</td>
+                <td className="px-3 py-2 text-center text-gray-500">21</td>
                 <td className="px-3 py-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" checked={advanceMaintenanceApplicable} onChange={(e) => setAdvanceMaintenanceApplicable(e.target.checked)}
@@ -1129,7 +1065,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Registration Payment Total (AUTO, BOLD) */}
               <tr className="border-b-2 border-green-200 bg-green-50 hover:bg-green-100">
-                <td className="px-3 py-2.5 text-center font-bold text-green-800">25</td>
+                <td className="px-3 py-2.5 text-center font-bold text-green-800">22</td>
                 <td className="px-3 py-2.5 font-bold text-green-800">Payment at the time of Registration <span className="text-xs font-normal text-green-500 ml-1">(auto)</span></td>
                 <td className="px-3 py-2.5 text-center text-xs text-green-500">Sum of above</td>
                 <td className="px-3 py-2.5">
@@ -1151,7 +1087,7 @@ export default function InitialSalesPage() {
 
               {/* GST */}
               <tr className="border-b border-gray-100 bg-blue-50/30 hover:bg-blue-50/50">
-                <td className="px-3 py-2 text-center text-gray-500">26</td>
+                <td className="px-3 py-2 text-center text-gray-500">23</td>
                 <td className="px-3 py-2 font-medium">
                   <div className="flex items-center gap-2">
                     <span>GST</span>
@@ -1168,7 +1104,7 @@ export default function InitialSalesPage() {
               </tr>
               {/* Stamp Duty */}
               <tr className="border-b border-gray-100 bg-blue-50/30 hover:bg-blue-50/50">
-                <td className="px-3 py-2 text-center text-gray-500">27</td>
+                <td className="px-3 py-2 text-center text-gray-500">24</td>
                 <td className="px-3 py-2 font-medium">
                   <div className="flex items-center gap-2">
                     <span>Stamp Duty & Registration</span>
