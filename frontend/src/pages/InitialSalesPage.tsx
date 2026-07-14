@@ -227,7 +227,6 @@ export default function InitialSalesPage() {
     setExtraLandSqYards(0);
     setExtraLandPricePerSqYard(0);
     setPaymentTillNow(0);
-    setLandRatePerSqYard(0);
     setTotalSftPerVilla(200 * DEFAULT_SFT_PER_SQYARD);
     setNewSftPerSqYard(DEFAULT_NEW_SFT_PER_SQYARD);
     setNewDefaultFacing("West");
@@ -235,7 +234,6 @@ export default function InitialSalesPage() {
     setNewExtraLandSqYards(0);
     setNewExtraLandPricePerSqYard(0);
     setNewPaymentTillNow(0);
-    setNewLandRatePerSqYard(0);
     setNewTotalSftPerVilla(200 * DEFAULT_NEW_SFT_PER_SQYARD);
     setClubHouseApplicable(true);
     setClubHouseAmount(DEFAULT_CLUB_HOUSE_AMOUNT);
