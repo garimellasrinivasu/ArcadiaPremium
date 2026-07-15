@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { villaBlockingService } from "../services/villaBlockingService";
 import type { VillaBlockingDto } from "../services/villaBlockingService";
@@ -295,6 +295,46 @@ export default function MasterPlanPage() {
   // Hover tooltip state
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
+  // Refs for pinch-to-zoom
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const lastPinchDist = useRef<number | null>(null);
+  const lastPinchZoom = useRef<number>(1);
+
+  // Pinch-to-zoom handlers
+  const handleTouchStartMap = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDist.current = Math.hypot(dx, dy);
+      lastPinchZoom.current = zoom;
+    }
+  }, [zoom]);
+
+  const handleTouchMoveMap = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && lastPinchDist.current !== null) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const scale = dist / lastPinchDist.current;
+      const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
+      setZoom(newZoom);
+    }
+  }, []);
+
+  const handleTouchEndMap = useCallback(() => {
+    lastPinchDist.current = null;
+  }, []);
+
+  // Mouse wheel zoom (desktop)
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom((z) => Math.min(4, Math.max(0.5, z + delta)));
+    }
+  }, []);
+
   // Load blocked villas from backend
   useEffect(() => {
     villaBlockingService
@@ -426,7 +466,7 @@ export default function MasterPlanPage() {
     }
   }, [selected, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
 
-  const zoomIn = useCallback(() => setZoom((z) => Math.min(3, z + 0.25)), []);
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(4, z + 0.25)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, z - 0.25)), []);
   const resetView = useCallback(() => setZoom(1), []);
 
@@ -454,18 +494,11 @@ export default function MasterPlanPage() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex items-center justify-between">
         <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
           Master Plan &mdash; Arcadia Premium
         </h1>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xs sm:text-sm text-gray-500">
-            Zoom: {Math.round(zoom * 100)}%
-          </span>
-          <button onClick={zoomIn} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">+</button>
-          <button onClick={zoomOut} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">&minus;</button>
-          <button onClick={resetView} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition">Reset</button>
-        </div>
+        <span className="hidden sm:inline text-sm text-gray-400">Pinch or Ctrl+Scroll to zoom</span>
       </div>
 
       {/* Legend */}
@@ -487,8 +520,29 @@ export default function MasterPlanPage() {
       </div>
 
       {/* Map container */}
-      <div className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white" style={{ height: "calc(100vh - 200px)" }}>
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "pan-x pan-y" }}>
+      <div
+        ref={mapContainerRef}
+        className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white"
+        style={{ height: "calc(100vh - 200px)" }}
+        onTouchStart={handleTouchStartMap}
+        onTouchMove={handleTouchMoveMap}
+        onTouchEnd={handleTouchEndMap}
+        onWheel={handleWheel}
+      >
+        {/* Floating zoom controls — always visible */}
+        <div className="sticky top-2 left-0 z-30 flex justify-end px-2 pointer-events-none" style={{ marginBottom: "-44px" }}>
+          <div className="pointer-events-auto flex items-center gap-1 bg-white/90 backdrop-blur rounded-full shadow-lg px-2 py-1 border border-gray-200">
+            <button onClick={zoomOut} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">&minus;</button>
+            <span className="text-xs font-medium text-gray-600 min-w-[40px] text-center">{Math.round(zoom * 100)}%</span>
+            <button onClick={zoomIn} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">+</button>
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+            <button onClick={() => setZoom(1.5)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.4 && zoom <= 1.6 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>1.5x</button>
+            <button onClick={() => setZoom(2)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.9 && zoom <= 2.1 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>2x</button>
+            <button onClick={resetView} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-600 transition">Fit</button>
+          </div>
+        </div>
+
+        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "none" }}>
           {/* Colored master plan background */}
           <img
             src="/masterplan_colored.png"
