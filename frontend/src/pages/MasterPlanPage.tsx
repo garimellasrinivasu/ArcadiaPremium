@@ -446,48 +446,49 @@ export default function MasterPlanPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 z-[100] bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium">
+        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-[100] bg-green-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg shadow-lg text-sm font-medium text-center sm:text-left">
           {toast}
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-arcadia-800">
-          Master Plan &mdash; Praneeth Arcadia Premium
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
+          Master Plan &mdash; Arcadia Premium
         </h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xs sm:text-sm text-gray-500">
             Zoom: {Math.round(zoom * 100)}%
           </span>
-          <button onClick={zoomIn} className="px-3 py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">+</button>
-          <button onClick={zoomOut} className="px-3 py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">&minus;</button>
-          <button onClick={resetView} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition">Reset</button>
+          <button onClick={zoomIn} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">+</button>
+          <button onClick={zoomOut} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-arcadia-100 text-arcadia-700 rounded text-sm font-bold hover:bg-arcadia-200 transition">&minus;</button>
+          <button onClick={resetView} className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition">Reset</button>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs items-center">
+      <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs items-center">
         <span className="flex items-center gap-1">
-          <span className="w-4 h-3 rounded" style={{ background: "#FFF299" }} />
-          Praneeth Share — Available ({praneethAvailable})
+          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#FFF299" }} />
+          Available ({praneethAvailable})
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-4 h-3 rounded" style={{ background: "#ef4444" }} />
+          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#ef4444" }} />
           Blocked ({blockedCount})
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-4 h-3 rounded" style={{ background: "#f9c4cb" }} />
-          Landlord Share ({landlordCount})
+          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#f9c4cb" }} />
+          Landlord ({landlordCount})
         </span>
-        <span className="text-gray-400 ml-2">Hover for details &bull; Click to block or create sale entry</span>
+        <span className="hidden sm:inline text-gray-400 ml-2">Hover for details &bull; Click to block or create sale entry</span>
+        <span className="sm:hidden text-gray-400">Tap villa for details</span>
       </div>
 
       {/* Map container */}
-      <div className="relative overflow-auto border-2 border-arcadia-200 rounded-xl bg-white" style={{ height: "calc(100vh - 280px)" }}>
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%" }}>
+      <div className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white" style={{ height: "calc(100vh - 200px)" }}>
+        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "pan-x pan-y" }}>
           {/* Colored master plan background */}
           <img
             src="/masterplan_colored.png"
@@ -551,6 +552,15 @@ export default function MasterPlanPage() {
                   }
                 }}
                 onMouseLeave={() => { setHovered(null); setTooltipPos(null); }}
+                onTouchStart={(e) => {
+                  setHovered(plot.villa);
+                  const touch = e.touches[0];
+                  const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
+                  if (rect && touch) {
+                    setTooltipPos({ x: touch.clientX - rect.left, y: touch.clientY - rect.top });
+                  }
+                }}
+                onTouchEnd={() => { setTimeout(() => { setHovered(null); setTooltipPos(null); }, 1500); }}
                 style={{
                   position: "absolute",
                   left: `${plot.left}%`,
@@ -600,16 +610,17 @@ export default function MasterPlanPage() {
                   position: "absolute",
                   left: `${tooltipPos.x + 14}px`,
                   top: `${tooltipPos.y - 10}px`,
-                  background: "rgba(15, 23, 42, 0.92)",
+                  background: "rgba(15, 23, 42, 0.95)",
                   color: "#fff",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  lineHeight: "1.5",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  lineHeight: "1.4",
                   pointerEvents: "none",
                   zIndex: 50,
                   whiteSpace: "nowrap",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                  maxWidth: "200px",
                 }}
               >
                 <div style={{ fontWeight: 700, marginBottom: "2px" }}>Villa {hovPlot.villa}</div>
@@ -626,31 +637,31 @@ export default function MasterPlanPage() {
       </div>
 
       {/* Villa detail / action modal */}
-      {selected && !showBlockForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+      {selected && !showBlockForm && !showEditForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
-              <h2 className="text-xl font-bold text-arcadia-800">
+              <h2 className="text-lg sm:text-xl font-bold text-arcadia-800">
                 Villa {selected.villa}
                 {blockedVillas.has(selected.villa) && (
-                  <span className="ml-2 text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded">BLOCKED</span>
+                  <span className="ml-2 text-xs sm:text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded">BLOCKED</span>
                 )}
               </h2>
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-gray-500 text-xs">Plot Area</div>
-                <div className="font-semibold text-lg">{selected.sqYards} SqYd</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 text-sm">
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <div className="text-gray-500 text-[10px] sm:text-xs">Plot Area</div>
+                <div className="font-semibold text-base sm:text-lg">{selected.sqYards} SqYd</div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-gray-500 text-xs">Facing</div>
-                <div className="font-semibold text-lg">{selected.facing}</div>
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <div className="text-gray-500 text-[10px] sm:text-xs">Facing</div>
+                <div className="font-semibold text-base sm:text-lg">{selected.facing}</div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-gray-500 text-xs">Category</div>
-                <div className="font-semibold text-sm text-yellow-700">Praneeth Share</div>
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <div className="text-gray-500 text-[10px] sm:text-xs">Category</div>
+                <div className="font-semibold text-xs sm:text-sm text-yellow-700">Praneeth Share</div>
               </div>
             </div>
 
@@ -693,18 +704,18 @@ export default function MasterPlanPage() {
               );
             })()}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-wrap gap-2 sm:gap-3 pt-2">
               {!blockedVillas.has(selected.villa) && (
                 <>
                   <button
                     onClick={() => setShowBlockForm(true)}
-                    className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-medium hover:bg-amber-600 transition"
+                    className="flex-1 min-w-[100px] bg-amber-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-amber-600 active:bg-amber-700 transition"
                   >
                     Block Villa
                   </button>
                   <button
                     onClick={handleCreateSale}
-                    className="flex-1 bg-arcadia-600 text-white py-2.5 rounded-lg font-medium hover:bg-arcadia-700 transition"
+                    className="flex-1 min-w-[100px] bg-arcadia-600 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-arcadia-700 active:bg-arcadia-800 transition"
                   >
                     Sale Entry
                   </button>
@@ -714,13 +725,13 @@ export default function MasterPlanPage() {
                 <>
                   <button
                     onClick={handleEditBlocked}
-                    className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg font-medium hover:bg-blue-600 transition"
+                    className="flex-1 min-w-[100px] bg-blue-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-600 active:bg-blue-700 transition"
                   >
                     Edit Details
                   </button>
                   <button
                     onClick={() => handleUnblock(selected.villa)}
-                    className="flex-1 bg-red-500 text-white py-2.5 rounded-lg font-medium hover:bg-red-600 transition"
+                    className="flex-1 min-w-[100px] bg-red-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-red-600 active:bg-red-700 transition"
                   >
                     Unblock
                   </button>
@@ -728,7 +739,7 @@ export default function MasterPlanPage() {
               )}
               <button
                 onClick={() => setSelected(null)}
-                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition"
+                className="flex-1 min-w-[80px] border border-gray-300 text-gray-700 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-50 active:bg-gray-100 transition"
               >
                 Close
               </button>
@@ -742,8 +753,8 @@ export default function MasterPlanPage() {
 
       {/* Block Villa form modal */}
       {selected && showBlockForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => { setShowBlockForm(false); setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h2 className="text-xl font-bold text-amber-700">Block Villa {selected.villa}</h2>
               <button
@@ -803,8 +814,8 @@ export default function MasterPlanPage() {
 
       {/* Edit Blocked Villa Details Modal */}
       {selected && showEditForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowEditForm(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={() => setShowEditForm(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-gray-800 mb-4">Edit Villa {selected.villa} Details</h3>
 
             <div className="space-y-3">
