@@ -299,40 +299,59 @@ export default function MasterPlanPage() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const lastPinchDist = useRef<number | null>(null);
   const lastPinchZoom = useRef<number>(1);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
-  // Pinch-to-zoom handlers
-  const handleTouchStartMap = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      lastPinchDist.current = Math.hypot(dx, dy);
-      lastPinchZoom.current = zoom;
-    }
-  }, [zoom]);
+  // Attach native touch & wheel listeners (non-passive) for pinch-to-zoom & scroll-zoom
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el) return;
 
-  const handleTouchMoveMap = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastPinchDist.current !== null) {
-      e.preventDefault();
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.hypot(dx, dy);
-      const scale = dist / lastPinchDist.current;
-      const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
-      setZoom(newZoom);
-    }
-  }, []);
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDist.current = Math.hypot(dx, dy);
+        lastPinchZoom.current = zoomRef.current;
+      }
+    };
 
-  const handleTouchEndMap = useCallback(() => {
-    lastPinchDist.current = null;
-  }, []);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastPinchDist.current !== null) {
+        e.preventDefault(); // prevent native scroll while pinching
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scale = dist / lastPinchDist.current;
+        const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
+        setZoom(newZoom);
+      }
+      // single-finger touch → browser handles scroll natively (touchAction: "pan-x pan-y")
+    };
 
-  // Mouse wheel zoom (desktop)
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom((z) => Math.min(4, Math.max(0.5, z + delta)));
-    }
+    const onTouchEnd = () => {
+      lastPinchDist.current = null;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom((z) => Math.min(4, Math.max(0.5, z + delta)));
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
+    };
   }, []);
 
   // Load blocked villas from backend
@@ -524,10 +543,6 @@ export default function MasterPlanPage() {
         ref={mapContainerRef}
         className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white"
         style={{ height: "calc(100vh - 200px)" }}
-        onTouchStart={handleTouchStartMap}
-        onTouchMove={handleTouchMoveMap}
-        onTouchEnd={handleTouchEndMap}
-        onWheel={handleWheel}
       >
         {/* Floating zoom controls — always visible */}
         <div className="sticky top-2 left-0 z-30 flex justify-end px-2 pointer-events-none" style={{ marginBottom: "-44px" }}>
@@ -542,7 +557,7 @@ export default function MasterPlanPage() {
           </div>
         </div>
 
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "none" }}>
+        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "pan-x pan-y" }}>
           {/* Colored master plan background */}
           <img
             src="/masterplan_colored.png"
