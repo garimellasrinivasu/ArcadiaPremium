@@ -295,72 +295,42 @@ export default function MasterPlanPage() {
   // Hover tooltip state
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Refs for touch gestures (pan + pinch)
+  // Refs for pinch-to-zoom
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const lastPinchDist = useRef<number | null>(null);
   const lastPinchZoom = useRef<number>(1);
-  const lastPanPos = useRef<{ x: number; y: number } | null>(null);
-  const touchMode = useRef<"none" | "pan" | "pinch">("none");
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
 
-  // Full touch control: single-finger = pan/scroll, two-finger = pinch-to-zoom
+  // Pinch-to-zoom (two-finger) + Ctrl+Scroll zoom via native listeners
   useEffect(() => {
     const el = mapContainerRef.current;
     if (!el) return;
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        // Start pinch-to-zoom
-        touchMode.current = "pinch";
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         lastPinchDist.current = Math.hypot(dx, dy);
         lastPinchZoom.current = zoomRef.current;
-        lastPanPos.current = null;
-      } else if (e.touches.length === 1) {
-        // Start single-finger pan
-        touchMode.current = "pan";
-        lastPanPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        lastPinchDist.current = null;
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // prevent browser default for both pan and pinch
-
-      if (e.touches.length === 2) {
-        // Pinch-to-zoom
-        touchMode.current = "pinch";
-        if (lastPinchDist.current !== null) {
-          const dx = e.touches[0].clientX - e.touches[1].clientX;
-          const dy = e.touches[0].clientY - e.touches[1].clientY;
-          const dist = Math.hypot(dx, dy);
-          const scale = dist / lastPinchDist.current;
-          const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
-          setZoom(newZoom);
-        }
-      } else if (e.touches.length === 1 && touchMode.current === "pan" && lastPanPos.current) {
-        // Single-finger pan — scroll the container
-        const dx = lastPanPos.current.x - e.touches[0].clientX;
-        const dy = lastPanPos.current.y - e.touches[0].clientY;
-        el.scrollLeft += dx;
-        el.scrollTop += dy;
-        lastPanPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (e.touches.length === 2 && lastPinchDist.current !== null) {
+        e.preventDefault(); // block native pinch only during our zoom gesture
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scale = dist / lastPinchDist.current;
+        const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
+        setZoom(newZoom);
       }
+      // single-finger moves are NOT prevented → browser scrolls natively
     };
 
-    const onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0) {
-        touchMode.current = "none";
-        lastPinchDist.current = null;
-        lastPanPos.current = null;
-      } else if (e.touches.length === 1) {
-        // Went from pinch to single finger — switch to pan
-        touchMode.current = "pan";
-        lastPinchDist.current = null;
-        lastPanPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
+    const onTouchEnd = () => {
+      lastPinchDist.current = null;
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -371,7 +341,7 @@ export default function MasterPlanPage() {
       }
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
     el.addEventListener("wheel", onWheel, { passive: false });
@@ -587,7 +557,7 @@ export default function MasterPlanPage() {
           </div>
         </div>
 
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", position: "relative", width: "100%", touchAction: "none" }}>
+        <div style={{ position: "relative", width: `${zoom * 100}%` }}>
           {/* Colored master plan background */}
           <img
             src="/masterplan_colored.png"
