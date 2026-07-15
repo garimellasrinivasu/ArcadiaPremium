@@ -472,18 +472,19 @@ export default function Layout() {
             ))}
           </nav>
 
-          {/* Tally — external link section */}
+          {/* Tally — embedded page */}
           <div className="mb-1">
-            <a
-              href="https://ssp.elcom.digital/user-pages/login"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+            <Link
+              to="/tally"
+              className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold rounded-lg transition ${
+                location.pathname === "/tally"
+                  ? "bg-indigo-100 text-indigo-800"
+                  : "text-indigo-700 hover:bg-indigo-50"
+              }`}
             >
               <span className="text-xs font-bold">&#9654;</span>
               Tally
-              <span className="ml-auto text-[10px] text-indigo-400">&#8599;</span>
-            </a>
+            </Link>
           </div>
 
           <div className="border-t border-gray-200 pt-3 mt-4 px-2">

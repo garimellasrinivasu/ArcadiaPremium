@@ -67,6 +67,7 @@ import BillApprovalHistoryPage from "./pages/BillApprovalHistoryPage";
 import RateAnalysisPage from "./pages/RateAnalysisPage";
 import ProjectExecutionTemplatePage from "./pages/ProjectExecutionTemplatePage";
 import DailyExecutionUpdatePage from "./pages/DailyExecutionUpdatePage";
+import TallyPage from "./pages/TallyPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -125,6 +126,7 @@ export default function App() {
         <Route path="admin/project-estimation" element={<ProjectEstimationPage />} />
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
+        <Route path="tally" element={<TallyPage />} />
 
         {/* Subcontracting */}
         <Route path="subcontracting/contractors" element={<ContractorListPage />} />
