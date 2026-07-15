@@ -646,18 +646,21 @@ export default function MasterPlanPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  overflow: "hidden",
                 }}
               >
                 {statusLabel && (
                   <span
                     style={{
-                      fontSize: "6px",
+                      fontSize: "clamp(4px, 0.5vw, 8px)",
                       fontWeight: 700,
                       color: "#dc2626",
                       textTransform: "uppercase",
-                      letterSpacing: "0.5px",
+                      letterSpacing: "0.3px",
                       pointerEvents: "none",
                       userSelect: "none",
+                      lineHeight: 1,
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {statusLabel}
