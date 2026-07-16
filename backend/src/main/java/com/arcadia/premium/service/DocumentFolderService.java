@@ -4,6 +4,8 @@ import com.arcadia.premium.dto.DocumentFolderDto;
 import com.arcadia.premium.model.DocumentFolder;
 import com.arcadia.premium.repository.DocumentFolderRepository;
 import com.arcadia.premium.repository.FolderPermissionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class DocumentFolderService {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentFolderService.class);
     private static final int MAX_DEPTH = 3;
 
     private final DocumentFolderRepository repository;
@@ -85,6 +88,10 @@ public class DocumentFolderService {
     /** Get the folder tree filtered by user permissions */
     public List<DocumentFolderDto> getTree(String projectName, String userEmail, boolean isAdmin) {
         List<DocumentFolder> roots = repository.findByProjectNameAndParentIsNullOrderByNameAsc(projectName);
+        log.info("getTree: project={}, user={}, isAdmin={}, rootFolders={}", projectName, userEmail, isAdmin, roots.size());
+        for (DocumentFolder r : roots) {
+            log.info("  root folder: id={}, name='{}', createdBy='{}'", r.getId(), r.getName(), r.getCreatedBy());
+        }
 
         // Build a permission-level map for the current user: folderId → permission level
         Map<Long, String> userPermMap = new HashMap<>();
@@ -97,17 +104,21 @@ public class DocumentFolderService {
 
         if (isAdmin) {
             // Admin sees everything; set userPermission = "MANAGE" on all folders
-            return roots.stream()
+            List<DocumentFolderDto> result = roots.stream()
                     .map(root -> toTreeWithPermission(root, userEmail, isAdmin, userPermMap))
                     .collect(Collectors.toList());
+            log.info("getTree: returning {} folders for admin", result.size());
+            return result;
         }
 
         // Non-admin: filter by access
         Set<Long> accessibleIds = new java.util.HashSet<>(userPermMap.keySet());
-        return roots.stream()
+        List<DocumentFolderDto> result = roots.stream()
                 .map(root -> filterTreeByAccess(root, userEmail, accessibleIds, userPermMap, isAdmin))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        log.info("getTree: returning {} folders for non-admin (was {} roots before filter)", result.size(), roots.size());
+        return result;
     }
 
     /** Build tree DTO with userPermission populated (for admin — no filtering) */

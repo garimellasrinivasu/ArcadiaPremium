@@ -1371,19 +1371,52 @@ export default function ProjectDocumentsPage() {
     });
   }
 
+  /* ─── Helper: insert a new folder into tree state optimistically ─── */
+  function insertFolderIntoTree(tree: FolderDto[], newFolder: FolderDto, parentId: number | null): FolderDto[] {
+    if (parentId == null) {
+      // Root-level folder — add and sort
+      return [...tree, newFolder].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    // Sub-folder — find parent and insert as child
+    return tree.map((node) => {
+      if (node.id === parentId) {
+        return {
+          ...node,
+          children: [...(node.children || []), newFolder].sort((a, b) => a.name.localeCompare(b.name)),
+        };
+      }
+      if (node.children && node.children.length > 0) {
+        return { ...node, children: insertFolderIntoTree(node.children, newFolder, parentId) };
+      }
+      return node;
+    });
+  }
+
   /* ─── Folder CRUD ─── */
   async function handleCreateFolder() {
     if (!newFolderName.trim()) return;
     setCreatingFolder(true);
     try {
-      await folderService.create(selectedProject, newFolderName.trim(), currentFolderId);
+      const created = await folderService.create(selectedProject, newFolderName.trim(), currentFolderId);
       setNewFolderName("");
       setShowFolderInput(false);
-      await loadFolders(selectedProject);
+
+      // Optimistically add the new folder to the tree immediately
+      // (don't wait for getTree which may have read-replica lag in production)
+      const optimisticFolder: FolderDto = {
+        ...created,
+        children: created.children || [],
+        userPermission: created.userPermission || "MANAGE",
+      };
+      setFolderTree((prev) => insertFolderIntoTree(prev, optimisticFolder, currentFolderId));
+
       // Expand current folder to show the new one
       if (currentFolderId != null) {
         setExpandedIds((prev) => new Set(prev).add(currentFolderId));
       }
+
+      // Background refresh to sync with authoritative tree (non-blocking)
+      loadFolders(selectedProject).catch(() => {});
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Failed to create folder.");
     } finally {
