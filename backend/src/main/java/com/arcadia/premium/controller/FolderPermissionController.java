@@ -34,7 +34,7 @@ public class FolderPermissionController {
             String userEmail = principal.getName();
             boolean isAdmin = isCurrentUserAdmin();
 
-            if (!isAdmin && !folder.getCreatedBy().equals(userEmail)
+            if (!isAdmin && !folder.getCreatedBy().equalsIgnoreCase(userEmail)
                     && !permissionService.hasPermission(folderId, userEmail, FolderPermissionLevel.MANAGE)) {
                 return ResponseEntity.status(403).body(Map.of("error", "You do not have permission to view permissions for this folder."));
             }
@@ -59,7 +59,7 @@ public class FolderPermissionController {
             String currentUser = principal.getName();
             boolean isAdmin = isCurrentUserAdmin();
 
-            if (!isAdmin && !folder.getCreatedBy().equals(currentUser)
+            if (!isAdmin && !folder.getCreatedBy().equalsIgnoreCase(currentUser)
                     && !permissionService.hasPermission(folderId, currentUser, FolderPermissionLevel.MANAGE)) {
                 return ResponseEntity.status(403).body(Map.of("error", "You do not have permission to manage permissions for this folder."));
             }
@@ -81,7 +81,7 @@ public class FolderPermissionController {
             String currentUser = principal.getName();
             boolean isAdmin = isCurrentUserAdmin();
 
-            if (!isAdmin && !folder.getCreatedBy().equals(currentUser)
+            if (!isAdmin && !folder.getCreatedBy().equalsIgnoreCase(currentUser)
                     && !permissionService.hasPermission(folderId, currentUser, FolderPermissionLevel.MANAGE)) {
                 return ResponseEntity.status(403).body(Map.of("error", "You do not have permission to manage permissions for this folder."));
             }

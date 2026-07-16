@@ -1281,8 +1281,11 @@ export default function ProjectDocumentsPage() {
     try {
       const tree = await folderService.getTree(proj);
       setFolderTree(tree);
-    } catch {
-      // silent — folders are optional
+    } catch (err: any) {
+      console.error("Failed to load folders:", err);
+      // Keep existing tree on error so UI doesn't blank out,
+      // but surface error so user knows something went wrong
+      setError("Failed to refresh folders. Please try reloading the page.");
     }
   }, []);
 

@@ -115,7 +115,7 @@ public class DocumentFolderService {
                                                      boolean isAdmin, Map<Long, String> userPermMap) {
         DocumentFolderDto dto = DocumentFolderDto.fromEntity(folder);
         // Admin gets MANAGE, creator gets MANAGE, others get their actual level
-        if (isAdmin || folder.getCreatedBy().equals(userEmail)) {
+        if (isAdmin || folder.getCreatedBy().equalsIgnoreCase(userEmail)) {
             dto.setUserPermission("MANAGE");
         } else {
             dto.setUserPermission(userPermMap.get(folder.getId()));
@@ -134,7 +134,7 @@ public class DocumentFolderService {
     private DocumentFolderDto filterTreeByAccess(DocumentFolder folder, String userEmail,
                                                    Set<Long> accessibleIds, Map<Long, String> userPermMap,
                                                    boolean isAdmin) {
-        boolean isCreator = folder.getCreatedBy().equals(userEmail);
+        boolean isCreator = folder.getCreatedBy().equalsIgnoreCase(userEmail);
         boolean hasExplicitAccess = accessibleIds.contains(folder.getId());
         boolean hasAccess = isCreator || hasExplicitAccess;
 
@@ -152,8 +152,10 @@ public class DocumentFolderService {
             // Set the user's permission level
             if (isCreator) {
                 dto.setUserPermission("MANAGE"); // creator always has full control
+            } else if (hasExplicitAccess) {
+                dto.setUserPermission(userPermMap.get(folder.getId())); // explicit permission
             } else {
-                dto.setUserPermission(userPermMap.get(folder.getId())); // explicit permission or null
+                dto.setUserPermission(null); // visible only because of accessible children
             }
             return dto;
         }
