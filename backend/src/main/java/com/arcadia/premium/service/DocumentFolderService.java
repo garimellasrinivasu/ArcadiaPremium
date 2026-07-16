@@ -96,9 +96,14 @@ public class DocumentFolderService {
         // Build a permission-level map for the current user: folderId → permission level
         Map<Long, String> userPermMap = new HashMap<>();
         if (!isAdmin) {
-            List<FolderPermission> userPerms = folderPermissionRepository.findByUserEmail(userEmail);
-            for (FolderPermission fp : userPerms) {
-                userPermMap.put(fp.getFolder().getId(), fp.getPermissionLevel().name());
+            try {
+                List<FolderPermission> userPerms = folderPermissionRepository.findByUserEmail(userEmail);
+                for (FolderPermission fp : userPerms) {
+                    userPermMap.put(fp.getFolder().getId(), fp.getPermissionLevel().name());
+                }
+            } catch (Exception e) {
+                log.warn("getTree: failed to load folder permissions for user={}: {}", userEmail, e.getMessage());
+                // Continue without permission data — creator-based access still works
             }
         }
 
@@ -126,7 +131,7 @@ public class DocumentFolderService {
                                                      boolean isAdmin, Map<Long, String> userPermMap) {
         DocumentFolderDto dto = DocumentFolderDto.fromEntity(folder);
         // Admin gets MANAGE, creator gets MANAGE, others get their actual level
-        if (isAdmin || folder.getCreatedBy().equalsIgnoreCase(userEmail)) {
+        if (isAdmin || (folder.getCreatedBy() != null && folder.getCreatedBy().equalsIgnoreCase(userEmail))) {
             dto.setUserPermission("MANAGE");
         } else {
             dto.setUserPermission(userPermMap.get(folder.getId()));
@@ -145,7 +150,7 @@ public class DocumentFolderService {
     private DocumentFolderDto filterTreeByAccess(DocumentFolder folder, String userEmail,
                                                    Set<Long> accessibleIds, Map<Long, String> userPermMap,
                                                    boolean isAdmin) {
-        boolean isCreator = folder.getCreatedBy().equalsIgnoreCase(userEmail);
+        boolean isCreator = folder.getCreatedBy() != null && folder.getCreatedBy().equalsIgnoreCase(userEmail);
         boolean hasExplicitAccess = accessibleIds.contains(folder.getId());
         boolean hasAccess = isCreator || hasExplicitAccess;
 

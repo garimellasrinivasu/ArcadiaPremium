@@ -39,9 +39,14 @@ public class DocumentFolderController {
 
     /** Get the full folder tree for a project, filtered by user permissions */
     @GetMapping("/tree")
-    public ResponseEntity<List<DocumentFolderDto>> getTree(@RequestParam String projectName, Principal principal) {
-        boolean isAdmin = isCurrentUserAdmin();
-        return ResponseEntity.ok(service.getTree(projectName, principal.getName(), isAdmin));
+    public ResponseEntity<?> getTree(@RequestParam String projectName, Principal principal) {
+        try {
+            boolean isAdmin = isCurrentUserAdmin();
+            return ResponseEntity.ok(service.getTree(projectName, principal.getName(), isAdmin));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to load folders: " + e.getMessage()));
+        }
     }
 
     /** Get breadcrumb path for a folder */

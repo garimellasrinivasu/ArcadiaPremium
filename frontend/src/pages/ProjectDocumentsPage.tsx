@@ -1283,9 +1283,9 @@ export default function ProjectDocumentsPage() {
       setFolderTree(tree);
     } catch (err: any) {
       console.error("Failed to load folders:", err);
-      // Keep existing tree on error so UI doesn't blank out,
-      // but surface error so user knows something went wrong
-      setError("Failed to refresh folders. Please try reloading the page.");
+      const detail = err.response?.data?.error || err.response?.status || err.message || "Unknown error";
+      // Keep existing tree on error so UI doesn't blank out
+      setError(`Failed to refresh folders (${detail}). Please try reloading the page.`);
     }
   }, []);
 
@@ -1424,14 +1424,48 @@ export default function ProjectDocumentsPage() {
     }
   }
 
+  /* ─── Helper: rename a folder in tree state optimistically ─── */
+  function renameFolderInTree(tree: FolderDto[], folderId: number, newName: string): FolderDto[] {
+    return tree.map((node) => {
+      if (node.id === folderId) {
+        return { ...node, name: newName };
+      }
+      if (node.children && node.children.length > 0) {
+        return { ...node, children: renameFolderInTree(node.children, folderId, newName) };
+      }
+      return node;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /* ─── Helper: remove a folder from tree state optimistically ─── */
+  function removeFolderFromTree(tree: FolderDto[], folderId: number): FolderDto[] {
+    return tree
+      .filter((node) => node.id !== folderId)
+      .map((node) => {
+        if (node.children && node.children.length > 0) {
+          return { ...node, children: removeFolderFromTree(node.children, folderId) };
+        }
+        return node;
+      });
+  }
+
   async function handleRenameFolder() {
     if (!renameValue.trim() || renamingFolderId == null) return;
     try {
-      await folderService.rename(renamingFolderId, renameValue.trim());
+      const trimmedName = renameValue.trim();
+      await folderService.rename(renamingFolderId, trimmedName);
+      const renamedId = renamingFolderId;
       setRenamingFolderId(null);
       setRenameValue("");
-      await loadFolders(selectedProject);
+
+      // Optimistic update: rename in tree state immediately
+      setFolderTree((prev) => renameFolderInTree(prev, renamedId, trimmedName));
+
+      // Update breadcrumb immediately
       if (currentFolderId != null) buildBreadcrumb(currentFolderId, selectedProject);
+
+      // Background sync (non-blocking)
+      loadFolders(selectedProject).catch(() => {});
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Failed to rename folder.");
     }
@@ -1442,7 +1476,12 @@ export default function ProjectDocumentsPage() {
     try {
       await folderService.delete(folderId);
       if (currentFolderId === folderId) setCurrentFolderId(null);
-      await loadFolders(selectedProject);
+
+      // Optimistic update: remove from tree state immediately
+      setFolderTree((prev) => removeFolderFromTree(prev, folderId));
+
+      // Background sync (non-blocking)
+      loadFolders(selectedProject).catch(() => {});
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Failed to delete folder.");
     }
