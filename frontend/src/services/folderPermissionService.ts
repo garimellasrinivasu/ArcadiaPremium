@@ -53,4 +53,27 @@ export const folderPermissionService = {
     const { data } = await api.get<SimpleUser[]>("/users/simple");
     return data;
   },
+
+  /** Get all permissions for a specific user (admin only) */
+  async getPermissionsByUser(
+    userEmail: string
+  ): Promise<FolderPermissionDto[]> {
+    const { data } = await api.get<FolderPermissionDto[]>(
+      `/folder-permissions/by-user/${encodeURIComponent(userEmail)}`
+    );
+    return data;
+  },
+
+  /** Batch update permissions for a user on a project (admin only) */
+  async batchUpdatePermissions(
+    userEmail: string,
+    projectName: string,
+    permissions: { folderId: number; permissionLevel: string }[]
+  ): Promise<void> {
+    await api.put("/folder-permissions/batch-by-user", {
+      userEmail,
+      projectName,
+      permissions,
+    });
+  },
 };

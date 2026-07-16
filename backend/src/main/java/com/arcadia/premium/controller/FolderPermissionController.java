@@ -71,6 +71,48 @@ public class FolderPermissionController {
         }
     }
 
+    /** Get all permissions for a specific user (admin only) */
+    @GetMapping("/by-user/{userEmail}")
+    public ResponseEntity<?> getPermissionsByUser(@PathVariable String userEmail, Principal principal) {
+        try {
+            if (!isCurrentUserAdmin()) {
+                return ResponseEntity.status(403).body(Map.of("error", "Only admins can view user permissions."));
+            }
+            List<FolderPermissionDto> permissions = permissionService.getPermissionsByUser(userEmail);
+            return ResponseEntity.ok(permissions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Batch update permissions for a user on a project (admin only) */
+    @PutMapping("/batch-by-user")
+    public ResponseEntity<?> batchUpdateForUser(@RequestBody Map<String, Object> request, Principal principal) {
+        try {
+            if (!isCurrentUserAdmin()) {
+                return ResponseEntity.status(403).body(Map.of("error", "Only admins can batch update permissions."));
+            }
+            String userEmail = (String) request.get("userEmail");
+            String projectName = (String) request.get("projectName");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> permissionsList = (List<Map<String, Object>>) request.get("permissions");
+
+            Map<Long, FolderPermissionLevel> permMap = new java.util.HashMap<>();
+            if (permissionsList != null) {
+                for (Map<String, Object> p : permissionsList) {
+                    Long folderId = Long.valueOf(p.get("folderId").toString());
+                    FolderPermissionLevel level = FolderPermissionLevel.valueOf((String) p.get("permissionLevel"));
+                    permMap.put(folderId, level);
+                }
+            }
+
+            permissionService.batchUpdateForUser(userEmail, projectName, permMap, principal.getName());
+            return ResponseEntity.ok(Map.of("message", "Document access updated successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** Remove a permission */
     @DeleteMapping("/{folderId}/{userEmail}")
     public ResponseEntity<?> removePermission(@PathVariable Long folderId,

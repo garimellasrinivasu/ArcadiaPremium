@@ -18,4 +18,7 @@ public interface DocumentFolderRepository extends JpaRepository<DocumentFolder, 
 
     /** Check if a folder name already exists at root level for a project */
     boolean existsByProjectNameAndParentIsNullAndName(String projectName, String name);
+
+    /** Get all folders for a project (all levels) */
+    List<DocumentFolder> findByProjectName(String projectName);
 }

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -118,5 +119,76 @@ public class FolderPermissionService {
         if (isAdmin) return true;
         if (userEmail.equals(createdBy)) return true;
         return hasPermission(folderId, userEmail, FolderPermissionLevel.VIEW);
+    }
+
+    /**
+     * Get all permissions for a user across all folders, with folder names resolved.
+     */
+    @Transactional(readOnly = true)
+    public List<FolderPermissionDto> getPermissionsByUser(String userEmail) {
+        List<FolderPermission> permissions = permissionRepository.findByUserEmail(userEmail);
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        String firstName = user != null ? user.getFirstName() : null;
+        String lastName = user != null ? user.getLastName() : null;
+        return permissions.stream()
+                .map(fp -> FolderPermissionDto.fromEntity(fp, firstName, lastName))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Batch update permissions for a user on a specific project.
+     * Replaces all existing permissions on folders belonging to this project.
+     * Folders not in the newPermissions map will have their permissions removed.
+     */
+    @Transactional
+    public void batchUpdateForUser(String userEmail, String projectName,
+                                    Map<Long, FolderPermissionLevel> newPermissions,
+                                    String grantedBy) {
+        // Get all folder IDs for this project
+        List<DocumentFolder> projectFolders = folderRepository.findByProjectName(projectName);
+        Set<Long> projectFolderIds = projectFolders.stream()
+                .map(DocumentFolder::getId)
+                .collect(Collectors.toSet());
+
+        // Get existing permissions for this user on project folders
+        List<FolderPermission> existingPerms = permissionRepository.findByUserEmail(userEmail);
+        Map<Long, FolderPermission> existingMap = existingPerms.stream()
+                .filter(fp -> projectFolderIds.contains(fp.getFolder().getId()))
+                .collect(Collectors.toMap(fp -> fp.getFolder().getId(), fp -> fp));
+
+        // Remove permissions no longer in the new set
+        for (Map.Entry<Long, FolderPermission> entry : existingMap.entrySet()) {
+            if (!newPermissions.containsKey(entry.getKey())) {
+                permissionRepository.delete(entry.getValue());
+            }
+        }
+
+        // Add or update permissions in the new set
+        for (Map.Entry<Long, FolderPermissionLevel> entry : newPermissions.entrySet()) {
+            Long folderId = entry.getKey();
+            FolderPermissionLevel level = entry.getValue();
+
+            if (!projectFolderIds.contains(folderId)) {
+                continue; // Skip folders not in this project
+            }
+
+            if (existingMap.containsKey(folderId)) {
+                FolderPermission existing = existingMap.get(folderId);
+                if (existing.getPermissionLevel() != level) {
+                    existing.setPermissionLevel(level);
+                    existing.setGrantedBy(grantedBy);
+                    permissionRepository.save(existing);
+                }
+            } else {
+                DocumentFolder folder = folderRepository.findById(folderId)
+                        .orElseThrow(() -> new RuntimeException("Folder not found: " + folderId));
+                FolderPermission perm = new FolderPermission();
+                perm.setFolder(folder);
+                perm.setUserEmail(userEmail);
+                perm.setPermissionLevel(level);
+                perm.setGrantedBy(grantedBy);
+                permissionRepository.save(perm);
+            }
+        }
     }
 }

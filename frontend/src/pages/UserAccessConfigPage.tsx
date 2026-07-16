@@ -1,6 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { userService } from "../services/userService";
 import { authService } from "../services/authService";
+import { folderService } from "../services/folderService";
+import type { FolderDto } from "../services/folderService";
+import { folderPermissionService } from "../services/folderPermissionService";
+import { projectService } from "../services/projectService";
+import type { ProjectDto } from "../services/projectService";
 import type { User, Role } from "../types/user";
 
 /* ─── All configurable pages grouped by section ─── */
@@ -163,6 +168,19 @@ export default function UserAccessConfigPage() {
   // Current admin
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Tab state for right panel
+  const [activeTab, setActiveTab] = useState<"pages" | "documents">("pages");
+
+  // Document Access state
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [docProject, setDocProject] = useState<string>("");
+  const [folderTree, setFolderTree] = useState<FolderDto[]>([]);
+  const [folderPerms, setFolderPerms] = useState<Map<number, string>>(new Map()); // folderId -> permission level
+  const [originalPerms, setOriginalPerms] = useState<Map<number, string>>(new Map());
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [savingDocs, setSavingDocs] = useState(false);
+  const [docSuccessMsg, setDocSuccessMsg] = useState("");
+
   useEffect(() => {
     loadData();
   }, []);
@@ -170,14 +188,16 @@ export default function UserAccessConfigPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [usersData, rolesData, me] = await Promise.all([
+      const [usersData, rolesData, me, projectsData] = await Promise.all([
         userService.getAll(),
         userService.getAllRoles(),
         authService.getCurrentUser(),
+        projectService.getActiveProjects(),
       ]);
       setUsers(usersData);
       setRoles(rolesData);
       setCurrentUser(me);
+      setProjects(projectsData);
     } catch {
       setError("Failed to load users.");
     } finally {
@@ -195,6 +215,12 @@ export default function UserAccessConfigPage() {
     setEditViewOnlyPages(new Set(user.viewOnlyPages || []));
     setSuccessMsg("");
     setError("");
+    // Reset document access when switching users
+    setDocProject("");
+    setFolderTree([]);
+    setFolderPerms(new Map());
+    setOriginalPerms(new Map());
+    setDocSuccessMsg("");
   }
 
   /** Get page access state: "none" | "view" | "full" */
@@ -329,6 +355,108 @@ export default function UserAccessConfigPage() {
       setTimeout(() => setSuccessMsg(""), 5000);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to reset password.");
+    }
+  }
+
+  /* ─── Document Access helpers ─── */
+
+  /** Flatten folder tree into a list with depth for rendering */
+  function flattenTree(nodes: FolderDto[], depth = 0): { folder: FolderDto; depth: number }[] {
+    const result: { folder: FolderDto; depth: number }[] = [];
+    for (const node of nodes) {
+      result.push({ folder: node, depth });
+      if (node.children && node.children.length > 0) {
+        result.push(...flattenTree(node.children, depth + 1));
+      }
+    }
+    return result;
+  }
+
+  /** Load folder tree and user permissions when project changes */
+  const loadDocAccess = useCallback(async (projectName: string, userEmail: string) => {
+    if (!projectName || !userEmail) return;
+    setLoadingFolders(true);
+    setDocSuccessMsg("");
+    try {
+      const [tree, userPerms] = await Promise.all([
+        folderService.getTree(projectName),
+        folderPermissionService.getPermissionsByUser(userEmail),
+      ]);
+      setFolderTree(tree);
+
+      // Build a map of folderId -> permissionLevel for the selected user
+      const permMap = new Map<number, string>();
+      for (const perm of userPerms) {
+        permMap.set(perm.folderId, perm.permissionLevel);
+      }
+      setFolderPerms(new Map(permMap));
+      setOriginalPerms(new Map(permMap));
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to load document access.");
+    } finally {
+      setLoadingFolders(false);
+    }
+  }, []);
+
+  /** Handle project change in Document Access tab */
+  function handleDocProjectChange(projectName: string) {
+    setDocProject(projectName);
+    if (projectName && selectedUserId != null) {
+      const user = users.find((u) => u.id === selectedUserId);
+      if (user) loadDocAccess(projectName, user.email);
+    } else {
+      setFolderTree([]);
+      setFolderPerms(new Map());
+      setOriginalPerms(new Map());
+    }
+  }
+
+  /** Set permission for a folder */
+  function setFolderPerm(folderId: number, level: string) {
+    setFolderPerms((prev) => {
+      const next = new Map(prev);
+      if (level === "NONE") {
+        next.delete(folderId);
+      } else {
+        next.set(folderId, level);
+      }
+      return next;
+    });
+  }
+
+  /** Check if Document Access has unsaved changes */
+  function docHasChanges(): boolean {
+    if (folderPerms.size !== originalPerms.size) return true;
+    for (const [key, val] of folderPerms) {
+      if (originalPerms.get(key) !== val) return true;
+    }
+    for (const key of originalPerms.keys()) {
+      if (!folderPerms.has(key)) return true;
+    }
+    return false;
+  }
+
+  /** Save document access changes */
+  async function saveDocAccess() {
+    if (!selectedUserId || !docProject) return;
+    const user = users.find((u) => u.id === selectedUserId);
+    if (!user) return;
+
+    setSavingDocs(true);
+    setError("");
+    try {
+      const permissions: { folderId: number; permissionLevel: string }[] = [];
+      for (const [folderId, level] of folderPerms) {
+        permissions.push({ folderId, permissionLevel: level });
+      }
+      await folderPermissionService.batchUpdatePermissions(user.email, docProject, permissions);
+      setOriginalPerms(new Map(folderPerms));
+      setDocSuccessMsg("Document access saved successfully!");
+      setTimeout(() => setDocSuccessMsg(""), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to save document access.");
+    } finally {
+      setSavingDocs(false);
     }
   }
 
@@ -481,134 +609,326 @@ export default function UserAccessConfigPage() {
               {isAdmin(selectedUser) ? (
                 <div className="px-6 py-12 text-center">
                   <div className="text-5xl mb-3">&#128272;</div>
-                  <p className="text-gray-700 font-medium">Admin users have access to all pages</p>
+                  <p className="text-gray-700 font-medium">Admin users have access to all pages and documents</p>
                   <p className="text-sm text-gray-400 mt-1">This user has the Admin role.</p>
                 </div>
               ) : (
                 <>
-                  {/* Page Access Grid — 3-state: None / View Only / Full Access */}
-                  <div className="px-4 sm:px-6 py-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-semibold text-gray-700">Page Access</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={selectAllPages}
-                          className="text-[10px] sm:text-xs text-arcadia-600 hover:text-arcadia-800 font-medium">
-                          All Full
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button onClick={viewAllPages}
-                          className="text-[10px] sm:text-xs text-amber-600 hover:text-amber-800 font-medium">
-                          All View
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button onClick={deselectAllPages}
-                          className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700 font-medium">
-                          All None
-                        </button>
-                        <span className="text-gray-300 hidden sm:inline">|</span>
-                        <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">
-                          {editPages.size} full, {editViewOnlyPages.size} view
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Legend */}
-                    <div className="flex items-center gap-4 mb-3 text-[10px] text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-100 border border-red-300" /> No Access (hidden)
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-400" /> View Only (read-only)
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-100 border border-green-400" /> Full Access
-                      </span>
-                    </div>
-
-                    <div className="space-y-4">
-                      {PAGE_SECTIONS.map((section) => {
-                        const fullCount = section.pages.filter((p) => editPages.has(p.key)).length;
-                        const viewCount = section.pages.filter((p) => editViewOnlyPages.has(p.key)).length;
-                        const allFull = section.pages.every((p) => editPages.has(p.key));
-                        return (
-                          <div key={section.section} className="border border-gray-200 rounded-lg overflow-hidden">
-                            {/* Section header */}
-                            <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
-                              <input type="checkbox"
-                                checked={allFull}
-                                onChange={() => toggleSectionFull(section.pages)}
-                                title="Toggle all to Full Access"
-                                className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
-                              <span className="text-xs sm:text-sm font-semibold text-gray-700">{section.section}</span>
-                              <span className="text-[10px] text-gray-400 ml-auto">
-                                {fullCount} full{viewCount > 0 && `, ${viewCount} view`} / {section.pages.length}
-                              </span>
-                            </div>
-                            {/* Page access rows */}
-                            <div className="px-3 sm:px-4 py-2 space-y-1">
-                              {section.pages.map((page) => {
-                                const state = getPageState(page.key);
-                                return (
-                                  <div key={page.key} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition">
-                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 min-w-0 truncate">{page.label}</span>
-                                    <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => setPageState(page.key, "none")}
-                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                          state === "none"
-                                            ? "bg-red-100 text-red-700 shadow-sm"
-                                            : "text-gray-400 hover:text-gray-600"
-                                        }`}
-                                        title="No Access"
-                                      >
-                                        None
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setPageState(page.key, "view")}
-                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                          state === "view"
-                                            ? "bg-amber-100 text-amber-700 shadow-sm"
-                                            : "text-gray-400 hover:text-gray-600"
-                                        }`}
-                                        title="View Only — page visible but all actions disabled"
-                                      >
-                                        View
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setPageState(page.key, "full")}
-                                        className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                          state === "full"
-                                            ? "bg-green-100 text-green-700 shadow-sm"
-                                            : "text-gray-400 hover:text-gray-600"
-                                        }`}
-                                        title="Full Access"
-                                      >
-                                        Full
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Save button */}
-                  <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
-                      {editPages.size} full, {editViewOnlyPages.size} view-only
-                    </span>
-                    <button onClick={savePageAccess} disabled={saving === selectedUserId}
-                      className="bg-arcadia-600 text-white px-5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
-                      {saving === selectedUserId ? "Saving..." : "Save Access"}
+                  {/* ═══ Tabs ═══ */}
+                  <div className="flex border-b border-gray-200">
+                    <button
+                      onClick={() => setActiveTab("pages")}
+                      className={`flex-1 px-4 py-3 text-xs sm:text-sm font-medium transition border-b-2 ${
+                        activeTab === "pages"
+                          ? "border-arcadia-600 text-arcadia-700 bg-arcadia-50/40"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Page Access
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("documents")}
+                      className={`flex-1 px-4 py-3 text-xs sm:text-sm font-medium transition border-b-2 ${
+                        activeTab === "documents"
+                          ? "border-arcadia-600 text-arcadia-700 bg-arcadia-50/40"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Document Access
                     </button>
                   </div>
+
+                  {/* ═══ Page Access Tab ═══ */}
+                  {activeTab === "pages" && (
+                    <>
+                      <div className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold text-gray-700">Page Access</h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button onClick={selectAllPages}
+                              className="text-[10px] sm:text-xs text-arcadia-600 hover:text-arcadia-800 font-medium">
+                              All Full
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button onClick={viewAllPages}
+                              className="text-[10px] sm:text-xs text-amber-600 hover:text-amber-800 font-medium">
+                              All View
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button onClick={deselectAllPages}
+                              className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700 font-medium">
+                              All None
+                            </button>
+                            <span className="text-gray-300 hidden sm:inline">|</span>
+                            <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">
+                              {editPages.size} full, {editViewOnlyPages.size} view
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Legend */}
+                        <div className="flex items-center gap-4 mb-3 text-[10px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-100 border border-red-300" /> No Access (hidden)
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-400" /> View Only (read-only)
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-100 border border-green-400" /> Full Access
+                          </span>
+                        </div>
+
+                        <div className="space-y-4">
+                          {PAGE_SECTIONS.map((section) => {
+                            const fullCount = section.pages.filter((p) => editPages.has(p.key)).length;
+                            const viewCount = section.pages.filter((p) => editViewOnlyPages.has(p.key)).length;
+                            const allFull = section.pages.every((p) => editPages.has(p.key));
+                            return (
+                              <div key={section.section} className="border border-gray-200 rounded-lg overflow-hidden">
+                                {/* Section header */}
+                                <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
+                                  <input type="checkbox"
+                                    checked={allFull}
+                                    onChange={() => toggleSectionFull(section.pages)}
+                                    title="Toggle all to Full Access"
+                                    className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 cursor-pointer" />
+                                  <span className="text-xs sm:text-sm font-semibold text-gray-700">{section.section}</span>
+                                  <span className="text-[10px] text-gray-400 ml-auto">
+                                    {fullCount} full{viewCount > 0 && `, ${viewCount} view`} / {section.pages.length}
+                                  </span>
+                                </div>
+                                {/* Page access rows */}
+                                <div className="px-3 sm:px-4 py-2 space-y-1">
+                                  {section.pages.map((page) => {
+                                    const state = getPageState(page.key);
+                                    return (
+                                      <div key={page.key} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition">
+                                        <span className="text-xs sm:text-sm text-gray-700 flex-1 min-w-0 truncate">{page.label}</span>
+                                        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => setPageState(page.key, "none")}
+                                            className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                              state === "none"
+                                                ? "bg-red-100 text-red-700 shadow-sm"
+                                                : "text-gray-400 hover:text-gray-600"
+                                            }`}
+                                            title="No Access"
+                                          >
+                                            None
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setPageState(page.key, "view")}
+                                            className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                              state === "view"
+                                                ? "bg-amber-100 text-amber-700 shadow-sm"
+                                                : "text-gray-400 hover:text-gray-600"
+                                            }`}
+                                            title="View Only — page visible but all actions disabled"
+                                          >
+                                            View
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setPageState(page.key, "full")}
+                                            className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                              state === "full"
+                                                ? "bg-green-100 text-green-700 shadow-sm"
+                                                : "text-gray-400 hover:text-gray-600"
+                                            }`}
+                                            title="Full Access"
+                                          >
+                                            Full
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Save button */}
+                      <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          {editPages.size} full, {editViewOnlyPages.size} view-only
+                        </span>
+                        <button onClick={savePageAccess} disabled={saving === selectedUserId}
+                          className="bg-arcadia-600 text-white px-5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
+                          {saving === selectedUserId ? "Saving..." : "Save Access"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ═══ Document Access Tab ═══ */}
+                  {activeTab === "documents" && (
+                    <>
+                      <div className="px-4 sm:px-6 py-4">
+                        {/* Project selector */}
+                        <div className="mb-4">
+                          <label className="block text-xs font-medium text-gray-600 mb-1.5">Select Project</label>
+                          <select
+                            value={docProject}
+                            onChange={(e) => handleDocProjectChange(e.target.value)}
+                            className="w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none bg-white"
+                          >
+                            <option value="">-- Select a project --</option>
+                            {projects.map((p) => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {docSuccessMsg && (
+                          <div className="p-3 mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+                            {docSuccessMsg}
+                          </div>
+                        )}
+
+                        {!docProject ? (
+                          <div className="text-center py-10">
+                            <div className="text-4xl text-gray-200 mb-3">&#128194;</div>
+                            <p className="text-gray-400 text-sm">Select a project to manage folder access for this user.</p>
+                          </div>
+                        ) : loadingFolders ? (
+                          <div className="flex items-center justify-center py-10 text-gray-500">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600 mr-3" />
+                            Loading folders...
+                          </div>
+                        ) : folderTree.length === 0 ? (
+                          <div className="text-center py-10">
+                            <div className="text-4xl text-gray-200 mb-3">&#128193;</div>
+                            <p className="text-gray-400 text-sm">No folders found for this project.</p>
+                            <p className="text-gray-300 text-xs mt-1">Create folders in Project Documents first.</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Legend */}
+                            <div className="flex items-center gap-4 mb-3 text-[10px] text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-100 border border-gray-300" /> No Access
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-400" /> View Only
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-400" /> Upload
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-100 border border-green-400" /> Full Control
+                              </span>
+                            </div>
+
+                            {/* Folder tree with permission selectors */}
+                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-semibold text-gray-700">
+                                  Folders — {docProject}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  {folderPerms.size} shared
+                                </span>
+                              </div>
+                              <div className="divide-y divide-gray-100">
+                                {flattenTree(folderTree).map(({ folder, depth }) => {
+                                  const currentLevel = folderPerms.get(folder.id) || "NONE";
+                                  return (
+                                    <div
+                                      key={folder.id}
+                                      className="flex items-center gap-2 py-2 px-3 sm:px-4 hover:bg-gray-50 transition"
+                                      style={{ paddingLeft: `${16 + depth * 24}px` }}
+                                    >
+                                      {/* Folder icon + name */}
+                                      <span className="text-sm text-amber-500 flex-shrink-0">
+                                        {folder.children && folder.children.length > 0 ? "📂" : "📁"}
+                                      </span>
+                                      <span className="text-xs sm:text-sm text-gray-700 flex-1 min-w-0 truncate">
+                                        {folder.name}
+                                      </span>
+
+                                      {/* Permission level selector */}
+                                      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => setFolderPerm(folder.id, "NONE")}
+                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                            currentLevel === "NONE"
+                                              ? "bg-gray-200 text-gray-700 shadow-sm"
+                                              : "text-gray-400 hover:text-gray-600"
+                                          }`}
+                                          title="No Access"
+                                        >
+                                          None
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setFolderPerm(folder.id, "VIEW")}
+                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                            currentLevel === "VIEW"
+                                              ? "bg-blue-100 text-blue-700 shadow-sm"
+                                              : "text-gray-400 hover:text-gray-600"
+                                          }`}
+                                          title="View Only — can see files but not upload or delete"
+                                        >
+                                          View
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setFolderPerm(folder.id, "UPLOAD")}
+                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                            currentLevel === "UPLOAD"
+                                              ? "bg-amber-100 text-amber-700 shadow-sm"
+                                              : "text-gray-400 hover:text-gray-600"
+                                          }`}
+                                          title="Upload — can view and upload files"
+                                        >
+                                          Upload
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setFolderPerm(folder.id, "MANAGE")}
+                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
+                                            currentLevel === "MANAGE"
+                                              ? "bg-green-100 text-green-700 shadow-sm"
+                                              : "text-gray-400 hover:text-gray-600"
+                                          }`}
+                                          title="Full Control — can view, upload, delete, and manage permissions"
+                                        >
+                                          Full
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Save button for document access */}
+                      {docProject && folderTree.length > 0 && (
+                        <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                          <span className="text-xs text-gray-400">
+                            {folderPerms.size} folder{folderPerms.size !== 1 ? "s" : ""} shared
+                            {docHasChanges() && (
+                              <span className="text-amber-600 ml-2">• unsaved changes</span>
+                            )}
+                          </span>
+                          <button onClick={saveDocAccess} disabled={savingDocs || !docHasChanges()}
+                            className="bg-arcadia-600 text-white px-5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50">
+                            {savingDocs ? "Saving..." : "Save Document Access"}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               )}
             </div>
