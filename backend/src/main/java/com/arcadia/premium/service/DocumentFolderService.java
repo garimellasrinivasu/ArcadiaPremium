@@ -78,6 +78,7 @@ public class DocumentFolderService {
     }
 
     /** Get the full folder tree for a project (root folders with nested children) */
+    @Transactional(readOnly = true)
     public List<DocumentFolderDto> getTree(String projectName) {
         List<DocumentFolder> roots = repository.findByProjectNameAndParentIsNullOrderByNameAsc(projectName);
         return roots.stream()
@@ -86,6 +87,7 @@ public class DocumentFolderService {
     }
 
     /** Get the folder tree filtered by user permissions */
+    @Transactional(readOnly = true)
     public List<DocumentFolderDto> getTree(String projectName, String userEmail, boolean isAdmin) {
         List<DocumentFolder> roots = repository.findByProjectNameAndParentIsNullOrderByNameAsc(projectName);
         log.info("getTree: project={}, user={}, isAdmin={}, rootFolders={}", projectName, userEmail, isAdmin, roots.size());
@@ -252,6 +254,7 @@ public class DocumentFolderService {
     }
 
     /** Build the breadcrumb path for a folder */
+    @Transactional(readOnly = true)
     public List<DocumentFolderDto> getBreadcrumb(Long folderId) {
         List<DocumentFolderDto> path = new java.util.ArrayList<>();
         DocumentFolder current = repository.findById(folderId).orElse(null);
