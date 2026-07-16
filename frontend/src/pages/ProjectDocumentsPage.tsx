@@ -1502,7 +1502,12 @@ export default function ProjectDocumentsPage() {
     "application/vnd.ms-excel",
     "image/png",
     "image/jpeg",
+    "application/acad",                    // .dwg
+    "application/x-acad",                  // .dwg alternate
+    "application/x-autocad",               // .dwg alternate
+    "image/vnd.dwg",                       // .dwg alternate
   ];
+  const ALLOWED_EXTENSIONS = [".pdf",".docx",".ppt",".pptx",".xlsx",".xls",".png",".jpg",".jpeg",".dwg"];
 
   /* ─── Files selected (multiple) ─── */
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1514,7 +1519,8 @@ export default function ProjectDocumentsPage() {
     const errors: string[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (!ALLOWED_TYPES.includes(file.type)) { errors.push(`"${file.name}" — type not allowed`); continue; }
+      const ext = "." + file.name.split(".").pop()?.toLowerCase();
+      if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) { errors.push(`"${file.name}" — type not allowed`); continue; }
       if (file.size > 100 * 1024 * 1024) { errors.push(`"${file.name}" — exceeds 100 MB`); continue; }
       newItems.push({
         id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1939,12 +1945,12 @@ export default function ProjectDocumentsPage() {
 
               <div>
                 <input ref={fileInputRef} type="file" multiple
-                  accept=".pdf,.docx,.ppt,.pptx,.xlsx,.xls,.png,.jpg,.jpeg"
+                  accept=".pdf,.docx,.ppt,.pptx,.xlsx,.xls,.png,.jpg,.jpeg,.dwg"
                   onChange={handleFileChange} disabled={uploading}
                   className="w-full text-xs sm:text-sm text-gray-600 file:mr-2 sm:file:mr-3 file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-medium file:bg-arcadia-50 file:text-arcadia-700 hover:file:bg-arcadia-100 cursor-pointer disabled:opacity-50"
                 />
                 <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                  PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG (max 100 MB each).
+                  PDF, DOCX, PPT, PPTX, XLSX, XLS, PNG, JPEG, DWG (max 100 MB each).
                 </p>
               </div>
 
