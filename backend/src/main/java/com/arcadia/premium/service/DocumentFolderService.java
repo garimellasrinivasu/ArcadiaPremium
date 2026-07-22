@@ -169,15 +169,18 @@ public class DocumentFolderService {
     /** Filter tree by access and populate userPermission */
     private DocumentFolderDto filterTreeByAccess(DocumentFolder folder, String userEmail,
                                                    Set<Long> accessibleIds, Map<Long, String> userPermMap,
-                                                   boolean isAdmin) {
+                                                   boolean isAdmin, Set<String> adminPartnerEmails) {
         boolean isCreator = folder.getCreatedBy() != null && folder.getCreatedBy().equalsIgnoreCase(userEmail);
         boolean hasExplicitAccess = accessibleIds.contains(folder.getId());
-        boolean hasAccess = isCreator || hasExplicitAccess;
+        // Folders created by admin/partner users are visible to everyone (at least VIEW)
+        boolean isAdminCreated = folder.getCreatedBy() != null
+                && adminPartnerEmails.contains(folder.getCreatedBy().toLowerCase());
+        boolean hasAccess = isCreator || hasExplicitAccess || isAdminCreated;
 
         List<DocumentFolderDto> filteredChildren = new ArrayList<>();
         if (folder.getChildren() != null) {
             for (DocumentFolder child : folder.getChildren()) {
-                DocumentFolderDto filteredChild = filterTreeByAccess(child, userEmail, accessibleIds, userPermMap, isAdmin);
+                DocumentFolderDto filteredChild = filterTreeByAccess(child, userEmail, accessibleIds, userPermMap, isAdmin, adminPartnerEmails);
                 if (filteredChild != null) filteredChildren.add(filteredChild);
             }
         }
@@ -190,6 +193,8 @@ public class DocumentFolderService {
                 dto.setUserPermission("MANAGE"); // creator always has full control
             } else if (hasExplicitAccess) {
                 dto.setUserPermission(userPermMap.get(folder.getId())); // explicit permission
+            } else if (isAdminCreated) {
+                dto.setUserPermission("VIEW"); // admin-created folders: everyone gets VIEW
             } else {
                 dto.setUserPermission(null); // visible only because of accessible children
             }
