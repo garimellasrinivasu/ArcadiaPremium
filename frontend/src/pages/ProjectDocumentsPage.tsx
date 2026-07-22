@@ -4,6 +4,7 @@ import { documentService, type DocumentDto, type UploadHandle } from "../service
 import { folderService, type FolderDto } from "../services/folderService";
 import { folderPermissionService, type FolderPermissionDto, type SimpleUser } from "../services/folderPermissionService";
 import { authService } from "../services/authService";
+import { useIsViewOnly } from "../components/ViewOnlyWrapper";
 import type { User } from "../types/user";
 
 /* ─── helpers ─── */
@@ -104,11 +105,13 @@ function FileViewerModal({
   allDocs,
   onClose,
   onNavigate,
+  isViewOnly = false,
 }: {
   doc: DocumentDto;
   allDocs: DocumentDto[];
   onClose: () => void;
   onNavigate: (doc: DocumentDto) => void;
+  isViewOnly?: boolean;
 }) {
   const token = sessionStorage.getItem("token") || "";
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -552,10 +555,12 @@ function FileViewerModal({
                 Full Screen
               </button>
             )}
-            <button onClick={handleDownload}
-              className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
-              Download
-            </button>
+            {!isViewOnly && (
+              <button onClick={handleDownload}
+                className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
+                Download
+              </button>
+            )}
             <button onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition text-lg leading-none">
               &times;
@@ -593,10 +598,12 @@ function FileViewerModal({
                   <span className="text-xs opacity-70">{formatFileSize(doc.fileSize)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button onClick={handleDownload}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
-                    Download
-                  </button>
+                  {!isViewOnly && (
+                    <button onClick={handleDownload}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
+                      Download
+                    </button>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); setViewerFullscreen(false); }}
                     title="Exit Full Screen (Esc)"
                     className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition flex items-center gap-1.5">
@@ -786,10 +793,12 @@ function FileViewerModal({
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={handleDownload}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
-                  Download
-                </button>
+                {!isViewOnly && (
+                  <button onClick={handleDownload}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
+                    Download
+                  </button>
+                )}
                 <button onClick={(e) => { e.stopPropagation(); setPptFullscreen(false); }}
                   title="Exit Full Screen (Esc)"
                   className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition flex items-center gap-1.5">
@@ -877,10 +886,12 @@ function FileViewerModal({
               <p className="text-gray-500 text-sm">
                 This file type cannot be previewed in the browser.
               </p>
-              <button onClick={handleDownload}
-                className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
-                Download File
-              </button>
+              {!isViewOnly && (
+                <button onClick={handleDownload}
+                  className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
+                  Download File
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -908,7 +919,7 @@ function FileViewerModal({
           </div>
         )}
         {/* Mobile: download button at bottom */}
-        {objectUrl && (
+        {!isViewOnly && objectUrl && (
           <div className="sm:hidden border-t border-gray-200 bg-gray-50 px-3 py-2 flex justify-center">
             <a href={objectUrl} download={doc.originalFileName}
               className="px-4 py-2 text-xs font-medium text-white bg-arcadia-600 hover:bg-arcadia-700 rounded-lg transition w-full text-center">
@@ -1266,6 +1277,7 @@ export default function ProjectDocumentsPage() {
 
   const isAdminOrPartner = currentUser ? currentUser.role?.name === "ADMIN" || currentUser.role?.name === "PARTNER" : false;
   const currentEmail = currentUser?.email || "";
+  const isViewOnly = useIsViewOnly();
 
   /** Check if the current user can delete a specific document */
   function canDelete(doc: DocumentDto): boolean {
@@ -1788,7 +1800,7 @@ export default function ProjectDocumentsPage() {
                   {breadcrumb.length > 1 ? `(${breadcrumb[breadcrumb.length - 1].name})` : "(Root)"}
                 </span>
               </button>
-              {getCurrentDepth() < 3 && (
+              {!isViewOnly && getCurrentDepth() < 3 && (
                 <button
                   onClick={() => { setShowFolderInput(!showFolderInput); setNewFolderName(""); setShowFolderPanel(true); }}
                   className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium"
@@ -1903,8 +1915,8 @@ export default function ProjectDocumentsPage() {
                         <span className="text-xs sm:text-sm font-medium text-gray-700 truncate flex-1">{folder.name}</span>
                       )}
                     </div>
-                    {/* Folder actions — visible on hover (or always on mobile for touch) */}
-                    {renamingFolderId !== folder.id && (
+                    {/* Folder actions — visible on hover (or always on mobile for touch) — hidden in view-only */}
+                    {!isViewOnly && renamingFolderId !== folder.id && (
                       <div className="mt-2 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                         {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission === "MANAGE") && (
                           <button onClick={() => setSharingFolder({ id: folder.id, name: folder.name })}
@@ -1927,7 +1939,8 @@ export default function ProjectDocumentsPage() {
               </div>
             )}
 
-            {/* ── Upload Section ── */}
+            {/* ── Upload Section (hidden in view-only mode) ── */}
+            {!isViewOnly && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 space-y-3 sm:space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-800">Upload Documents</h2>
@@ -2035,6 +2048,7 @@ export default function ProjectDocumentsPage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* ── Documents List ── */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -2048,7 +2062,7 @@ export default function ProjectDocumentsPage() {
                       className="text-[10px] sm:text-xs font-medium text-arcadia-600 bg-arcadia-50 hover:bg-arcadia-100 border border-arcadia-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
                       View Selected ({selectedDocIds.size})
                     </button>
-                    {documents.some((d) => selectedDocIds.has(d.id) && canDelete(d)) && (
+                    {!isViewOnly && documents.some((d) => selectedDocIds.has(d.id) && canDelete(d)) && (
                       <button onClick={handleBulkDelete}
                         className="text-[10px] sm:text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition">
                         Delete Selected ({selectedDocIds.size})
@@ -2130,7 +2144,7 @@ export default function ProjectDocumentsPage() {
                               <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
                                 <button onClick={() => openViewer(doc, documents)}
                                   className="text-xs text-arcadia-600 hover:text-arcadia-800 font-medium px-2 py-1 rounded hover:bg-arcadia-50 transition">View</button>
-                                {canDelete(doc) && (
+                                {!isViewOnly && canDelete(doc) && (
                                   <button onClick={() => handleDelete(doc)}
                                     className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
                                 )}
@@ -2186,7 +2200,7 @@ export default function ProjectDocumentsPage() {
                             <div className="flex items-center gap-3 mt-1.5" onClick={(e) => e.stopPropagation()}>
                               <button onClick={() => openViewer(doc, documents)}
                                 className="text-[11px] text-arcadia-600 font-semibold">View</button>
-                              {canDelete(doc) && (
+                              {!isViewOnly && canDelete(doc) && (
                                 <button onClick={() => handleDelete(doc)}
                                   className="text-[11px] text-red-500 font-semibold">Delete</button>
                               )}
@@ -2212,6 +2226,7 @@ export default function ProjectDocumentsPage() {
           allDocs={viewerDocList.length > 0 ? viewerDocList : documents}
           onClose={() => { setViewingDoc(null); setViewerDocList([]); }}
           onNavigate={(d) => setViewingDoc(d)}
+          isViewOnly={isViewOnly}
         />
       )}
 

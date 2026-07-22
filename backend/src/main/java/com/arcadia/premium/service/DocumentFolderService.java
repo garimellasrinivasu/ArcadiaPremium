@@ -2,8 +2,10 @@ package com.arcadia.premium.service;
 
 import com.arcadia.premium.dto.DocumentFolderDto;
 import com.arcadia.premium.model.DocumentFolder;
+import com.arcadia.premium.model.User;
 import com.arcadia.premium.repository.DocumentFolderRepository;
 import com.arcadia.premium.repository.FolderPermissionRepository;
+import com.arcadia.premium.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,13 +31,16 @@ public class DocumentFolderService {
     private final DocumentFolderRepository repository;
     private final FolderPermissionRepository folderPermissionRepository;
     private final FolderPermissionService folderPermissionService;
+    private final UserRepository userRepository;
 
     public DocumentFolderService(DocumentFolderRepository repository,
                                   FolderPermissionRepository folderPermissionRepository,
-                                  FolderPermissionService folderPermissionService) {
+                                  FolderPermissionService folderPermissionService,
+                                  UserRepository userRepository) {
         this.repository = repository;
         this.folderPermissionRepository = folderPermissionRepository;
         this.folderPermissionService = folderPermissionService;
+        this.userRepository = userRepository;
     }
 
     /** Create a folder. parentId = null means root level under the project. */
@@ -119,9 +124,22 @@ public class DocumentFolderService {
         }
 
         // Non-admin: filter by access
+        // Load admin/partner emails so their folders are visible to everyone
+        Set<String> adminPartnerEmails = new java.util.HashSet<>();
+        try {
+            List<User> allUsers = userRepository.findAll();
+            for (User u : allUsers) {
+                if (u.getRole() != null && ("ADMIN".equals(u.getRole().getName()) || "PARTNER".equals(u.getRole().getName()))) {
+                    adminPartnerEmails.add(u.getEmail().toLowerCase());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("getTree: failed to load admin/partner emails: {}", e.getMessage());
+        }
+
         Set<Long> accessibleIds = new java.util.HashSet<>(userPermMap.keySet());
         List<DocumentFolderDto> result = roots.stream()
-                .map(root -> filterTreeByAccess(root, userEmail, accessibleIds, userPermMap, isAdmin))
+                .map(root -> filterTreeByAccess(root, userEmail, accessibleIds, userPermMap, isAdmin, adminPartnerEmails))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         log.info("getTree: returning {} folders for non-admin (was {} roots before filter)", result.size(), roots.size());

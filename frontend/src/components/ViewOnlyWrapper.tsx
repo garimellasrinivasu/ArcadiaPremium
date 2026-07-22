@@ -67,6 +67,13 @@ const PATH_TO_PAGE_KEY: Record<string, string> = {
   "/supply-chain/stock-transfers": "STOCK_TRANSFER",
 };
 
+/**
+ * Pages that handle view-only mode internally.
+ * These pages show the banner but DON'T get pointer-events blocked,
+ * because they need partial interactivity (e.g., browsing but no editing).
+ */
+const SELF_MANAGED_VIEW_ONLY = new Set(["/activities/documents"]);
+
 interface ViewOnlyWrapperProps {
   children: React.ReactNode;
 }
@@ -92,6 +99,9 @@ export default function ViewOnlyWrapper({ children }: ViewOnlyWrapperProps) {
     return <>{children}</>;
   }
 
+  // Self-managed pages: show banner but let the page handle interaction restrictions
+  const isSelfManaged = SELF_MANAGED_VIEW_ONLY.has(location.pathname);
+
   return (
     <div className="relative">
       {/* View-Only Banner */}
@@ -108,16 +118,41 @@ export default function ViewOnlyWrapper({ children }: ViewOnlyWrapperProps) {
         </span>
       </div>
 
-      {/* Content with disabled overlay */}
-      <div
-        style={{
-          pointerEvents: "none",
-          userSelect: "none",
-          opacity: 0.75,
-        }}
-      >
-        {children}
-      </div>
+      {isSelfManaged ? (
+        /* Self-managed: page controls its own interactivity */
+        <div>{children}</div>
+      ) : (
+        /* Default: block all interactions */
+        <div
+          style={{
+            pointerEvents: "none",
+            userSelect: "none",
+            opacity: 0.75,
+          }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
+}
+
+/**
+ * Hook for pages that self-manage view-only mode.
+ * Returns true if the current user has view-only access to the current page.
+ */
+export function useIsViewOnly(): boolean {
+  const location = useLocation();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    authService.getCurrentUser().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  const pageKey = PATH_TO_PAGE_KEY[location.pathname];
+  const isAdmin = currentUser?.role?.name === "ADMIN";
+  const viewOnlyPages = new Set<string>(currentUser?.viewOnlyPages || []);
+  const allowedPages = new Set<string>(currentUser?.allowedPages || []);
+
+  return !isAdmin && !!pageKey && viewOnlyPages.has(pageKey) && !allowedPages.has(pageKey);
 }
