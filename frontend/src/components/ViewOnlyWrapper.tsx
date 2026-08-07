@@ -22,6 +22,7 @@ const PATH_TO_PAGE_KEY: Record<string, string> = {
   "/activities/partner-investment": "PARTNER_INVESTMENT",
   "/activities/walk-ins": "WALK_INS",
   "/activities/land-converter": "LAND_CONVERTER",
+  "/activities/ground-level-work": "GROUND_LEVEL_WORK",
   "/admin/approval-chains": "APPROVAL_CHAINS",
   "/admin/projects": "PROJECTS",
   "/admin/capitol-fund": "CAPITOL_FUND",
@@ -155,4 +156,25 @@ export function useIsViewOnly(): boolean {
   const allowedPages = new Set<string>(currentUser?.allowedPages || []);
 
   return !isAdmin && !!pageKey && viewOnlyPages.has(pageKey) && !allowedPages.has(pageKey);
+}
+
+/**
+ * Hook that returns whether the current user is allowed to download/export files.
+ * Admin users always have download enabled; for others it reads user.downloadEnabled.
+ * Returns true (allowed) by default until the user is loaded.
+ */
+export function useDownloadEnabled(): boolean {
+  const [allowed, setAllowed] = useState(true);
+
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      if (user.role?.name === "ADMIN") {
+        setAllowed(true);
+      } else {
+        setAllowed(user.downloadEnabled !== false);
+      }
+    }).catch(() => {});
+  }, []);
+
+  return allowed;
 }

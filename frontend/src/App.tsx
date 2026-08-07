@@ -68,6 +68,7 @@ import RateAnalysisPage from "./pages/RateAnalysisPage";
 import ProjectExecutionTemplatePage from "./pages/ProjectExecutionTemplatePage";
 import DailyExecutionUpdatePage from "./pages/DailyExecutionUpdatePage";
 import TallyPage from "./pages/TallyPage";
+import GroundLevelWorkPage from "./pages/GroundLevelWorkPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -120,6 +121,7 @@ export default function App() {
         <Route path="activities/partner-investment" element={<PartnerInvestmentPage />} />
         <Route path="activities/walk-ins" element={<WalkInsPage />} />
         <Route path="activities/land-converter" element={<LandConverterPage />} />
+        <Route path="activities/ground-level-work" element={<GroundLevelWorkPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />

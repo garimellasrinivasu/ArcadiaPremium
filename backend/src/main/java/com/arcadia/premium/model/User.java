@@ -53,6 +53,10 @@ public class User {
     @Column(name = "page_key")
     private Set<String> viewOnlyPages = new HashSet<>();
 
+    /** Whether this user can download/export documents and files. Default true. */
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean downloadEnabled = true;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -85,6 +89,8 @@ public class User {
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public Set<String> getViewOnlyPages() { return viewOnlyPages; }
     public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
+    public boolean isDownloadEnabled() { return downloadEnabled; }
+    public void setDownloadEnabled(boolean downloadEnabled) { this.downloadEnabled = downloadEnabled; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

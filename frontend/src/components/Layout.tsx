@@ -46,6 +46,7 @@ const menuSections: MenuSection[] = [
       { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
       { label: "Walk-Ins", path: "/activities/walk-ins", pageKey: "WALK_INS" },
       { label: "Land Converter", path: "/activities/land-converter", pageKey: "LAND_CONVERTER" },
+      { label: "Ground Level Work", path: "/activities/ground-level-work", pageKey: "GROUND_LEVEL_WORK" },
     ],
   },
   {

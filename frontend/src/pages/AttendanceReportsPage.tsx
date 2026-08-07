@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import {
   attendanceReportService,
   type AttendanceReportDto,
@@ -7,6 +8,7 @@ import {
 type ReportView = "site" | "date" | "detail";
 
 export default function AttendanceReportsPage() {
+  const downloadEnabled = useDownloadEnabled();
   const today = new Date().toISOString().split("T")[0];
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
@@ -146,6 +148,7 @@ export default function AttendanceReportsPage() {
               {loading ? "Loading..." : "Generate Report"}
             </button>
           </div>
+          {downloadEnabled && (
           <div className="flex gap-2">
             <button
               onClick={() => handleExport("excel")}
@@ -162,6 +165,7 @@ export default function AttendanceReportsPage() {
               PDF
             </button>
           </div>
+          )}
         </div>
       </div>
 

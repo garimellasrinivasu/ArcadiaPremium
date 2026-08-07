@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { authService } from "../services/authService";
 import { financeSpentService } from "../services/financeSpentService";
 import type { FinanceSpentDto, CreateFinanceSpentRequest, UserName } from "../services/financeSpentService";
@@ -918,6 +919,7 @@ function ApprovalsTab() {
    REPORTS TAB
    ═══════════════════════════════════════════ */
 function ReportsTab({ projects }: { projects: Project[] }) {
+  const downloadEnabled = useDownloadEnabled();
   const today = new Date();
   const [mode, setMode] = useState<"day" | "week" | "month">("day");
   const [fromDate, setFromDate] = useState(toISODate(today));
@@ -1028,9 +1030,11 @@ function ReportsTab({ projects }: { projects: Project[] }) {
           <button onClick={fetchReport} disabled={loading} className="px-4 py-1.5 bg-arcadia-600 text-white text-sm rounded-lg hover:bg-arcadia-700 disabled:opacity-50">
             {loading ? "Loading..." : "Search"}
           </button>
+          {downloadEnabled && (
           <button onClick={exportCSV} disabled={entries.length === 0} className="px-4 py-1.5 border border-green-600 text-green-700 text-sm rounded-lg hover:bg-green-50 disabled:opacity-50">
             Export CSV
           </button>
+          )}
         </div>
       </div>
 

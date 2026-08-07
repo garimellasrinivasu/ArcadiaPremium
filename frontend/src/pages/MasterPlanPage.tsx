@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { villaBlockingService } from "../services/villaBlockingService";
 import type { VillaBlockingDto } from "../services/villaBlockingService";
+import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 
 interface PlotDef {
   villa: number;
@@ -276,6 +277,7 @@ function getVillaCategory(villaNum: number): VillaCategory {
 
 export default function MasterPlanPage() {
   const navigate = useNavigate();
+  const downloadEnabled = useDownloadEnabled();
   const [selected, setSelected] = useState<PlotDef | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -489,6 +491,74 @@ export default function MasterPlanPage() {
   const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, z - 0.25)), []);
   const resetView = useCallback(() => setZoom(1), []);
 
+  /** Download the master plan image with current blocked-villa overlays rendered on top. */
+  const handleDownloadMap = useCallback(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Draw background image at full resolution
+      ctx.drawImage(img, 0, 0);
+
+      // Draw blocked villa overlays
+      PLOTS.forEach((plot) => {
+        const isBlocked = blockedVillas.has(plot.villa);
+        if (!isBlocked) return;
+
+        const x = (plot.left / 100) * canvas.width;
+        const y = (plot.top / 100) * canvas.height;
+        const w = (plot.width / 100) * canvas.width;
+        const h = (plot.height / 100) * canvas.height;
+
+        // Red blocked fill
+        ctx.fillStyle = "rgba(220, 38, 38, 0.7)";
+        ctx.fillRect(x, y, w, h);
+
+        // Red border
+        ctx.strokeStyle = "#b91c1c";
+        ctx.lineWidth = Math.max(2, canvas.width * 0.001);
+        ctx.strokeRect(x, y, w, h);
+
+        // Owner name label — fit within the box
+        const info = blockedVillas.get(plot.villa);
+        const ownerName = info?.customerName || "";
+        if (ownerName) {
+          let fontSize = Math.max(6, Math.round(Math.min(h * 0.28, w * 0.11)));
+          ctx.font = `bold ${fontSize}px Arial`;
+          let measured = ctx.measureText(ownerName).width;
+          while (measured > w * 0.9 && fontSize > 5) {
+            fontSize -= 1;
+            ctx.font = `bold ${fontSize}px Arial`;
+            measured = ctx.measureText(ownerName).width;
+          }
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(ownerName, x + w / 2, y + h / 2);
+        }
+      });
+
+      // Trigger download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Arcadia_Premium_Master_Plan.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    };
+    img.src = "/masterplan_colored.png";
+  }, [blockedVillas]);
+
   // Counts
   const praneethAvailable = PLOTS.filter(
     (p) => getVillaCategory(p.villa) === "praneeth" && !blockedVillas.has(p.villa)
@@ -554,6 +624,21 @@ export default function MasterPlanPage() {
             <button onClick={() => setZoom(1.5)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.4 && zoom <= 1.6 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>1.5x</button>
             <button onClick={() => setZoom(2)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.9 && zoom <= 2.1 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>2x</button>
             <button onClick={resetView} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-600 transition">Fit</button>
+            {downloadEnabled && (
+              <>
+                <div className="w-px h-5 bg-gray-300 mx-1" />
+                <button
+                  onClick={handleDownloadMap}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 hover:bg-blue-200 text-blue-700 transition"
+                  title="Download Master Plan with current status"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </button>
+              </>
+            )}
           </div>
         </div>
 

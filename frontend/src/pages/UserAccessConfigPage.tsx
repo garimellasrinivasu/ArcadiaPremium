@@ -152,6 +152,7 @@ export default function UserAccessConfigPage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [editPages, setEditPages] = useState<Set<string>>(new Set());
   const [editViewOnlyPages, setEditViewOnlyPages] = useState<Set<string>>(new Set());
+  const [editDownloadEnabled, setEditDownloadEnabled] = useState<boolean>(true);
 
   // Create user modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -213,6 +214,7 @@ export default function UserAccessConfigPage() {
     setSelectedUserId(user.id);
     setEditPages(new Set(user.allowedPages || []));
     setEditViewOnlyPages(new Set(user.viewOnlyPages || []));
+    setEditDownloadEnabled(user.downloadEnabled !== false);
     setSuccessMsg("");
     setError("");
     // Reset document access when switching users
@@ -274,6 +276,7 @@ export default function UserAccessConfigPage() {
         selectedUserId,
         Array.from(editPages),
         Array.from(editViewOnlyPages),
+        editDownloadEnabled,
       );
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       setSuccessMsg("Page access saved successfully!");
@@ -663,6 +666,35 @@ export default function UserAccessConfigPage() {
                             <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">
                               {editPages.size} full, {editViewOnlyPages.size} view
                             </span>
+                          </div>
+                        </div>
+
+                        {/* ─── Download Permission Toggle ─── */}
+                        <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+                          <div className="px-3 sm:px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">&#128229;</span>
+                              <span className="text-xs sm:text-sm font-semibold text-gray-700">Download Permission</span>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editDownloadEnabled}
+                                onChange={(e) => setEditDownloadEnabled(e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-arcadia-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-arcadia-600"></div>
+                              <span className={`ml-2 text-xs font-medium ${editDownloadEnabled ? "text-green-700" : "text-red-600"}`}>
+                                {editDownloadEnabled ? "Enabled" : "Disabled"}
+                              </span>
+                            </label>
+                          </div>
+                          <div className="px-3 sm:px-4 py-2.5">
+                            <p className="text-[11px] text-gray-500">
+                              {editDownloadEnabled
+                                ? "This user can download documents and export data from all pages."
+                                : "This user cannot download documents or export data. Download buttons will be hidden across all pages."}
+                            </p>
                           </div>
                         </div>
 

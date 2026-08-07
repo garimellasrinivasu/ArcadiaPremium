@@ -106,13 +106,16 @@ function FileViewerModal({
   onClose,
   onNavigate,
   isViewOnly = false,
+  downloadDisabled = false,
 }: {
   doc: DocumentDto;
   allDocs: DocumentDto[];
   onClose: () => void;
   onNavigate: (doc: DocumentDto) => void;
   isViewOnly?: boolean;
+  downloadDisabled?: boolean;
 }) {
+  const canDownload = !isViewOnly && !downloadDisabled;
   const token = sessionStorage.getItem("token") || "";
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -555,7 +558,7 @@ function FileViewerModal({
                 Full Screen
               </button>
             )}
-            {!isViewOnly && (
+            {canDownload && (
               <button onClick={handleDownload}
                 className="hidden sm:inline-block px-3 py-1.5 text-xs font-medium text-arcadia-700 bg-arcadia-50 hover:bg-arcadia-100 rounded-lg transition">
                 Download
@@ -598,7 +601,7 @@ function FileViewerModal({
                   <span className="text-xs opacity-70">{formatFileSize(doc.fileSize)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {!isViewOnly && (
+                  {canDownload && (
                     <button onClick={handleDownload}
                       className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
                       Download
@@ -793,7 +796,7 @@ function FileViewerModal({
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                {!isViewOnly && (
+                {canDownload && (
                   <button onClick={handleDownload}
                     className="px-3 py-1.5 text-xs font-medium text-white bg-white/15 hover:bg-white/25 rounded-lg transition">
                     Download
@@ -886,7 +889,7 @@ function FileViewerModal({
               <p className="text-gray-500 text-sm">
                 This file type cannot be previewed in the browser.
               </p>
-              {!isViewOnly && (
+              {canDownload && (
                 <button onClick={handleDownload}
                   className="inline-block px-5 py-2.5 bg-arcadia-600 text-white font-medium rounded-lg hover:bg-arcadia-700 transition">
                   Download File
@@ -919,7 +922,7 @@ function FileViewerModal({
           </div>
         )}
         {/* Mobile: download button at bottom */}
-        {!isViewOnly && objectUrl && (
+        {canDownload && objectUrl && (
           <div className="sm:hidden border-t border-gray-200 bg-gray-50 px-3 py-2 flex justify-center">
             <a href={objectUrl} download={doc.originalFileName}
               className="px-4 py-2 text-xs font-medium text-white bg-arcadia-600 hover:bg-arcadia-700 rounded-lg transition w-full text-center">
@@ -2227,6 +2230,7 @@ export default function ProjectDocumentsPage() {
           onClose={() => { setViewingDoc(null); setViewerDocList([]); }}
           onNavigate={(d) => setViewingDoc(d)}
           isViewOnly={isViewOnly}
+          downloadDisabled={currentUser?.downloadEnabled === false}
         />
       )}
 

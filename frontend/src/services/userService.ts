@@ -32,8 +32,10 @@ export const userService = {
     await api.delete(`/users/${id}`);
   },
 
-  async updatePageAccess(id: number, allowedPages: string[], viewOnlyPages: string[] = []): Promise<User> {
-    const { data } = await api.put<User>(`/users/${id}/page-access`, { allowedPages, viewOnlyPages });
+  async updatePageAccess(id: number, allowedPages: string[], viewOnlyPages: string[] = [], downloadEnabled?: boolean): Promise<User> {
+    const body: Record<string, unknown> = { allowedPages, viewOnlyPages };
+    if (downloadEnabled !== undefined) body.downloadEnabled = downloadEnabled;
+    const { data } = await api.put<User>(`/users/${id}/page-access`, body);
     return data;
   },
 

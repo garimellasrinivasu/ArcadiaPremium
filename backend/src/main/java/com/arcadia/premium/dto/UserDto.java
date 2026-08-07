@@ -16,6 +16,7 @@ public class UserDto {
     private RoleDto role;
     private Set<String> allowedPages;
     private Set<String> viewOnlyPages;
+    private boolean downloadEnabled = true;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -33,6 +34,7 @@ public class UserDto {
         dto.role = user.getRole() != null ? RoleDto.fromEntity(user.getRole()) : null;
         dto.allowedPages = user.getAllowedPages();
         dto.viewOnlyPages = user.getViewOnlyPages();
+        dto.downloadEnabled = user.isDownloadEnabled();
         return dto;
     }
 
@@ -68,6 +70,8 @@ public class UserDto {
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public Set<String> getViewOnlyPages() { return viewOnlyPages; }
     public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
+    public boolean isDownloadEnabled() { return downloadEnabled; }
+    public void setDownloadEnabled(boolean downloadEnabled) { this.downloadEnabled = downloadEnabled; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

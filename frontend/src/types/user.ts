@@ -7,6 +7,7 @@ export interface User {
   role: Role | null;
   allowedPages?: string[];
   viewOnlyPages?: string[];
+  downloadEnabled?: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;

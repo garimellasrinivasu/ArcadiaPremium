@@ -103,16 +103,22 @@ public class UserService {
         if (request.getViewOnlyPages() != null) {
             user.setViewOnlyPages(request.getViewOnlyPages());
         }
+        if (request.getDownloadEnabled() != null) {
+            user.setDownloadEnabled(request.getDownloadEnabled());
+        }
 
         return UserDto.fromEntity(userRepository.save(user));
     }
 
     @Transactional
-    public UserDto updatePageAccess(Long id, Set<String> allowedPages, Set<String> viewOnlyPages) {
+    public UserDto updatePageAccess(Long id, Set<String> allowedPages, Set<String> viewOnlyPages, Boolean downloadEnabled) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         user.setAllowedPages(allowedPages != null ? allowedPages : new HashSet<>());
         user.setViewOnlyPages(viewOnlyPages != null ? viewOnlyPages : new HashSet<>());
+        if (downloadEnabled != null) {
+            user.setDownloadEnabled(downloadEnabled);
+        }
         return UserDto.fromEntity(userRepository.save(user));
     }
 

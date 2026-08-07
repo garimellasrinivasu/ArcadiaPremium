@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { initialSalesService } from "../services/initialSalesService";
 import type { InitialSaleDto, CreateInitialSaleRequest } from "../services/initialSalesService";
 import { useProject, PROJECTS } from "../contexts/ProjectContext";
@@ -48,6 +49,7 @@ function formatDate(iso: string) {
    ═══════════════════════════════════════════ */
 
 export default function InitialSalesPage() {
+  const downloadEnabled = useDownloadEnabled();
   const { activeProject, setPageProject } = useProject();
 
   // ─── Data ───
@@ -1159,12 +1161,14 @@ export default function InitialSalesPage() {
               Clear
             </button>
           )}
+          {downloadEnabled && (
           <button
             onClick={() => setShowExportPopup(true)}
             className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold shadow transition"
           >
             Export Records
           </button>
+          )}
         </div>
       </div>
 

@@ -61,13 +61,22 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Update page access for a user (full access + view-only) */
+    /** Update page access for a user (full access + view-only + download toggle) */
     @PutMapping("/{id}/page-access")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> updatePageAccess(@PathVariable Long id,
-                                                     @RequestBody Map<String, Set<String>> body) {
-        Set<String> allowedPages = body.getOrDefault("allowedPages", Set.of());
-        Set<String> viewOnlyPages = body.getOrDefault("viewOnlyPages", Set.of());
-        return ResponseEntity.ok(userService.updatePageAccess(id, allowedPages, viewOnlyPages));
+                                                     @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        Set<String> allowedPages = body.containsKey("allowedPages")
+                ? new java.util.HashSet<>((java.util.Collection<String>) body.get("allowedPages"))
+                : Set.of();
+        @SuppressWarnings("unchecked")
+        Set<String> viewOnlyPages = body.containsKey("viewOnlyPages")
+                ? new java.util.HashSet<>((java.util.Collection<String>) body.get("viewOnlyPages"))
+                : Set.of();
+        Boolean downloadEnabled = body.containsKey("downloadEnabled")
+                ? (Boolean) body.get("downloadEnabled")
+                : null;
+        return ResponseEntity.ok(userService.updatePageAccess(id, allowedPages, viewOnlyPages, downloadEnabled));
     }
 }

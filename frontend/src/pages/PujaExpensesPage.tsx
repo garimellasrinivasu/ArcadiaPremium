@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { authService } from "../services/authService";
 import { pujaExpensesService } from "../services/pujaExpensesService";
 import type { PujaExpenseDto, CreatePujaExpenseRequest } from "../services/pujaExpensesService";
@@ -78,6 +79,7 @@ function formatDateDisplay(isoDate: string) {
    ═══════════════════════════════════════════ */
 
 export default function PujaExpensesPage() {
+  const downloadEnabled = useDownloadEnabled();
   // Data
   const [expenses, setExpenses] = useState<PujaExpenseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -721,12 +723,14 @@ export default function PujaExpensesPage() {
         <div className="p-4 border-b border-amber-200 flex items-center justify-between">
           <h2 className="text-lg font-bold text-amber-900">Expense Details</h2>
           <div className="flex gap-2">
+            {downloadEnabled && (
             <button
               onClick={handleExportExcel}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium shadow"
             >
               Export Excel
             </button>
+            )}
             <button
               onClick={handlePrint}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow"

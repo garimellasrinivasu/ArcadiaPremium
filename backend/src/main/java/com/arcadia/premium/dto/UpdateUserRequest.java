@@ -11,6 +11,7 @@ public class UpdateUserRequest {
     private Boolean active;
     private Set<String> allowedPages;
     private Set<String> viewOnlyPages;
+    private Boolean downloadEnabled;
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -28,4 +29,6 @@ public class UpdateUserRequest {
     public void setAllowedPages(Set<String> allowedPages) { this.allowedPages = allowedPages; }
     public Set<String> getViewOnlyPages() { return viewOnlyPages; }
     public void setViewOnlyPages(Set<String> viewOnlyPages) { this.viewOnlyPages = viewOnlyPages; }
+    public Boolean getDownloadEnabled() { return downloadEnabled; }
+    public void setDownloadEnabled(Boolean downloadEnabled) { this.downloadEnabled = downloadEnabled; }
 }
