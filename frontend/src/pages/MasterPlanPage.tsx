@@ -297,6 +297,10 @@ export default function MasterPlanPage() {
   // Hover tooltip state
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
+  // Export dropdown state
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
   // Refs for pinch-to-zoom
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const lastPinchDist = useRef<number | null>(null);
@@ -559,6 +563,91 @@ export default function MasterPlanPage() {
     img.src = "/masterplan_colored.png";
   }, [blockedVillas]);
 
+  /** Export villa data to Excel (.xls) using HTML-table approach */
+  const handleExportExcel = useCallback(
+    (mode: "full" | "blocked") => {
+      setShowExportMenu(false);
+      const plots =
+        mode === "blocked"
+          ? PLOTS.filter((p) => blockedVillas.has(p.villa))
+          : [...PLOTS];
+
+      plots.sort((a, b) => a.villa - b.villa);
+
+      const rows = plots.map((p) => {
+        const cat = getVillaCategory(p.villa);
+        const isBlocked = blockedVillas.has(p.villa);
+        const info = isBlocked ? blockedVillas.get(p.villa) : undefined;
+        const allocBg = cat === "praneeth" ? "#FFF299" : "#f9c4cb";
+        const rowBg = isBlocked ? "#fecaca" : allocBg;
+        return `<tr style="background:${rowBg}">
+          <td style="border:1px solid #999;padding:4px;text-align:center">${p.villa}</td>
+          <td style="border:1px solid #999;padding:4px">${p.facing}</td>
+          <td style="border:1px solid #999;padding:4px;text-align:right">${p.sqYards}</td>
+          <td style="border:1px solid #999;padding:4px;background:${allocBg}">${cat === "praneeth" ? "Praneeth" : "Landlord"}</td>
+          <td style="border:1px solid #999;padding:4px;text-align:center;${isBlocked ? "background:#ef4444;color:#fff;font-weight:bold" : ""}">${isBlocked ? "Blocked" : "Available"}</td>
+          <td style="border:1px solid #999;padding:4px">${info?.customerName || ""}</td>
+          <td style="border:1px solid #999;padding:4px">${info?.customerPhone || ""}</td>
+          <td style="border:1px solid #999;padding:4px;text-align:right">${info?.bookingAmount ? info.bookingAmount.toLocaleString("en-IN") : ""}</td>
+        </tr>`;
+      });
+
+      const title = mode === "blocked" ? "Blocked Villas" : "Master Plan - Full Data";
+      const html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:x="urn:schemas-microsoft-com:office:excel"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8">
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+        <x:ExcelWorksheet><x:Name>${title}</x:Name>
+        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        </head>
+        <body>
+        <table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial;font-size:12px">
+          <thead>
+            <tr style="background:#1e3a5f;color:#fff;font-weight:bold">
+              <th style="border:1px solid #999;padding:6px">Villa No</th>
+              <th style="border:1px solid #999;padding:6px">Facing</th>
+              <th style="border:1px solid #999;padding:6px">Villa Size (Sq.Yds)</th>
+              <th style="border:1px solid #999;padding:6px">Allocation Type</th>
+              <th style="border:1px solid #999;padding:6px">Status</th>
+              <th style="border:1px solid #999;padding:6px">Customer Name</th>
+              <th style="border:1px solid #999;padding:6px">Phone</th>
+              <th style="border:1px solid #999;padding:6px">Booking Amount</th>
+            </tr>
+          </thead>
+          <tbody>${rows.join("")}</tbody>
+        </table>
+        </body></html>`;
+
+      const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        mode === "blocked"
+          ? "Arcadia_Premium_Blocked_Villas.xls"
+          : "Arcadia_Premium_Master_Plan_Data.xls";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    [blockedVillas]
+  );
+
+  // Close export menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   // Counts
   const praneethAvailable = PLOTS.filter(
     (p) => getVillaCategory(p.villa) === "praneeth" && !blockedVillas.has(p.villa)
@@ -587,7 +676,45 @@ export default function MasterPlanPage() {
         <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
           Master Plan &mdash; Arcadia Premium
         </h1>
-        <span className="hidden sm:inline text-sm text-gray-400">Pinch or Ctrl+Scroll to zoom</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline text-sm text-gray-400">Pinch or Ctrl+Scroll to zoom</span>
+          {/* Export to Excel */}
+          {downloadEnabled && (
+            <div ref={exportMenuRef} className="relative">
+              <button
+                onClick={() => setShowExportMenu((v) => !v)}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white shadow-sm transition"
+                title="Export villa data to Excel"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8l-6-6H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Export Excel
+                <svg className="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 min-w-[200px]">
+                  <button
+                    onClick={() => handleExportExcel("full")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <span className="w-4 h-3 rounded border border-gray-300" style={{ background: "linear-gradient(135deg, #FFF299 50%, #f9c4cb 50%)" }} />
+                    Full Data
+                  </button>
+                  <button
+                    onClick={() => handleExportExcel("blocked")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <span className="w-4 h-3 rounded bg-red-500" />
+                    Blocked Villas
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Legend */}
