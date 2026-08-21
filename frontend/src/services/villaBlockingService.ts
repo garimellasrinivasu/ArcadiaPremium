@@ -36,12 +36,12 @@ export const villaBlockingService = {
     return data;
   },
 
-  async updateBlockedVilla(villaNumber: number, dto: VillaBlockingDto, projectName: string = "Arcadia"): Promise<VillaBlockingDto> {
+  async updateBlockedVilla(villaNumber: number, dto: VillaBlockingDto, projectName: string = "Praneeth Arcadia Premium"): Promise<VillaBlockingDto> {
     const { data } = await api.put<VillaBlockingDto>(`/villa-blocking/${villaNumber}`, dto, { params: { projectName } });
     return data;
   },
 
-  async unblockVilla(villaNumber: number, projectName: string = "Arcadia"): Promise<void> {
+  async unblockVilla(villaNumber: number, projectName: string = "Praneeth Arcadia Premium"): Promise<void> {
     await api.delete(`/villa-blocking/${villaNumber}`, { params: { projectName } });
   },
 };

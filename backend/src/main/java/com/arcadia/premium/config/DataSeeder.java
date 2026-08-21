@@ -22,18 +22,21 @@ public class DataSeeder implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final ApprovalChainRepository approvalChainRepository;
     private final ProjectRepository projectRepository;
+    private final VillaBlockingRepository villaBlockingRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(UserRepository userRepository, RoleRepository roleRepository,
                       PermissionRepository permissionRepository,
                       ApprovalChainRepository approvalChainRepository,
                       ProjectRepository projectRepository,
+                      VillaBlockingRepository villaBlockingRepository,
                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.approvalChainRepository = approvalChainRepository;
         this.projectRepository = projectRepository;
+        this.villaBlockingRepository = villaBlockingRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -167,6 +170,9 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed default projects if none exist
         seedProjectsIfNeeded();
+
+        // Migrate legacy villa blocking project names
+        migrateVillaBlockingProjectNames();
     }
 
     private void seedProjectsIfNeeded() {
@@ -189,6 +195,17 @@ public class DataSeeder implements CommandLineRunner {
         if (!exists) {
             projectRepository.save(new Project(name, description));
             log.info("Seeded missing project: {}", name);
+        }
+    }
+
+    /**
+     * One-time migration: rename legacy project names in villa_blockings table
+     * so that old records stored as "Arcadia" match the current "Praneeth Arcadia Premium" name.
+     */
+    private void migrateVillaBlockingProjectNames() {
+        int updated = villaBlockingRepository.updateProjectName("Arcadia", "Praneeth Arcadia Premium");
+        if (updated > 0) {
+            log.info("Migrated {} villa blocking records from 'Arcadia' to 'Praneeth Arcadia Premium'", updated);
         }
     }
 

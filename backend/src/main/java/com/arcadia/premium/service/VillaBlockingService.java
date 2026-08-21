@@ -52,7 +52,7 @@ public class VillaBlockingService {
 
     @Transactional
     public VillaBlockingDto blockVilla(VillaBlockingDto dto) {
-        String project = dto.getProjectName() != null ? dto.getProjectName() : "Arcadia";
+        String project = dto.getProjectName() != null ? dto.getProjectName() : "Praneeth Arcadia Premium";
         if (villaExists(project, dto.getVillaNumber())) {
             throw new RuntimeException("Villa " + dto.getVillaNumber() + " is already blocked in " + project);
         }

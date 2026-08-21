@@ -33,6 +33,7 @@ public interface VillaBlockingRepository extends JpaRepository<VillaBlocking, Lo
 
     /** Bulk update old project names to new name */
     @Modifying
+    @org.springframework.transaction.annotation.Transactional
     @Query("UPDATE VillaBlocking v SET v.projectName = :newName WHERE v.projectName = :oldName")
     int updateProjectName(@Param("oldName") String oldName, @Param("newName") String newName);
 

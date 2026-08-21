@@ -47,7 +47,7 @@ public class VillaBlockingController {
     @PutMapping("/{villaNumber}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'MASTER_PLAN')")
     public ResponseEntity<VillaBlockingDto> updateBlockedVilla(@PathVariable Integer villaNumber,
-                                                                @RequestParam(defaultValue = "Arcadia") String projectName,
+                                                                @RequestParam(defaultValue = "Praneeth Arcadia Premium") String projectName,
                                                                 @RequestBody VillaBlockingDto dto) {
         return ResponseEntity.ok(service.updateBlockedVilla(projectName, villaNumber, dto));
     }
@@ -55,7 +55,7 @@ public class VillaBlockingController {
     @DeleteMapping("/{villaNumber}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'MASTER_PLAN')")
     public ResponseEntity<Map<String, String>> unblockVilla(@PathVariable Integer villaNumber,
-                                                             @RequestParam(defaultValue = "Arcadia") String projectName) {
+                                                             @RequestParam(defaultValue = "Praneeth Arcadia Premium") String projectName) {
         service.unblockVilla(projectName, villaNumber);
         return ResponseEntity.ok(Map.of("message", "Villa " + villaNumber + " unblocked successfully"));
     }
