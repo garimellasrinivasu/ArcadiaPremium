@@ -173,7 +173,22 @@ public class DataSeeder implements CommandLineRunner {
         if (projectRepository.count() == 0) {
             projectRepository.save(new Project("Praneeth Arcadia Premium", "Premium villa project"));
             projectRepository.save(new Project("Praneeth Redfern Square", "Redfern Square project"));
-            log.info("Seeded default projects: Praneeth Arcadia Premium, Praneeth Redfern Square");
+            projectRepository.save(new Project("Kalpavruksha Developers", "Kalpavruksha villa project"));
+            projectRepository.save(new Project("Aalaya Arvindham", "Aalaya Arvindham plot project"));
+            log.info("Seeded default projects: Praneeth Arcadia Premium, Praneeth Redfern Square, Kalpavruksha Developers, Aalaya Arvindham");
+        } else {
+            // Ensure newer projects exist even if seeder ran before they were added
+            ensureProject("Kalpavruksha Developers", "Kalpavruksha villa project");
+            ensureProject("Aalaya Arvindham", "Aalaya Arvindham plot project");
+        }
+    }
+
+    private void ensureProject(String name, String description) {
+        boolean exists = projectRepository.findAll().stream()
+                .anyMatch(p -> name.equals(p.getName()));
+        if (!exists) {
+            projectRepository.save(new Project(name, description));
+            log.info("Seeded missing project: {}", name);
         }
     }
 
