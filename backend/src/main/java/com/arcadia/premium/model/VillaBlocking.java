@@ -7,15 +7,18 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "villa_blockings")
+@Table(name = "villa_blockings", uniqueConstraints = @UniqueConstraint(columnNames = {"project_name", "villa_number"}))
 public class VillaBlocking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "villa_number", unique = true, nullable = false)
+    @Column(name = "villa_number", nullable = false)
     private Integer villaNumber;
+
+    @Column(name = "project_name", nullable = false, columnDefinition = "varchar(255) default 'Arcadia'")
+    private String projectName = "Arcadia";
 
     @Column(name = "customer_name", nullable = false)
     private String customerName;
@@ -65,6 +68,8 @@ public class VillaBlocking {
     public void setBlockedBy(String blockedBy) { this.blockedBy = blockedBy; }
     public LocalDateTime getBlockedAt() { return blockedAt; }
     public void setBlockedAt(LocalDateTime blockedAt) { this.blockedAt = blockedAt; }
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

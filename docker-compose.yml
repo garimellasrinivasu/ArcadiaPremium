@@ -44,7 +44,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1536M
+          memory: 2560M
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/ 2>/dev/null; exit 0"]
       interval: 60s

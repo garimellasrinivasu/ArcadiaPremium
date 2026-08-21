@@ -796,6 +796,22 @@
           <label for="chk_sd">Stamp Duty &amp; Registration</label>
           <div class="pct-wrap"><input type="number" id="pct_sd" value="7.6" step="0.1" min="0" max="30"></div>
         </div>
+        <div class="charge-row">
+          <input type="checkbox" id="chk_gst_maint" checked>
+          <label for="chk_gst_maint">GST @ 18% on Advance Maintenance <span class="hint" style="font-size:11px;color:var(--muted);">(auto-calculated)</span></label>
+          <div class="pct-wrap" style="visibility:hidden;"><input type="number" value="18" disabled></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="panel-head" style="background:linear-gradient(to right,#7c3aed,#6d28d9);"><span class="dot" style="background:#c4b5fd;"></span> Discount</div>
+      <div class="panel-body">
+        <div class="charge-row">
+          <input type="checkbox" id="chk_discount">
+          <label for="chk_discount">Apply Discount</label>
+          <div class="pct-wrap"><input type="number" id="pct_discount" value="0" step="0.5" min="0" max="100"></div>
+        </div>
       </div>
     </div>
 
@@ -903,13 +919,15 @@
       defaultPlotArea: 200,
       headerTitle: 'Praneeth Arcadia Premium',
       headerSubtitle: 'Premium Villas | Shamirpet, Hyderabad',
-      footerText: 'Venkata Praneeth Developers Pvt. Ltd. – Praneeth Arcadia Premium – Hyderabad'
+      footerText: 'Venkata Praneeth Developers Pvt. Ltd. – Praneeth Arcadia Premium – Hyderabad',
+      logo: 'logo-arcadia-premium.svg',
+      filePrefix: 'Arcadia_Premium'
     },
     kalpavruksha: {
       name: 'Kalpavruksha Developers',
       developer: 'Kalpavruksha Developers Pvt. Ltd.',
       tagline: 'Building Dreams – Premium Living',
-      saleTypes: ['villa', 'plot'],
+      saleTypes: ['villa'],
       prefix: 'V-',
       refPrefix: 'KAL',
       defaultRateOtp: 7500,
@@ -920,7 +938,9 @@
       defaultPlotArea: 200,
       headerTitle: 'Kalpavruksha Developers',
       headerSubtitle: 'Premium Villas & Plots',
-      footerText: 'Kalpavruksha Developers Pvt. Ltd. – Hyderabad'
+      footerText: 'Kalpavruksha Developers Pvt. Ltd. – Hyderabad',
+      logo: 'logo-kalpavruksha.svg',
+      filePrefix: 'Kalpavruksha'
     },
     redfern: {
       name: 'Redfern Square',
@@ -937,7 +957,9 @@
       defaultPlotArea: 200,
       headerTitle: 'Redfern Square',
       headerSubtitle: 'Luxury Villas',
-      footerText: 'Redfern Square Developers Pvt. Ltd. – Hyderabad'
+      footerText: 'Redfern Square Developers Pvt. Ltd. – Hyderabad',
+      logo: 'logo-redfern-square.svg',
+      filePrefix: 'Redfern_Square'
     }
   };
 
@@ -1344,6 +1366,16 @@
 
     const subtotal = saleValue + totalLandCost + addlTotal + plcTotal;
 
+    // ─── Discount ───
+    let discountPct = 0;
+    let discountAmt = 0;
+    let netBeforeTax = subtotal;
+    if (document.getElementById('chk_discount').checked) {
+      discountPct = parseFloat(document.getElementById('pct_discount').value) || 0;
+      discountAmt = Math.round(subtotal * discountPct / 100);
+      netBeforeTax = subtotal - discountAmt;
+    }
+
     const taxes = [];
     if (document.getElementById('chk_gst').checked) {
       const pct = parseFloat(document.getElementById('pct_gst').value) || 0;
@@ -1355,9 +1387,17 @@
       const sd = saleValue * pct / 100;
       if (sd > 0) taxes.push({ label: 'Stamp Duty & Registration @ ' + pct + '% on Sale Value', value: sd });
     }
+    // GST @18% on Advance Maintenance
+    if (document.getElementById('chk_gst_maint').checked && document.getElementById('chk_maint').checked) {
+      const maintAmt = addl.find(a => a.label.startsWith('Advance Maintenance'));
+      if (maintAmt && maintAmt.value > 0) {
+        const gstOnMaint = Math.round(maintAmt.value * 18 / 100);
+        taxes.push({ label: 'GST @ 18% on Advance Maintenance', value: gstOnMaint });
+      }
+    }
     const taxTotal = taxes.reduce((s, x) => s + x.value, 0);
 
-    const grandTotal = subtotal + taxTotal;
+    const grandTotal = netBeforeTax + taxTotal;
 
     const today = new Date();
     const dateStr = today.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
@@ -1389,29 +1429,24 @@
     document.getElementById('summaryHeader').innerHTML = summaryHtml;
 
     let html = '<table class="cost-table"><tbody>';
-    html += '<tr class="section"><td>Basic Sale Value</td><td class="amt">Amount (\u20B9)</td></tr>';
-    saleRows.forEach(function (r) {
-      html += '<tr><td class="desc">' + r.label + '</td><td class="amt">' + formatINR(r.value) + '</td></tr>';
-    });
-    if (saleRows.length > 1) {
-      html += '<tr class="subtotal"><td>Construction Value (combined)</td><td class="amt">' + formatINR(saleValue) + '</td></tr>';
-    }
-    if (totalLandCost > 0) {
-      html += '<tr class="section" style="background:#f0fdfa;color:#0d9488;"><td>Extra Land Cost</td><td class="amt"></td></tr>';
-      html += '<tr><td class="desc">Extra Land: ' + formatINR(extraLandSqYards2) + ' Sq.Yds × ₹ ' + formatINR(landRate) + ' /Sq.Yd</td><td class="amt">' + formatINR(totalLandCost) + '</td></tr>';
-    }
-    html += '<tr class="section" style="background:#e0f2f1;color:#0d9488;font-weight:700;"><td>Basic Sale Value</td><td class="amt"></td></tr>';
-    html += '<tr><td class="desc" style="padding-left:24px;">Construction</td><td class="amt">' + formatINR(saleValue) + '</td></tr>';
-    if (totalLandCost > 0) {
-      html += '<tr><td class="desc" style="padding-left:24px;">Land Cost</td><td class="amt">' + formatINR(totalLandCost) + '</td></tr>';
+    html += '<tr class="section" style="background:#e0f2f1;color:#0d9488;font-weight:700;"><td>Basic Sale Value</td><td class="amt">Amount (₹)</td></tr>';
+    if (plotMode) {
+      html += '<tr><td class="desc" style="padding-left:24px;">Land (' + plot + ' Sq.Yd × ₹ ' + formatINR(rate) + ' /Sq.Yd)</td><td class="amt">' + formatINR(basicSaleValue) + '</td></tr>';
+    } else {
+      html += '<tr><td class="desc" style="padding-left:24px;">Land + Construction (' + sft + ' Sft × ₹ ' + formatINR(rate) + ' /Sft (' + optLabel + '))</td><td class="amt">' + formatINR(basicSaleValue) + '</td></tr>';
     }
     plc.forEach(p => html += '<tr><td class="desc" style="padding-left:24px;">' + p.label + '</td><td class="amt">' + formatINR(p.value) + '</td></tr>');
     html += '<tr class="subtotal" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">' + formatINR(basicSaleValue + plcTotal) + '</td></tr>';
     if (addl.length) {
       html += '<tr class="section"><td>Additional Charges</td><td class="amt" style="font-size:15px;font-weight:700;">' + formatINR(addlTotal) + '</td></tr>';
       addl.forEach(a => html += '<tr><td class="desc">' + a.label + '</td><td class="amt">' + formatINR(a.value) + '</td></tr>');
+      html += '<tr><td colspan="2" style="font-size:11px;color:#b45309;font-style:italic;padding:4px 16px;background:#fffbeb;">* At the time of Registration or handover whichever is earlier</td></tr>';
     }
     html += '<tr class="subtotal"><td>Total Amount Before Taxes <span style="font-size:11px;font-weight:400;color:var(--muted);">(Basic Sale Value + Additional Charges)</span></td><td class="amt">' + formatINR((basicSaleValue + plcTotal) + addlTotal) + '</td></tr>';
+    if (discountPct > 0) {
+      html += '<tr style="background:#fef3c7;"><td class="desc" style="padding-left:24px;color:#92400e;font-weight:600;">Discount @ ' + discountPct + '%</td><td class="amt" style="color:#dc2626;">- ' + formatINR(discountAmt) + '</td></tr>';
+      html += '<tr class="subtotal" style="background:#d1fae5;"><td style="font-weight:700;">Total Net Amount Before Taxes</td><td class="amt" style="font-weight:700;">' + formatINR(netBeforeTax) + '</td></tr>';
+    }
     if (taxes.length) {
       html += '<tr class="section"><td>Taxes &amp; Registration</td><td class="amt"></td></tr>';
       taxes.forEach(t => html += '<tr><td class="desc">' + t.label + '</td><td class="amt">' + formatINR(t.value) + '</td></tr>');
@@ -1441,6 +1476,19 @@
     var pSignCo = document.getElementById('p_signCompany');
     if (pSignCo) pSignCo.textContent = 'For ' + cfg.developer;
 
+    // Update print logo for selected project (preserve original Arcadia base64 logo)
+    var pLogoEl = document.querySelector('.p-logo');
+    if (pLogoEl) {
+      if (!window._arcadiaLogoSrc) window._arcadiaLogoSrc = pLogoEl.src; // save original on first run
+      if (getCurrentProject() === 'arcadia') {
+        pLogoEl.src = window._arcadiaLogoSrc;
+        pLogoEl.alt = 'Praneeth Arcadia';
+      } else if (cfg.logo) {
+        pLogoEl.src = cfg.logo;
+        pLogoEl.alt = cfg.name;
+      }
+    }
+
     var pCustHtml =
       '<div class="cell"><div class="k">Customer</div><div class="v">' + name + '</div></div>' +
       '<div class="cell"><div class="k">Contact</div><div class="v">' + phone + '</div></div>' +
@@ -1462,42 +1510,31 @@
     document.getElementById('p_customer').innerHTML = pCustHtml;
 
     let p = '';
-    p += '<div class="p-section-head" style="display:flex;justify-content:space-between;">Construction Value<span>₹ ' + formatINR(saleValue) + '</span></div>';
-    p += '<table class="p-table"><tbody>';
-    saleRows.forEach(function (r) {
-      p += '<tr><td class="desc">' + r.label + '</td><td class="amt">\u20B9 ' + formatINR(r.value) + '</td></tr>';
-    });
-    if (saleRows.length > 1) {
-      p += '<tr class="sub"><td>Construction Value (combined) &nbsp;<em>(' + optLabel + ')</em></td><td class="amt">\u20B9 ' + formatINR(saleValue) + '</td></tr>';
-    }
-    p += '</tbody></table>';
-
-    if (totalLandCost > 0) {
-      p += '<div class="p-section-head" style="background:#0d9488;display:flex;justify-content:space-between;">Extra Land Cost<span>₹ ' + formatINR(totalLandCost) + '</span></div>';
-      p += '<table class="p-table"><tbody>';
-      p += '<tr><td class="desc">Extra Land: ' + formatINR(extraLandSqYards2) + ' Sq.Yds \u00D7 \u20B9 ' + formatINR(landRate) + ' /Sq.Yd</td><td class="amt">\u20B9 ' + formatINR(totalLandCost) + '</td></tr>';
-      p += '</tbody></table>';
-    }
-
     p += '<div class="p-section-head" style="background:#0f766e;display:flex;justify-content:space-between;">Basic Sale Value<span>₹ ' + formatINR(basicSaleValue + plcTotal) + '</span></div>';
     p += '<table class="p-table"><tbody>';
-    p += '<tr><td class="desc">Construction</td><td class="amt">\u20B9 ' + formatINR(saleValue) + '</td></tr>';
-    if (totalLandCost > 0) {
-      p += '<tr><td class="desc">Land Cost</td><td class="amt">\u20B9 ' + formatINR(totalLandCost) + '</td></tr>';
+    if (plotMode) {
+      p += '<tr><td class="desc">Land (' + plot + ' Sq.Yd × ₹ ' + formatINR(rate) + ' /Sq.Yd)</td><td class="amt">₹ ' + formatINR(basicSaleValue) + '</td></tr>';
+    } else {
+      p += '<tr><td class="desc">Land + Construction (' + sft + ' Sft × ₹ ' + formatINR(rate) + ' /Sft (' + optLabel + '))</td><td class="amt">₹ ' + formatINR(basicSaleValue) + '</td></tr>';
     }
-    plc.forEach(x => p += '<tr><td class="desc">' + x.label + '</td><td class="amt">\u20B9 ' + formatINR(x.value) + '</td></tr>');
-    p += '<tr class="sub" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">\u20B9 ' + formatINR(basicSaleValue + plcTotal) + '</td></tr>';
+    plc.forEach(pc => p += '<tr><td class="desc">' + pc.label + '</td><td class="amt">₹ ' + formatINR(pc.value) + '</td></tr>');
+    p += '<tr class="sub" style="background:#ccfbf1;"><td>Basic Sale Value</td><td class="amt">₹ ' + formatINR(basicSaleValue + plcTotal) + '</td></tr>';
     p += '</tbody></table>';
 
     if (addl.length) {
       p += '<div class="p-section-head" style="display:flex;justify-content:space-between;">Additional Charges<span>\u20B9 ' + formatINR(addlTotal) + '</span></div>';
       p += '<table class="p-table"><tbody>';
       addl.forEach(a => p += '<tr><td class="desc">' + a.label + '</td><td class="amt">\u20B9 ' + formatINR(a.value) + '</td></tr>');
+      p += '<tr><td colspan="2" style="font-size:9px;color:#b45309;font-style:italic;padding:3px 8px;">* At the time of Registration or handover whichever is earlier</td></tr>';
       p += '</tbody></table>';
     }
 
     p += '<table class="p-table"><tbody>';
     p += '<tr class="sub"><td>Total Amount Before Taxes <span style="font-size:9px;font-weight:400;color:#666;">(Basic Sale Value + Additional Charges)</span></td><td class="amt">\u20B9 ' + formatINR((basicSaleValue + plcTotal) + addlTotal) + '</td></tr>';
+    if (discountPct > 0) {
+      p += '<tr style="background:#fef3c7;"><td class="desc" style="padding-left:12px;color:#92400e;font-weight:600;">Discount @ ' + discountPct + '%</td><td class="amt" style="color:#dc2626;">- \u20B9 ' + formatINR(discountAmt) + '</td></tr>';
+      p += '<tr class="sub" style="background:#d1fae5;"><td style="font-weight:700;">Total Net Amount Before Taxes</td><td class="amt">\u20B9 ' + formatINR(netBeforeTax) + '</td></tr>';
+    }
     p += '</tbody></table>';
 
     if (taxes.length) {
@@ -1686,7 +1723,8 @@
     const villaRaw = (villaEl ? villaEl.value : '').trim().replace(/^v-?/i, '');
     const villaPart = villaRaw ? 'V-' + villaRaw : 'V-001';
     const villa   = sanitizeFilename(villaPart);
-    const fname   = 'Arcadia_Premium_' + cust + '_' + villa;
+    const projCfg = getProjectConfig();
+    const fname   = (projCfg.filePrefix || 'Quote') + '_' + cust + '_' + villa;
 
     const titleEl = document.querySelector('title');
     const originalTitleText = titleEl ? titleEl.textContent : document.title;

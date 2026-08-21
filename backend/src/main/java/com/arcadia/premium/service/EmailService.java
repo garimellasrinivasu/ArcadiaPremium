@@ -65,4 +65,28 @@ public class EmailService {
             throw new RuntimeException("Password was reset but email could not be sent to " + toEmail + ". Please share the new password manually. Error: " + e.getMessage());
         }
     }
+
+    public void sendPaySlipEmail(String toEmail, String employeeName, String payMonth, String salaryDetails) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(toEmail);
+        message.setSubject("PRANEETH ARCADIA PROPERTIES – Pay Slip for " + payMonth);
+        message.setText(
+            "Dear " + employeeName + ",\n\n" +
+            "Your pay slip for " + payMonth + " is attached.\n\n" +
+            "--- PAY SLIP DETAILS ---\n\n" +
+            salaryDetails + "\n\n" +
+            "Company: PRANEETH ARCADIA PROPERTIES\n\n" +
+            "This is a system generated email. For any queries, please contact HR.\n\n" +
+            "Regards,\n" +
+            "PRANEETH ARCADIA PROPERTIES"
+        );
+        try {
+            mailSender.send(message);
+            log.info("Pay slip email sent to {} for month {}", toEmail, payMonth);
+        } catch (Exception e) {
+            log.error("Failed to send pay slip email to {}: {}", toEmail, e.getMessage());
+            throw new RuntimeException("Failed to send pay slip email: " + e.getMessage());
+        }
+    }
 }

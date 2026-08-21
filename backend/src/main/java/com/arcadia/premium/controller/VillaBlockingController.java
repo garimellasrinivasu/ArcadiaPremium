@@ -21,7 +21,11 @@ public class VillaBlockingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VillaBlockingDto>> getAll() {
+    public ResponseEntity<List<VillaBlockingDto>> getAll(
+            @RequestParam(required = false) String projectName) {
+        if (projectName != null && !projectName.isEmpty()) {
+            return ResponseEntity.ok(service.getByProject(projectName));
+        }
         return ResponseEntity.ok(service.getAll());
     }
 
@@ -43,14 +47,16 @@ public class VillaBlockingController {
     @PutMapping("/{villaNumber}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'MASTER_PLAN')")
     public ResponseEntity<VillaBlockingDto> updateBlockedVilla(@PathVariable Integer villaNumber,
+                                                                @RequestParam(defaultValue = "Arcadia") String projectName,
                                                                 @RequestBody VillaBlockingDto dto) {
-        return ResponseEntity.ok(service.updateBlockedVilla(villaNumber, dto));
+        return ResponseEntity.ok(service.updateBlockedVilla(projectName, villaNumber, dto));
     }
 
     @DeleteMapping("/{villaNumber}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'MASTER_PLAN')")
-    public ResponseEntity<Map<String, String>> unblockVilla(@PathVariable Integer villaNumber) {
-        service.unblockVilla(villaNumber);
+    public ResponseEntity<Map<String, String>> unblockVilla(@PathVariable Integer villaNumber,
+                                                             @RequestParam(defaultValue = "Arcadia") String projectName) {
+        service.unblockVilla(projectName, villaNumber);
         return ResponseEntity.ok(Map.of("message", "Villa " + villaNumber + " unblocked successfully"));
     }
 }

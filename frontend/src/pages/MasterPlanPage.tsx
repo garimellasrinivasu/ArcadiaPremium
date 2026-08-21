@@ -3,19 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { villaBlockingService } from "../services/villaBlockingService";
 import type { VillaBlockingDto } from "../services/villaBlockingService";
 import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
-
-interface PlotDef {
-  villa: number;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  sqYards: number;
-  facing: string;
-}
+import { KALPAVRUKSHA_PLOTS, KALPAVRUKSHA_PRANEETH_SHARE } from "../data/kalpavrukshaPlots";
+import type { PlotDef } from "../data/kalpavrukshaPlots";
+import { ARAVINDHAM_PLOTS, ARAVINDHAM_PRANEETH_SHARE } from "../data/aravindhamPlots";
+import { projectService } from "../services/projectService";
+import type { ProjectDto } from "../services/projectService";
 
 // Praneeth Share villas (Yellow in the master plan)
-const PRANEETH_SHARE = new Set([
+const ARCADIA_PRANEETH_SHARE = new Set([
   2,3,4,5,7,11,12,13,14,15,16,17,18,19,20,21,24,25,26,28,29,30,31,32,34,35,
   38,40,47,50,51,53,54,60,61,65,67,68,69,70,71,72,73,76,77,79,80,81,83,84,
   87,88,89,90,91,92,94,95,96,97,98,99,104,109,115,116,119,120,123,124,130,
@@ -28,7 +23,7 @@ const PRANEETH_SHARE = new Set([
 // Red villas removed — all villas are now blockable via the blocking feature
 // Villa 17's red fill was replaced with yellow directly in the PNG image
 
-const PLOTS: PlotDef[] = [
+const ARCADIA_PLOTS: PlotDef[] = [
   { villa: 1, left: 21.81, top: 27.19, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
   { villa: 2, left: 21.81, top: 29.5, width: 4.44, height: 2.25, sqYards: 200, facing: "West" },
   { villa: 3, left: 21.81, top: 31.83, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
@@ -270,9 +265,22 @@ const PLOTS: PlotDef[] = [
 
 type VillaCategory = "praneeth" | "landlord";
 
-function getVillaCategory(villaNum: number): VillaCategory {
-  if (PRANEETH_SHARE.has(villaNum)) return "praneeth";
-  return "landlord";
+/** Check if a project name contains a known keyword (case-insensitive) */
+function isKalpavruksha(name: string): boolean {
+  return name.toLowerCase().includes("kalpavruksha");
+}
+function isArcadia(name: string): boolean {
+  return name.toLowerCase().includes("arcadia");
+}
+function isAravindham(name: string): boolean {
+  return name.toLowerCase().includes("arvindham");
+}
+function hasMasterPlan(projectName: string): boolean {
+  return isArcadia(projectName) || isKalpavruksha(projectName) || isAravindham(projectName);
+}
+/** Returns "Plot" for Aravindham, "Villa" for other projects */
+function plotLabel(projectName: string): string {
+  return isAravindham(projectName) ? "Plot" : "Villa";
 }
 
 export default function MasterPlanPage() {
@@ -286,6 +294,32 @@ export default function MasterPlanPage() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Project selection state
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>("");
+
+  // Derive active data based on selected project
+  const activePlots = isAravindham(selectedProject)
+    ? ARAVINDHAM_PLOTS
+    : isKalpavruksha(selectedProject)
+      ? KALPAVRUKSHA_PLOTS
+      : ARCADIA_PLOTS;
+  const activeShare = isAravindham(selectedProject)
+    ? ARAVINDHAM_PRANEETH_SHARE
+    : isKalpavruksha(selectedProject)
+      ? KALPAVRUKSHA_PRANEETH_SHARE
+      : ARCADIA_PRANEETH_SHARE;
+  const activeImage = isAravindham(selectedProject)
+    ? "/aravindham_masterplan.png"
+    : isKalpavruksha(selectedProject)
+      ? "/kalpavruksha_masterplan.png"
+      : "/masterplan_colored.png";
+
+  function getVillaCategory(villaNum: number): VillaCategory {
+    if (activeShare.has(villaNum)) return "praneeth";
+    return "landlord";
+  }
 
   // Block form state
   const [blockName, setBlockName] = useState("");
@@ -307,6 +341,18 @@ export default function MasterPlanPage() {
   const lastPinchZoom = useRef<number>(1);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+
+  // Load projects on mount and auto-select the first Arcadia project
+  useEffect(() => {
+    projectService.getActiveProjects().then((list) => {
+      setProjects(list);
+      if (list.length > 0 && !selectedProject) {
+        // Prefer an Arcadia project as default, else first project
+        const arcadiaProject = list.find((p) => isArcadia(p.name));
+        setSelectedProject(arcadiaProject ? arcadiaProject.name : list[0].name);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Pinch-to-zoom (two-finger) + Ctrl+Scroll zoom via native listeners
   useEffect(() => {
@@ -332,7 +378,7 @@ export default function MasterPlanPage() {
         const newZoom = Math.min(4, Math.max(0.5, lastPinchZoom.current * scale));
         setZoom(newZoom);
       }
-      // single-finger moves are NOT prevented → browser scrolls natively
+      // single-finger moves are NOT prevented -> browser scrolls natively
     };
 
     const onTouchEnd = () => {
@@ -360,10 +406,15 @@ export default function MasterPlanPage() {
     };
   }, []);
 
-  // Load blocked villas from backend
+  // Load blocked villas from backend — reload when project changes
   useEffect(() => {
+    if (!selectedProject) return; // wait for project to be set
+    setLoading(true);
+    setSelected(null);
+    setShowBlockForm(false);
+    setShowEditForm(false);
     villaBlockingService
-      .getAll()
+      .getAll(selectedProject)
       .then((list) => {
         const map = new Map<number, VillaBlockingDto>();
         list.forEach((b) => map.set(b.villaNumber, b));
@@ -371,7 +422,7 @@ export default function MasterPlanPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedProject]);
 
   const handlePlotClick = useCallback(
     (plot: PlotDef) => {
@@ -380,7 +431,8 @@ export default function MasterPlanPage() {
       setSelected(plot);
       setShowBlockForm(false);
     },
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeShare]
   );
 
   const handleCreateSale = useCallback(() => {
@@ -395,6 +447,7 @@ export default function MasterPlanPage() {
     try {
       const dto: VillaBlockingDto = {
         villaNumber: selected.villa,
+        projectName: selectedProject,
         customerName: blockName.trim(),
         customerPhone: blockPhone.trim(),
         customerEmail: blockEmail.trim() || undefined,
@@ -407,7 +460,7 @@ export default function MasterPlanPage() {
         next.set(selected.villa, saved);
         return next;
       });
-      setToast(`Villa ${selected.villa} blocked for ${blockName.trim()}`);
+      setToast(`${plotLabel(selectedProject)} ${selected.villa} blocked for ${blockName.trim()}`);
       setTimeout(() => setToast(null), 3000);
       setBlockName("");
       setBlockPhone("");
@@ -425,18 +478,18 @@ export default function MasterPlanPage() {
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
-  }, [selected, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
+  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
 
   const handleUnblock = useCallback(async (villaNum: number) => {
-    if (!confirm(`Are you sure you want to unblock Villa ${villaNum}?`)) return;
+    if (!confirm(`Are you sure you want to unblock ${plotLabel(selectedProject)} ${villaNum}?`)) return;
     try {
-      await villaBlockingService.unblockVilla(villaNum);
+      await villaBlockingService.unblockVilla(villaNum, selectedProject);
       setBlockedVillas((prev) => {
         const next = new Map(prev);
         next.delete(villaNum);
         return next;
       });
-      setToast(`Villa ${villaNum} unblocked`);
+      setToast(`${plotLabel(selectedProject)} ${villaNum} unblocked`);
       setTimeout(() => setToast(null), 3000);
       setSelected(null);
     } catch (err: unknown) {
@@ -448,7 +501,7 @@ export default function MasterPlanPage() {
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
-  }, []);
+  }, [selectedProject]);
 
   const handleEditBlocked = useCallback(() => {
     if (!selected) return;
@@ -467,19 +520,20 @@ export default function MasterPlanPage() {
     try {
       const dto: VillaBlockingDto = {
         villaNumber: selected.villa,
+        projectName: selectedProject,
         customerName: blockName.trim(),
         customerPhone: blockPhone.trim(),
         customerEmail: blockEmail.trim() || undefined,
         bookingAmount: parseFloat(blockAmount) || 0,
         notes: blockNotes.trim() || undefined,
       };
-      const saved = await villaBlockingService.updateBlockedVilla(selected.villa, dto);
+      const saved = await villaBlockingService.updateBlockedVilla(selected.villa, dto, selectedProject);
       setBlockedVillas((prev) => {
         const next = new Map(prev);
         next.set(selected.villa, saved);
         return next;
       });
-      setToast(`Villa ${selected.villa} details updated`);
+      setToast(`${plotLabel(selectedProject)} ${selected.villa} details updated`);
       setTimeout(() => setToast(null), 3000);
       setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes("");
       setShowEditForm(false);
@@ -489,7 +543,7 @@ export default function MasterPlanPage() {
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
-  }, [selected, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
+  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
 
   const zoomIn = useCallback(() => setZoom((z) => Math.min(4, z + 0.25)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, z - 0.25)), []);
@@ -510,7 +564,7 @@ export default function MasterPlanPage() {
       ctx.drawImage(img, 0, 0);
 
       // Draw blocked villa overlays
-      PLOTS.forEach((plot) => {
+      activePlots.forEach((plot) => {
         const isBlocked = blockedVillas.has(plot.villa);
         if (!isBlocked) return;
 
@@ -548,20 +602,21 @@ export default function MasterPlanPage() {
       });
 
       // Trigger download
+      const projectSlug = selectedProject.replace(/\s+/g, "_");
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "Arcadia_Premium_Master_Plan.png";
+        a.download = `${projectSlug}_Master_Plan.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, "image/png");
     };
-    img.src = "/masterplan_colored.png";
-  }, [blockedVillas]);
+    img.src = activeImage;
+  }, [blockedVillas, activePlots, activeImage, selectedProject]);
 
   /** Export villa data to Excel (.xls) using HTML-table approach */
   const handleExportExcel = useCallback(
@@ -569,8 +624,8 @@ export default function MasterPlanPage() {
       setShowExportMenu(false);
       const plots =
         mode === "blocked"
-          ? PLOTS.filter((p) => blockedVillas.has(p.villa))
-          : [...PLOTS];
+          ? activePlots.filter((p) => blockedVillas.has(p.villa))
+          : [...activePlots];
 
       plots.sort((a, b) => a.villa - b.villa);
 
@@ -592,7 +647,9 @@ export default function MasterPlanPage() {
         </tr>`;
       });
 
-      const title = mode === "blocked" ? "Blocked Villas" : "Master Plan - Full Data";
+      const projectSlug = selectedProject.replace(/\s+/g, "_");
+      const pLabel = plotLabel(selectedProject);
+      const title = mode === "blocked" ? `${selectedProject} - Blocked ${pLabel}s` : `${selectedProject} - Master Plan Full Data`;
       const html = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office"
               xmlns:x="urn:schemas-microsoft-com:office:excel"
@@ -607,9 +664,9 @@ export default function MasterPlanPage() {
         <table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial;font-size:12px">
           <thead>
             <tr style="background:#1e3a5f;color:#fff;font-weight:bold">
-              <th style="border:1px solid #999;padding:6px">Villa No</th>
+              <th style="border:1px solid #999;padding:6px">${pLabel} No</th>
               <th style="border:1px solid #999;padding:6px">Facing</th>
-              <th style="border:1px solid #999;padding:6px">Villa Size (Sq.Yds)</th>
+              <th style="border:1px solid #999;padding:6px">${pLabel} Size (Sq.Yds)</th>
               <th style="border:1px solid #999;padding:6px">Allocation Type</th>
               <th style="border:1px solid #999;padding:6px">Status</th>
               <th style="border:1px solid #999;padding:6px">Customer Name</th>
@@ -627,14 +684,15 @@ export default function MasterPlanPage() {
       a.href = url;
       a.download =
         mode === "blocked"
-          ? "Arcadia_Premium_Blocked_Villas.xls"
-          : "Arcadia_Premium_Master_Plan_Data.xls";
+          ? `${projectSlug}_Blocked_Villas.xls`
+          : `${projectSlug}_Master_Plan_Data.xls`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     },
-    [blockedVillas]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blockedVillas, activePlots, selectedProject, activeShare]
   );
 
   // Close export menu on outside click
@@ -649,11 +707,14 @@ export default function MasterPlanPage() {
   }, []);
 
   // Counts
-  const praneethAvailable = PLOTS.filter(
+  const praneethAvailable = activePlots.filter(
     (p) => getVillaCategory(p.villa) === "praneeth" && !blockedVillas.has(p.villa)
   ).length;
   const blockedCount = blockedVillas.size;
-  const landlordCount = PLOTS.filter((p) => getVillaCategory(p.villa) === "landlord").length;
+  const landlordCount = activePlots.filter((p) => getVillaCategory(p.villa) === "landlord").length;
+
+  // Whether the selected project has a master plan
+  const projectHasMasterPlan = hasMasterPlan(selectedProject);
 
   if (loading) {
     return (
@@ -673,13 +734,38 @@ export default function MasterPlanPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
-          Master Plan &mdash; Arcadia Premium
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
+            Master Plan &mdash; {selectedProject}
+          </h1>
+          {/* Project selector dropdown */}
+          <select
+            value={selectedProject}
+            onChange={(e) => {
+              setSelectedProject(e.target.value);
+              setZoom(1);
+            }}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium bg-white shadow-sm focus:ring-2 focus:ring-arcadia-400 focus:border-arcadia-400 outline-none cursor-pointer"
+          >
+            {/* Always show Arcadia and Kalpavruksha even if API hasn't loaded yet */}
+            {projects.length === 0 ? (
+              <>
+                <option value="Arcadia">Arcadia</option>
+                <option value="Kalpavruksha">Kalpavruksha</option>
+              </>
+            ) : (
+              projects.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-sm text-gray-400">Pinch or Ctrl+Scroll to zoom</span>
           {/* Export to Excel */}
-          {downloadEnabled && (
+          {downloadEnabled && projectHasMasterPlan && (
             <div ref={exportMenuRef} className="relative">
               <button
                 onClick={() => setShowExportMenu((v) => !v)}
@@ -717,208 +803,223 @@ export default function MasterPlanPage() {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs items-center">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#FFF299" }} />
-          Available ({praneethAvailable})
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#ef4444" }} />
-          Blocked ({blockedCount})
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#f9c4cb" }} />
-          Landlord ({landlordCount})
-        </span>
-        <span className="hidden sm:inline text-gray-400 ml-2">Hover for details &bull; Click to block or create sale entry</span>
-        <span className="sm:hidden text-gray-400">Tap villa for details</span>
-      </div>
-
-      {/* Map container */}
-      <div
-        ref={mapContainerRef}
-        className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white"
-        style={{ height: "calc(100vh - 200px)" }}
-      >
-        {/* Floating zoom controls — always visible */}
-        <div className="sticky top-2 left-0 z-30 flex justify-end px-2 pointer-events-none" style={{ marginBottom: "-44px" }}>
-          <div className="pointer-events-auto flex items-center gap-1 bg-white/90 backdrop-blur rounded-full shadow-lg px-2 py-1 border border-gray-200">
-            <button onClick={zoomOut} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">&minus;</button>
-            <span className="text-xs font-medium text-gray-600 min-w-[40px] text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={zoomIn} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">+</button>
-            <div className="w-px h-5 bg-gray-300 mx-1" />
-            <button onClick={() => setZoom(1.5)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.4 && zoom <= 1.6 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>1.5x</button>
-            <button onClick={() => setZoom(2)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.9 && zoom <= 2.1 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>2x</button>
-            <button onClick={resetView} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-600 transition">Fit</button>
-            {downloadEnabled && (
-              <>
-                <div className="w-px h-5 bg-gray-300 mx-1" />
-                <button
-                  onClick={handleDownloadMap}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 hover:bg-blue-200 text-blue-700 transition"
-                  title="Download Master Plan with current status"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download
-                </button>
-              </>
-            )}
-          </div>
+      {/* No master plan available message */}
+      {!projectHasMasterPlan && (
+        <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+          </svg>
+          <h2 className="text-lg font-semibold text-gray-500 mb-1">Master plan not available</h2>
+          <p className="text-sm text-gray-400">No master plan has been configured for <strong>{selectedProject}</strong>.</p>
         </div>
+      )}
 
-        <div style={{ position: "relative", width: `${zoom * 100}%` }}>
-          {/* Colored master plan background */}
-          <img
-            src="/masterplan_colored.png"
-            alt="Arcadia Premium Master Plan"
-            className="w-full h-auto select-none"
-            draggable={false}
-          />
+      {/* Legend — only show when master plan is available */}
+      {projectHasMasterPlan && (
+        <>
+          <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs items-center">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#FFF299" }} />
+              Available ({praneethAvailable})
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#ef4444" }} />
+              Blocked ({blockedCount})
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#f9c4cb" }} />
+              Landlord ({landlordCount})
+            </span>
+            <span className="hidden sm:inline text-gray-400 ml-2">Hover for details &bull; Click to block or create sale entry</span>
+            <span className="sm:hidden text-gray-400">Tap villa for details</span>
+          </div>
 
-          {/* Clickable plot overlays */}
-          {PLOTS.map((plot) => {
-            const cat = getVillaCategory(plot.villa);
-            const isBlocked = blockedVillas.has(plot.villa);
-            const isDisabled = cat === "landlord";
-            const isHovered = hovered === plot.villa;
-            const isSelected = selected?.villa === plot.villa;
+          {/* Map container */}
+          <div
+            ref={mapContainerRef}
+            className="relative overflow-auto border border-arcadia-200 sm:border-2 rounded-lg sm:rounded-xl bg-white"
+            style={{ height: "calc(100vh - 200px)" }}
+          >
+            {/* Floating zoom controls — always visible */}
+            <div className="sticky top-2 left-0 z-30 flex justify-end px-2 pointer-events-none" style={{ marginBottom: "-44px" }}>
+              <div className="pointer-events-auto flex items-center gap-1 bg-white/90 backdrop-blur rounded-full shadow-lg px-2 py-1 border border-gray-200">
+                <button onClick={zoomOut} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">&minus;</button>
+                <span className="text-xs font-medium text-gray-600 min-w-[40px] text-center">{Math.round(zoom * 100)}%</span>
+                <button onClick={zoomIn} className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-lg font-bold text-gray-700 transition">+</button>
+                <div className="w-px h-5 bg-gray-300 mx-1" />
+                <button onClick={() => setZoom(1.5)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.4 && zoom <= 1.6 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>1.5x</button>
+                <button onClick={() => setZoom(2)} className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${zoom >= 1.9 && zoom <= 2.1 ? 'bg-arcadia-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>2x</button>
+                <button onClick={resetView} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-600 transition">Fit</button>
+                {downloadEnabled && (
+                  <>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      onClick={handleDownloadMap}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 hover:bg-blue-200 text-blue-700 transition"
+                      title="Download Master Plan with current status"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
 
-            let bg = "rgba(255,255,255,0.01)";
-            let border = "1px solid rgba(0,0,0,0.04)";
-            let cursor = "pointer";
+            <div style={{ position: "relative", width: `${zoom * 100}%` }}>
+              {/* Colored master plan background */}
+              <img
+                src={activeImage}
+                alt={`${selectedProject} Master Plan`}
+                className="w-full h-auto select-none"
+                draggable={false}
+              />
 
-            if (isBlocked) {
-              bg = "rgba(220, 38, 38, 0.7)";
-              border = "2px solid #b91c1c";
-            } else if (cat === "landlord") {
-              bg = "rgba(0,0,0,0.01)";
-              border = "1px solid rgba(0,0,0,0.04)";
-              cursor = "not-allowed";
-            } else if (isSelected) {
-              bg = "rgba(37, 99, 235, 0.3)";
-              border = "2px solid #2563eb";
-            } else if (isHovered) {
-              bg = "rgba(245, 158, 11, 0.25)";
-              border = "2px solid #f59e0b";
-            }
+              {/* Clickable plot overlays */}
+              {activePlots.map((plot) => {
+                const cat = getVillaCategory(plot.villa);
+                const isBlocked = blockedVillas.has(plot.villa);
+                const isDisabled = cat === "landlord";
+                const isHovered = hovered === plot.villa;
+                const isSelected = selected?.villa === plot.villa;
 
-            const statusLabel = isBlocked ? "BLOCKED" : "";
+                let bg = "rgba(255,255,255,0.01)";
+                let border = "1px solid rgba(0,0,0,0.04)";
+                let cursor = "pointer";
 
-            return (
-              <div
-                key={plot.villa}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isBlocked) {
-                    setSelected(plot);
-                    setShowBlockForm(false);
-                    return;
-                  }
-                  if (!isDisabled) handlePlotClick(plot);
-                }}
-                onMouseEnter={(e) => {
-                  setHovered(plot.villa);
-                  const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
-                  if (rect) {
-                    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-                  }
-                }}
-                onMouseMove={(e) => {
-                  const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
-                  if (rect) {
-                    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-                  }
-                }}
-                onMouseLeave={() => { setHovered(null); setTooltipPos(null); }}
-                onTouchStart={(e) => {
-                  setHovered(plot.villa);
-                  const touch = e.touches[0];
-                  const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
-                  if (rect && touch) {
-                    setTooltipPos({ x: touch.clientX - rect.left, y: touch.clientY - rect.top });
-                  }
-                }}
-                onTouchEnd={() => { setTimeout(() => { setHovered(null); setTooltipPos(null); }, 1500); }}
-                style={{
-                  position: "absolute",
-                  left: `${plot.left}%`,
-                  top: `${plot.top}%`,
-                  width: `${plot.width}%`,
-                  height: `${plot.height}%`,
-                  cursor,
-                  border,
-                  background: bg,
-                  borderRadius: "2px",
-                  transition: "border 0.15s, background 0.15s",
-                  zIndex: isSelected ? 20 : isHovered ? 10 : 1,
-                  boxSizing: "border-box",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                {statusLabel && (
-                  <span
+                if (isBlocked) {
+                  bg = "rgba(220, 38, 38, 0.7)";
+                  border = "2px solid #b91c1c";
+                } else if (cat === "landlord") {
+                  bg = "rgba(0,0,0,0.01)";
+                  border = "1px solid rgba(0,0,0,0.04)";
+                  cursor = "not-allowed";
+                } else if (isSelected) {
+                  bg = "rgba(37, 99, 235, 0.3)";
+                  border = "2px solid #2563eb";
+                } else if (isHovered) {
+                  bg = "rgba(245, 158, 11, 0.25)";
+                  border = "2px solid #f59e0b";
+                }
+
+                const statusLabel = isBlocked ? "BLOCKED" : "";
+
+                return (
+                  <div
+                    key={plot.villa}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isBlocked) {
+                        setSelected(plot);
+                        setShowBlockForm(false);
+                        return;
+                      }
+                      if (!isDisabled) handlePlotClick(plot);
+                    }}
+                    onMouseEnter={(e) => {
+                      setHovered(plot.villa);
+                      const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
+                      if (rect) {
+                        setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                      }
+                    }}
+                    onMouseMove={(e) => {
+                      const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
+                      if (rect) {
+                        setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                      }
+                    }}
+                    onMouseLeave={() => { setHovered(null); setTooltipPos(null); }}
+                    onTouchStart={(e) => {
+                      setHovered(plot.villa);
+                      const touch = e.touches[0];
+                      const rect = (e.currentTarget.closest("[style*='position: relative']") as HTMLElement)?.getBoundingClientRect();
+                      if (rect && touch) {
+                        setTooltipPos({ x: touch.clientX - rect.left, y: touch.clientY - rect.top });
+                      }
+                    }}
+                    onTouchEnd={() => { setTimeout(() => { setHovered(null); setTooltipPos(null); }, 1500); }}
                     style={{
-                      fontSize: "clamp(4px, 0.5vw, 8px)",
-                      fontWeight: 700,
-                      color: "#dc2626",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.3px",
-                      pointerEvents: "none",
-                      userSelect: "none",
-                      lineHeight: 1,
-                      whiteSpace: "nowrap",
+                      position: "absolute",
+                      left: `${plot.left}%`,
+                      top: `${plot.top}%`,
+                      width: `${plot.width}%`,
+                      height: `${plot.height}%`,
+                      cursor,
+                      border,
+                      background: bg,
+                      borderRadius: "2px",
+                      transition: "border 0.15s, background 0.15s",
+                      zIndex: isSelected ? 20 : isHovered ? 10 : 1,
+                      boxSizing: "border-box",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
                     }}
                   >
-                    {statusLabel}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Floating tooltip on hover */}
-          {hovered !== null && tooltipPos && (() => {
-            const hovPlot = PLOTS.find(p => p.villa === hovered);
-            if (!hovPlot) return null;
-            const hovBlocked = blockedVillas.has(hovPlot.villa);
-            const blocker = hovBlocked ? blockedVillas.get(hovPlot.villa) : null;
-            return (
-              <div
-                style={{
-                  position: "absolute",
-                  left: `${tooltipPos.x + 14}px`,
-                  top: `${tooltipPos.y - 10}px`,
-                  background: "rgba(15, 23, 42, 0.95)",
-                  color: "#fff",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  lineHeight: "1.4",
-                  pointerEvents: "none",
-                  zIndex: 50,
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                  maxWidth: "200px",
-                }}
-              >
-                <div style={{ fontWeight: 700, marginBottom: "2px" }}>Villa {hovPlot.villa}</div>
-                <div>{hovPlot.sqYards} Sq.Yards &bull; {hovPlot.facing} Facing</div>
-                {hovBlocked && blocker && (
-                  <div style={{ color: "#fca5a5", marginTop: "3px", fontWeight: 600 }}>
-                    Blocked: {blocker.customerName}
+                    {statusLabel && (
+                      <span
+                        style={{
+                          fontSize: "clamp(4px, 0.5vw, 8px)",
+                          fontWeight: 700,
+                          color: "#dc2626",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.3px",
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          lineHeight: 1,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
+                );
+              })}
+
+              {/* Floating tooltip on hover */}
+              {hovered !== null && tooltipPos && (() => {
+                const hovPlot = activePlots.find(p => p.villa === hovered);
+                if (!hovPlot) return null;
+                const hovBlocked = blockedVillas.has(hovPlot.villa);
+                const blocker = hovBlocked ? blockedVillas.get(hovPlot.villa) : null;
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: `${tooltipPos.x + 14}px`,
+                      top: `${tooltipPos.y - 10}px`,
+                      background: "rgba(15, 23, 42, 0.95)",
+                      color: "#fff",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      lineHeight: "1.4",
+                      pointerEvents: "none",
+                      zIndex: 50,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                      maxWidth: "200px",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, marginBottom: "2px" }}>{plotLabel(selectedProject)} {hovPlot.villa}</div>
+                    <div>{hovPlot.sqYards} Sq.Yards &bull; {hovPlot.facing} Facing</div>
+                    {hovBlocked && blocker && (
+                      <div style={{ color: "#fca5a5", marginTop: "3px", fontWeight: 600 }}>
+                        Blocked: {blocker.customerName}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Villa detail / action modal */}
       {selected && !showBlockForm && !showEditForm && (
@@ -926,7 +1027,7 @@ export default function MasterPlanPage() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h2 className="text-lg sm:text-xl font-bold text-arcadia-800">
-                Villa {selected.villa}
+                {plotLabel(selectedProject)} {selected.villa}
                 {blockedVillas.has(selected.villa) && (
                   <span className="ml-2 text-xs sm:text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded">BLOCKED</span>
                 )}
@@ -954,7 +1055,7 @@ export default function MasterPlanPage() {
               const info = blockedVillas.get(selected.villa)!;
               return (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm space-y-2">
-                  <div className="font-semibold text-red-800 text-base">Villa Owner Details</div>
+                  <div className="font-semibold text-red-800 text-base">{plotLabel(selectedProject)} Owner Details</div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <span className="text-gray-500 text-xs">Customer Name</span>
@@ -995,7 +1096,7 @@ export default function MasterPlanPage() {
                     onClick={() => setShowBlockForm(true)}
                     className="flex-1 min-w-[100px] bg-amber-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-amber-600 active:bg-amber-700 transition"
                   >
-                    Block Villa
+                    Block {plotLabel(selectedProject)}
                   </button>
                   <button
                     onClick={handleCreateSale}
@@ -1029,7 +1130,7 @@ export default function MasterPlanPage() {
               </button>
             </div>
             {blockedVillas.has(selected.villa) && (
-              <p className="text-xs text-gray-400 text-center">To create a Sale Entry, please unblock the villa first.</p>
+              <p className="text-xs text-gray-400 text-center">To create a Sale Entry, please unblock the {plotLabel(selectedProject).toLowerCase()} first.</p>
             )}
           </div>
         </div>
@@ -1040,7 +1141,7 @@ export default function MasterPlanPage() {
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => { setShowBlockForm(false); setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); }}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
-              <h2 className="text-xl font-bold text-amber-700">Block Villa {selected.villa}</h2>
+              <h2 className="text-xl font-bold text-amber-700">Block {plotLabel(selectedProject)} {selected.villa}</h2>
               <button
                 onClick={() => {
                   setShowBlockForm(false);
@@ -1100,7 +1201,7 @@ export default function MasterPlanPage() {
       {selected && showEditForm && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={() => setShowEditForm(false)}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Edit Villa {selected.villa} Details</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Edit {plotLabel(selectedProject)} {selected.villa} Details</h3>
 
             <div className="space-y-3">
               <div>

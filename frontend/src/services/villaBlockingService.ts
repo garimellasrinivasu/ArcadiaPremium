@@ -3,6 +3,7 @@ import api from "./api";
 export interface VillaBlockingDto {
   id?: number;
   villaNumber: number;
+  projectName?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
@@ -15,8 +16,9 @@ export interface VillaBlockingDto {
 }
 
 export const villaBlockingService = {
-  async getAll(): Promise<VillaBlockingDto[]> {
-    const { data } = await api.get<VillaBlockingDto[]>("/villa-blocking");
+  async getAll(projectName?: string): Promise<VillaBlockingDto[]> {
+    const params = projectName ? { projectName } : {};
+    const { data } = await api.get<VillaBlockingDto[]>("/villa-blocking", { params });
     return data;
   },
 
@@ -34,12 +36,12 @@ export const villaBlockingService = {
     return data;
   },
 
-  async updateBlockedVilla(villaNumber: number, dto: VillaBlockingDto): Promise<VillaBlockingDto> {
-    const { data } = await api.put<VillaBlockingDto>(`/villa-blocking/${villaNumber}`, dto);
+  async updateBlockedVilla(villaNumber: number, dto: VillaBlockingDto, projectName: string = "Arcadia"): Promise<VillaBlockingDto> {
+    const { data } = await api.put<VillaBlockingDto>(`/villa-blocking/${villaNumber}`, dto, { params: { projectName } });
     return data;
   },
 
-  async unblockVilla(villaNumber: number): Promise<void> {
-    await api.delete(`/villa-blocking/${villaNumber}`);
+  async unblockVilla(villaNumber: number, projectName: string = "Arcadia"): Promise<void> {
+    await api.delete(`/villa-blocking/${villaNumber}`, { params: { projectName } });
   },
 };

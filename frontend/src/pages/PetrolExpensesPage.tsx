@@ -106,7 +106,9 @@ export default function PetrolExpensesPage() {
   );
 
   const [error, setError] = useState("");
+  const [importing, setImporting] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -283,6 +285,100 @@ export default function PetrolExpensesPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  /* ── Import Excel ── */
+  async function handleImportExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setImporting(true);
+    setError("");
+    try {
+      const text = await file.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/html");
+      const rows = doc.querySelectorAll("table tr");
+
+      let headerIdx = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].querySelectorAll("th, td");
+        const firstCell = cells[0]?.textContent?.trim().toLowerCase() || "";
+        if (firstCell === "s.no" || firstCell === "sno" || firstCell === "s no") {
+          headerIdx = i;
+          break;
+        }
+      }
+      if (headerIdx === -1) {
+        setError("Could not find header row (S.No) in the Excel file");
+        setImporting(false);
+        return;
+      }
+
+      const dataRows: CreatePujaExpenseRequest[] = [];
+      for (let i = headerIdx + 1; i < rows.length; i++) {
+        const cells = rows[i].querySelectorAll("td, th");
+        if (cells.length < 5) continue;
+        const firstCell = cells[0]?.textContent?.trim().toLowerCase() || "";
+        if (firstCell === "" || firstCell.includes("total") || firstCell.includes("category")) break;
+        const sno = parseInt(firstCell);
+        if (isNaN(sno)) continue;
+
+        const cat = cells[1]?.textContent?.trim() || "";
+        const desc = cells[2]?.textContent?.trim() || "";
+        const vend = cells[3]?.textContent?.trim() || "";
+        const amt = parseFloat((cells[4]?.textContent?.trim() || "0").replace(/[^0-9.-]/g, "")) || 0;
+        const status = cells[5]?.textContent?.trim() || "Paid";
+        const paidByVal = cells[6]?.textContent?.trim() || "";
+        const payMode = cells[7]?.textContent?.trim() || "";
+        const receipt = cells[8]?.textContent?.trim() || "";
+
+        if (!cat || amt === 0) continue;
+
+        const isPending = status.toLowerCase().includes("pending");
+        const payeeVal = isPending && paidByVal.startsWith("Pay to: ") ? paidByVal.replace("Pay to: ", "") : "";
+
+        dataRows.push({
+          pujaName: "Petrol Expenses",
+          pujaDate,
+          category: cat,
+          description: desc,
+          vendor: vend,
+          amount: amt,
+          paymentStatus: isPending ? "Pending" : "Paid",
+          paidBy: isPending ? "" : paidByVal,
+          paymentMode: isPending ? "" : payMode,
+          receiptNo: isPending ? "" : receipt,
+          payeeName: payeeVal,
+          projectName,
+          notes,
+          preparedBy,
+        });
+      }
+
+      if (dataRows.length === 0) {
+        setError("No expense rows found in the Excel file");
+        setImporting(false);
+        return;
+      }
+
+      let created = 0;
+      for (const req of dataRows) {
+        try {
+          await pujaExpensesService.create(req);
+          created++;
+        } catch {
+          // skip failed rows
+        }
+      }
+      await loadExpenses();
+      alert(`Successfully imported ${created} of ${dataRows.length} expenses`);
+    } catch (err: any) {
+      setError(err?.message || "Failed to import Excel file");
+    } finally {
+      setImporting(false);
+    }
   }
 
   /* ── Print ── */
@@ -700,6 +796,20 @@ export default function PetrolExpensesPage() {
         <div className="p-4 border-b border-blue-200 flex items-center justify-between">
           <h2 className="text-lg font-bold text-blue-900">Expense Details</h2>
           <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xls,.xlsx,.html"
+              onChange={handleImportExcel}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium shadow disabled:opacity-50"
+            >
+              {importing ? "Importing..." : "Import Excel"}
+            </button>
             {downloadEnabled && (
             <button
               onClick={handleExportExcel}

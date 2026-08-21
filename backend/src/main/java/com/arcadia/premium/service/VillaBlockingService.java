@@ -29,17 +29,35 @@ public class VillaBlockingService {
                 .map(VillaBlockingDto::fromEntity).collect(Collectors.toList());
     }
 
+    public List<VillaBlockingDto> getByProject(String projectName) {
+        // Strict exact-match only — each project maintains its own independent blocking list
+        List<VillaBlocking> results = villaBlockingRepo.findByProjectName(projectName);
+        return results.stream().map(VillaBlockingDto::fromEntity).collect(Collectors.toList());
+    }
+
     public Optional<VillaBlockingDto> getByVillaNumber(Integer villaNumber) {
         return villaBlockingRepo.findByVillaNumber(villaNumber)
                 .map(VillaBlockingDto::fromEntity);
     }
 
+    /** Find a blocked villa by strict exact project + villa number match */
+    private Optional<VillaBlocking> findVilla(String projectName, Integer villaNumber) {
+        return villaBlockingRepo.findByProjectNameAndVillaNumber(projectName, villaNumber);
+    }
+
+    /** Check if a villa is blocked under project (strict exact match) */
+    private boolean villaExists(String projectName, Integer villaNumber) {
+        return villaBlockingRepo.existsByProjectNameAndVillaNumber(projectName, villaNumber);
+    }
+
     @Transactional
     public VillaBlockingDto blockVilla(VillaBlockingDto dto) {
-        if (villaBlockingRepo.existsByVillaNumber(dto.getVillaNumber())) {
-            throw new RuntimeException("Villa " + dto.getVillaNumber() + " is already blocked");
+        String project = dto.getProjectName() != null ? dto.getProjectName() : "Arcadia";
+        if (villaExists(project, dto.getVillaNumber())) {
+            throw new RuntimeException("Villa " + dto.getVillaNumber() + " is already blocked in " + project);
         }
         VillaBlocking v = new VillaBlocking();
+        v.setProjectName(project);
         v.setVillaNumber(dto.getVillaNumber());
         v.setCustomerName(dto.getCustomerName());
         v.setCustomerPhone(dto.getCustomerPhone());
@@ -49,29 +67,29 @@ public class VillaBlockingService {
         v.setBlockedBy(dto.getBlockedBy());
         v.setBlockedAt(LocalDateTime.now());
         v = villaBlockingRepo.save(v);
-        log.info("Blocked villa {} by {} (id={})", v.getVillaNumber(), v.getBlockedBy(), v.getId());
+        log.info("Blocked villa {} in project {} by {} (id={})", v.getVillaNumber(), project, v.getBlockedBy(), v.getId());
         return VillaBlockingDto.fromEntity(v);
     }
 
     @Transactional
-    public VillaBlockingDto updateBlockedVilla(Integer villaNumber, VillaBlockingDto dto) {
-        VillaBlocking v = villaBlockingRepo.findByVillaNumber(villaNumber)
-                .orElseThrow(() -> new RuntimeException("Villa " + villaNumber + " is not blocked"));
+    public VillaBlockingDto updateBlockedVilla(String projectName, Integer villaNumber, VillaBlockingDto dto) {
+        VillaBlocking v = findVilla(projectName, villaNumber)
+                .orElseThrow(() -> new RuntimeException("Villa " + villaNumber + " is not blocked in " + projectName));
         v.setCustomerName(dto.getCustomerName());
         v.setCustomerPhone(dto.getCustomerPhone());
         v.setCustomerEmail(dto.getCustomerEmail());
         v.setBookingAmount(dto.getBookingAmount());
         v.setNotes(dto.getNotes());
         v = villaBlockingRepo.save(v);
-        log.info("Updated blocked villa {} details (id={})", villaNumber, v.getId());
+        log.info("Updated blocked villa {} in project {} (id={})", villaNumber, projectName, v.getId());
         return VillaBlockingDto.fromEntity(v);
     }
 
     @Transactional
-    public void unblockVilla(Integer villaNumber) {
-        VillaBlocking v = villaBlockingRepo.findByVillaNumber(villaNumber)
-                .orElseThrow(() -> new RuntimeException("Villa " + villaNumber + " is not blocked"));
+    public void unblockVilla(String projectName, Integer villaNumber) {
+        VillaBlocking v = findVilla(projectName, villaNumber)
+                .orElseThrow(() -> new RuntimeException("Villa " + villaNumber + " is not blocked in " + projectName));
         villaBlockingRepo.delete(v);
-        log.info("Unblocked villa {} (id={})", villaNumber, v.getId());
+        log.info("Unblocked villa {} in project {} (id={})", villaNumber, projectName, v.getId());
     }
 }

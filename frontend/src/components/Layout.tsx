@@ -47,6 +47,7 @@ const menuSections: MenuSection[] = [
       { label: "Walk-Ins", path: "/activities/walk-ins", pageKey: "WALK_INS" },
       { label: "Land Converter", path: "/activities/land-converter", pageKey: "LAND_CONVERTER" },
       { label: "Ground Level Work", path: "/activities/ground-level-work", pageKey: "GROUND_LEVEL_WORK" },
+      { label: "Pay Slips", path: "/activities/pay-slips", pageKey: "PAY_SLIPS" },
     ],
   },
   {
@@ -110,6 +111,12 @@ const menuSections: MenuSection[] = [
     label: "Reports",
     items: [
       { label: "Attendance Reports", path: "/reports/attendance", pageKey: "ATTENDANCE_REPORTS" },
+    ],
+  },
+  {
+    label: "Accounts",
+    items: [
+      { label: "Accounts Ledger", path: "/accounts/ledger", pageKey: "ACCOUNTS" },
     ],
   },
   {

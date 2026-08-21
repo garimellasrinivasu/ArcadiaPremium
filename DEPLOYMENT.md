@@ -37,7 +37,7 @@
    - **Region**: Same as your database
    - **Root Directory**: `backend`
    - **Runtime**: Docker
-   - **Plan**: Free
+   - **Plan**: Free (Note: Starter plan recommended for AI detection — free tier's 512MB RAM may not suffice for insightface + onnxruntime)
 4. Add **Environment Variables** (click "Advanced" → "Add Environment Variable"):
 
    | Key | Value |

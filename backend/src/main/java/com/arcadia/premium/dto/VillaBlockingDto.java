@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class VillaBlockingDto {
     private Long id;
     private Integer villaNumber;
+    private String projectName;
     private String customerName;
     private String customerPhone;
     private String customerEmail;
@@ -21,6 +22,7 @@ public class VillaBlockingDto {
         VillaBlockingDto d = new VillaBlockingDto();
         d.id = e.getId();
         d.villaNumber = e.getVillaNumber();
+        d.projectName = e.getProjectName();
         d.customerName = e.getCustomerName();
         d.customerPhone = e.getCustomerPhone();
         d.customerEmail = e.getCustomerEmail();
@@ -38,6 +40,8 @@ public class VillaBlockingDto {
     public void setId(Long id) { this.id = id; }
     public Integer getVillaNumber() { return villaNumber; }
     public void setVillaNumber(Integer villaNumber) { this.villaNumber = villaNumber; }
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public String getCustomerPhone() { return customerPhone; }

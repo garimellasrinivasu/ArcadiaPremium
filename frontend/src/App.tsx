@@ -69,6 +69,8 @@ import ProjectExecutionTemplatePage from "./pages/ProjectExecutionTemplatePage";
 import DailyExecutionUpdatePage from "./pages/DailyExecutionUpdatePage";
 import TallyPage from "./pages/TallyPage";
 import GroundLevelWorkPage from "./pages/GroundLevelWorkPage";
+import PaySlipPage from "./pages/PaySlipPage";
+import AccountsPage from "./pages/AccountsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -122,12 +124,14 @@ export default function App() {
         <Route path="activities/walk-ins" element={<WalkInsPage />} />
         <Route path="activities/land-converter" element={<LandConverterPage />} />
         <Route path="activities/ground-level-work" element={<GroundLevelWorkPage />} />
+        <Route path="activities/pay-slips" element={<PaySlipPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />
         <Route path="admin/project-estimation" element={<ProjectEstimationPage />} />
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
+        <Route path="accounts/ledger" element={<AccountsPage />} />
         <Route path="tally" element={<TallyPage />} />
 
         {/* Subcontracting */}

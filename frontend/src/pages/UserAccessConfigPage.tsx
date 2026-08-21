@@ -46,6 +46,8 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "WEEKLY_EXPENSES", label: "Weekly Expenses", path: "/activities/expenses/weekly" },
       { key: "PETROL_EXPENSES", label: "Petrol Expenses", path: "/activities/expenses/petrol" },
       { key: "LAND_CONVERTER", label: "Land Converter", path: "/activities/land-converter" },
+      { key: "GROUND_LEVEL_WORK", label: "Ground Level Work", path: "/activities/ground-level-work" },
+      { key: "PAY_SLIPS", label: "Pay Slips", path: "/activities/pay-slips" },
     ],
   },
   {
