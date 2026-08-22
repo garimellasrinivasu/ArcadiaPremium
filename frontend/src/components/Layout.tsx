@@ -117,6 +117,7 @@ const menuSections: MenuSection[] = [
     label: "Accounts",
     items: [
       { label: "Accounts Ledger", path: "/accounts/ledger", pageKey: "ACCOUNTS" },
+      { label: "Invoice & Payment Entry", path: "/accounts/invoice-book", pageKey: "INVOICE_ENTRY" },
     ],
   },
   {

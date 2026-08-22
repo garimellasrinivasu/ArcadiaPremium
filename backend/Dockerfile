@@ -16,11 +16,12 @@ RUN mvn package -DskipTests -B
 # ── Stage 2: Runtime with Java 21 + Python 3 for AI gender detection ──
 FROM eclipse-temurin:21-jre
 
-# Install Python 3, pip, and native libs needed by OpenCV
+# Install Python 3, pip, native libs for OpenCV, and Tesseract OCR for invoice extraction
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         python3 python3-pip python3-venv \
-        libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 && \
+        libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
+        tesseract-ocr tesseract-ocr-eng && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python AI packages (lightweight stack: insightface + onnxruntime, no TensorFlow)

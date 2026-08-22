@@ -123,6 +123,13 @@ const PAGE_SECTIONS: PageSection[] = [
     ],
   },
   {
+    section: "Accounts",
+    pages: [
+      { key: "ACCOUNTS", label: "Accounts Ledger", path: "/accounts/ledger" },
+      { key: "INVOICE_ENTRY", label: "Invoice & Payment Entry", path: "/accounts/invoice-book" },
+    ],
+  },
+  {
     section: "Reports",
     pages: [
       { key: "ATTENDANCE_REPORTS", label: "Attendance Reports", path: "/reports/attendance" },

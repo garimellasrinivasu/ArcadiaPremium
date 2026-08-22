@@ -71,6 +71,7 @@ import TallyPage from "./pages/TallyPage";
 import GroundLevelWorkPage from "./pages/GroundLevelWorkPage";
 import PaySlipPage from "./pages/PaySlipPage";
 import AccountsPage from "./pages/AccountsPage";
+import InvoiceBookPage from "./pages/InvoiceBookPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -132,6 +133,7 @@ export default function App() {
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
         <Route path="accounts/ledger" element={<AccountsPage />} />
+        <Route path="accounts/invoice-book" element={<InvoiceBookPage />} />
         <Route path="tally" element={<TallyPage />} />
 
         {/* Subcontracting */}

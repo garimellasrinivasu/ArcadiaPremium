@@ -1,10 +1,14 @@
 package com.arcadia.premium.service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -63,6 +67,27 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
             throw new RuntimeException("Password was reset but email could not be sent to " + toEmail + ". Please share the new password manually. Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send an email with a file attachment using MimeMessage.
+     */
+    public void sendEmailWithAttachment(String to, String subject, String body,
+                                         byte[] attachment, String attachmentFilename) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body);
+            helper.addAttachment(attachmentFilename, new ByteArrayResource(attachment));
+            mailSender.send(mimeMessage);
+            log.info("Email with attachment '{}' sent to {}", attachmentFilename, to);
+        } catch (MessagingException e) {
+            log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
+            throw new RuntimeException("Failed to send email with attachment: " + e.getMessage());
         }
     }
 

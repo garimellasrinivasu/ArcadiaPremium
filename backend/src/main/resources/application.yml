@@ -76,6 +76,10 @@ app:
     expiration-ms: 86400000       # 24 hours
     refresh-expiration-ms: 604800000  # 7 days
 
+  # Daily export scheduler
+  daily-export:
+    recipient-email: ${DAILY_EXPORT_EMAIL:}
+
   # Gender detection (Python + OpenCV)
   detection:
     python-path: ${PYTHON_PATH:python3}
