@@ -42,7 +42,8 @@ export default function WorkExecutionUpdatesPage() {
     projectService.getActiveProjects().then((list: ProjectDto[]) => {
       setProjects(list);
       if (list.length > 0 && !selectedProject) {
-        setSelectedProject(list[0].name);
+        const arcadia = list.find((p) => p.name.toLowerCase().includes("arcadia"));
+        setSelectedProject(arcadia ? arcadia.name : list[0].name);
       }
     });
   }, []);
