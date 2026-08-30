@@ -6,6 +6,7 @@ import type { VillaConstructionStatusDto } from "../services/villaConstructionSe
 import {
   ARCADIA_PLOTS,
   CONSTRUCTION_PHASES,
+  ARCADIA_CLUSTERS,
   isKalpavruksha,
   isArcadia,
   isAravindham,
@@ -537,6 +538,7 @@ function ConstructionSummaryView({
 }) {
   const [allStatuses, setAllStatuses] = useState<VillaConstructionStatusDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<"villa" | "cluster">("villa");
 
   useEffect(() => {
     setLoading(true);
@@ -561,7 +563,20 @@ function ConstructionSummaryView({
     statusMap.set(`${s.villaNumber}-${s.phase}`, s);
   });
 
-  // Calculate phase totals
+  const totalActs = CONSTRUCTION_PHASES.reduce((sum, p) => sum + (p.single ? 1 : 2), 0);
+
+  // Helper: compute done count for a villa
+  function villaDoneCount(villaNum: number): number {
+    let count = 0;
+    CONSTRUCTION_PHASES.forEach((phase) => {
+      const s = statusMap.get(`${villaNum}-${phase.key}`);
+      if (s?.activity1Done) count++;
+      if (!phase.single && s?.activity2Done) count++;
+    });
+    return count;
+  }
+
+  // Calculate phase totals (overall)
   const phaseTotals = CONSTRUCTION_PHASES.map((phase) => {
     let a1Count = 0;
     let a2Count = 0;
@@ -574,9 +589,32 @@ function ConstructionSummaryView({
   });
 
   // Overall completion
-  const totalActivities = plots.length * CONSTRUCTION_PHASES.reduce((sum, p) => sum + (p.single ? 1 : 2), 0);
+  const totalActivities = plots.length * totalActs;
   const completedActivities = phaseTotals.reduce((sum, p) => sum + p.a1Count + (p.single ? 0 : p.a2Count), 0);
   const overallPercent = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
+
+  // Cluster-wise summary
+  const clusterColors = ["#2563eb", "#16a34a", "#d97706"];
+  const clusterSummary = ARCADIA_CLUSTERS.map((cluster) => {
+    const clusterPlots = plots.filter((p) => cluster.villas.includes(p.villa));
+    const clusterTotal = clusterPlots.length * totalActs;
+    let clusterDone = 0;
+    clusterPlots.forEach((p) => { clusterDone += villaDoneCount(p.villa); });
+    const pct = clusterTotal > 0 ? Math.round((clusterDone / clusterTotal) * 100) : 0;
+
+    // Phase breakdown per cluster
+    const phaseBreakdown = CONSTRUCTION_PHASES.map((phase) => {
+      let a1 = 0, a2 = 0;
+      clusterPlots.forEach((p) => {
+        const s = statusMap.get(`${p.villa}-${phase.key}`);
+        if (s?.activity1Done) a1++;
+        if (s?.activity2Done) a2++;
+      });
+      return { ...phase, a1, a2, total: clusterPlots.length };
+    });
+
+    return { ...cluster, villaCount: clusterPlots.length, clusterDone, clusterTotal, pct, phaseBreakdown };
+  });
 
   return (
     <div className="space-y-4">
@@ -598,6 +636,44 @@ function ConstructionSummaryView({
         <p className="text-xs text-gray-500 mt-1">
           {completedActivities} of {totalActivities} activities completed across {plots.length} villas
         </p>
+      </div>
+
+      {/* Cluster-wise Summary */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Cluster-wise Summary</div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+          {clusterSummary.map((cluster, idx) => (
+            <div key={cluster.name} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold" style={{ color: clusterColors[idx] }}>{cluster.name}</h4>
+                <span className="text-lg font-bold" style={{ color: clusterColors[idx] }}>{cluster.pct}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div className="h-2.5 rounded-full transition-all" style={{ width: `${cluster.pct}%`, background: clusterColors[idx] }} />
+              </div>
+              <p className="text-[11px] text-gray-500">
+                {cluster.clusterDone}/{cluster.clusterTotal} activities &middot; {cluster.villaCount} villas
+              </p>
+              {/* Phase breakdown for this cluster */}
+              <div className="space-y-1">
+                {cluster.phaseBreakdown.map((pb) => {
+                  const pbDone = pb.a1 + (pb.single ? 0 : pb.a2);
+                  const pbTotal = pb.total * (pb.single ? 1 : 2);
+                  const pbPct = pbTotal > 0 ? Math.round((pbDone / pbTotal) * 100) : 0;
+                  return (
+                    <div key={pb.key} className="flex items-center gap-2 text-[10px]">
+                      <span className="text-gray-600 w-32 truncate">{pb.label}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                        <div className="h-1.5 rounded-full" style={{ width: `${pbPct}%`, background: clusterColors[idx] }} />
+                      </div>
+                      <span className="text-gray-500 w-10 text-right">{pbPct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Phase summary cards */}
@@ -628,14 +704,31 @@ function ConstructionSummaryView({
         })}
       </div>
 
-      {/* Detailed villa table */}
+      {/* Villa-wise Status Table (1-237) */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Villa-wise Status</div>
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <span className="font-semibold text-gray-700">Villa-wise Status (1 &ndash; {plots.length})</span>
+          <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setSortBy("villa")}
+              className={`px-3 py-1 rounded text-xs font-medium transition ${sortBy === "villa" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Sort by Villa
+            </button>
+            <button
+              onClick={() => setSortBy("cluster")}
+              className={`px-3 py-1 rounded text-xs font-medium transition ${sortBy === "cluster" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Sort by Cluster
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-3 py-2 text-left font-semibold text-gray-700 sticky left-0 bg-gray-50">Villa</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Cluster</th>
                 {CONSTRUCTION_PHASES.map((phase) => (
                   <th key={phase.key} className="px-2 py-2 text-center font-semibold text-gray-700" colSpan={phase.single ? 1 : 2}>
                     {phase.label}
@@ -645,6 +738,7 @@ function ConstructionSummaryView({
               </tr>
               <tr className="bg-gray-50 border-b">
                 <th className="sticky left-0 bg-gray-50" />
+                <th />
                 {CONSTRUCTION_PHASES.map((phase) => (
                   <React.Fragment key={phase.key}>
                     <th className="px-1 py-1 text-center text-[10px] text-gray-500 font-normal">{phase.activity1}</th>
@@ -657,19 +751,27 @@ function ConstructionSummaryView({
             <tbody>
               {plots
                 .slice()
-                .sort((a, b) => a.villa - b.villa)
+                .sort((a, b) => {
+                  if (sortBy === "cluster") {
+                    const clusterA = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(a.villa));
+                    const clusterB = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(b.villa));
+                    if (clusterA !== clusterB) return clusterA - clusterB;
+                  }
+                  return a.villa - b.villa;
+                })
                 .map((plot) => {
-                  let doneCount = 0;
-                  const totalActs = CONSTRUCTION_PHASES.reduce((sum, p) => sum + (p.single ? 1 : 2), 0);
-                  CONSTRUCTION_PHASES.forEach((phase) => {
-                    const s = statusMap.get(`${plot.villa}-${phase.key}`);
-                    if (s?.activity1Done) doneCount++;
-                    if (!phase.single && s?.activity2Done) doneCount++;
-                  });
+                  const doneCount = villaDoneCount(plot.villa);
                   const isComplete = doneCount === totalActs;
+                  const clusterIdx = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(plot.villa));
+                  const clusterLabel = clusterIdx >= 0 ? `C${clusterIdx + 1}` : "";
                   return (
                     <tr key={plot.villa} className={`border-b hover:bg-gray-50 ${isComplete ? "bg-green-50" : ""}`}>
                       <td className="px-3 py-1.5 font-medium text-gray-800 sticky left-0 bg-white">{plot.villa}</td>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                          clusterIdx === 0 ? "bg-blue-100 text-blue-700" : clusterIdx === 1 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                        }`}>{clusterLabel}</span>
+                      </td>
                       {CONSTRUCTION_PHASES.map((phase) => {
                         const s = statusMap.get(`${plot.villa}-${phase.key}`);
                         return (

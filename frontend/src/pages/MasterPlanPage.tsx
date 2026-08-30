@@ -288,14 +288,21 @@ export function plotLabel(projectName: string): string {
 /* ------------------------------------------------------------------ */
 export const CONSTRUCTION_PHASES: { key: string; label: string; activity1: string; activity2: string; single?: boolean }[] = [
   { key: "EXCAVATION", label: "Excavation", activity1: "Excavation", activity2: "", single: true },
-  { key: "PCC_PUTTINGS", label: "PCC & Puttings", activity1: "PCC", activity2: "Puttings" },
+  { key: "PCC", label: "PCC", activity1: "PCC", activity2: "", single: true },
+  { key: "FOOTINGS", label: "Footings", activity1: "Footings", activity2: "", single: true },
   { key: "NECK_COLUMNS", label: "Neck Columns", activity1: "Neck Columns", activity2: "", single: true },
-  { key: "PLINTH_BEAM", label: "Plinth Beam", activity1: "Plinth Beam", activity2: "", single: true },
   { key: "BACK_FILLING_COMPACTION", label: "Back Filling & Compaction", activity1: "Back Filling & Compaction", activity2: "", single: true },
+  { key: "PLINTH_BEAM", label: "Plinth Beam", activity1: "Plinth Beam", activity2: "", single: true },
   { key: "COLUMNS", label: "Columns", activity1: "Columns", activity2: "", single: true },
   { key: "GROUND_FLOOR_SLAB", label: "Ground Floor Slab", activity1: "Ground Floor Slab", activity2: "", single: true },
   { key: "FIRST_FLOOR_SLAB", label: "First Floor Slab", activity1: "First Floor Slab", activity2: "", single: true },
   { key: "SECOND_FLOOR_SLAB", label: "Second Floor Slab", activity1: "Second Floor Slab", activity2: "", single: true },
+];
+
+export const ARCADIA_CLUSTERS: { name: string; villas: number[] }[] = [
+  { name: "Cluster 1", villas: [1,2,3,4,17,18,19,20,21,22,23,24,25,26,55,56,57,58,59,60,61,62,63,64,65,66,67,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221] },
+  { name: "Cluster 2", villas: [9,10,11,12,13,14,15,16,27,28,29,30,31,32,49,50,51,52,53,54,68,69,70,71,72,73,94,95,96,97,98,99,115,116,117,118,119,120,143,144,145,146,147,148,167,168,169,170,171,172,173,174,194,195,196,197,198,199,200,201,222,223,224,225,226,227,228,229] },
+  { name: "Cluster 3", villas: [5,6,7,8,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,230,231,232,233,234,235,236,237] },
 ];
 
 export default function MasterPlanPage() {
