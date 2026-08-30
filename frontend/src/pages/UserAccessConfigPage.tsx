@@ -37,6 +37,7 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "SALE_QUOTE", label: "Sale Quote", path: "/activities/sale-quote" },
       { key: "FINANCE_SPENT", label: "Finance Spent", path: "/activities/finance-spent" },
       { key: "MASTER_PLAN", label: "Master Plan", path: "/activities/master-plan" },
+      { key: "WORK_EXECUTION", label: "Work Execution Updates", path: "/activities/work-execution" },
       { key: "SITE_ATTENDANCE", label: "Site Attendance", path: "/activities/site-attendance" },
       { key: "PROJECT_DOCUMENTS", label: "Project Documents", path: "/activities/documents" },
       { key: "PARTNER_INVESTMENT", label: "Partner Investment", path: "/activities/partner-investment" },
