@@ -18,7 +18,7 @@ import {
 } from "../services/attendanceReportService";
 import { projectService, type ProjectDto } from "../services/projectService";
 import type { User } from "../types/user";
-import api from "../services/api";
+
 
 const ROLE_DISPLAY: Record<string, string> = {
   OFFICE_ASSISTANT: "Office Assistant",
@@ -33,19 +33,6 @@ const ROLE_DISPLAY: Record<string, string> = {
 };
 function displayRole(code: string) {
   return ROLE_DISPLAY[code] || code;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Server-side gender detection                                      */
-/* ------------------------------------------------------------------ */
-
-async function detectPeople(
-  imageBase64: string
-): Promise<{ total: number; male: number; female: number }> {
-  const response = await api.post("/detect/gender", { imageBase64 }, { timeout: 300000 });
-  const data = response.data;
-  if (data.error) throw new Error(data.error);
-  return { total: data.total ?? 0, male: data.male ?? 0, female: data.female ?? 0 };
 }
 
 /* ------------------------------------------------------------------ */
@@ -134,22 +121,23 @@ function CaptureTab({
 
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [detecting, setDetecting] = useState(false);
 
-  const [totalWorkers, setTotalWorkers] = useState(0);
   const [maleMastri, setMaleMastri] = useState(0);
   const [femaleMastri, setFemaleMastri] = useState(0);
   const [maleHelper, setMaleHelper] = useState(0);
   const [femaleHelper, setFemaleHelper] = useState(0);
-  const [detected, setDetected] = useState(false);
-  const [mismatchError, setMismatchError] = useState("");
+  const [totalWorkers, setTotalWorkers] = useState(0);
+
+  // Auto-update total when breakdown changes
+  useEffect(() => {
+    setTotalWorkers(maleMastri + femaleMastri + maleHelper + femaleHelper);
+  }, [maleMastri, femaleMastri, maleHelper, femaleHelper]);
 
   const [siteName, setSiteName] = useState("");
   const [projectList, setProjectList] = useState<ProjectDto[]>([]);
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [detectionError, setDetectionError] = useState<string | null>(null);
 
   // Approval chain info for the current user
   const [myChain, setMyChain] = useState<ApprovalChainDto | null>(null);
@@ -254,13 +242,10 @@ function CaptureTab({
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImage(dataUrl);
     stopCamera();
-    setDetected(false);
-    setTotalWorkers(0);
     setMaleMastri(0);
     setFemaleMastri(0);
     setMaleHelper(0);
     setFemaleHelper(0);
-    setMismatchError("");
   }, [stopCamera]);
 
   const handleFileUpload = useCallback(
@@ -270,13 +255,10 @@ function CaptureTab({
       const reader = new FileReader();
       reader.onload = () => {
         setCapturedImage(reader.result as string);
-        setDetected(false);
-        setTotalWorkers(0);
         setMaleMastri(0);
         setFemaleMastri(0);
         setMaleHelper(0);
         setFemaleHelper(0);
-        setMismatchError("");
         stopCamera();
       };
       reader.readAsDataURL(file);
@@ -284,44 +266,11 @@ function CaptureTab({
     [stopCamera]
   );
 
-  const runDetection = useCallback(async () => {
-    if (!capturedImage) return;
-    setDetecting(true);
-    setDetectionError(null);
-    try {
-      const result = await detectPeople(capturedImage);
-      setTotalWorkers(result.total);
-      setDetected(true);
-      if (result.total === 0) {
-        setDetectionError("AI found 0 faces. You can enter counts manually.");
-      }
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || String(err);
-      setDetectionError(`AI detection failed: ${msg}. Enter counts manually.`);
-    } finally {
-      setDetecting(false);
-    }
-  }, [capturedImage]);
-
-  useEffect(() => {
-    if (capturedImage && !detecting && !detected) {
-      const timer = setTimeout(() => runDetection(), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [capturedImage]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleSubmit = useCallback(async () => {
     if (!capturedImage) return alert("Please capture an image first.");
     if (!siteName) return alert("Please select a project / site name.");
-    if (totalWorkers === 0) return alert("Worker count cannot be 0.");
+    if (totalWorkers === 0) return alert("Please enter worker counts.");
     if (!myChain && approverId === 0) return alert("Please select an approver.");
-
-    const enteredSum = maleMastri + femaleMastri + maleHelper + femaleHelper;
-    if (enteredSum !== totalWorkers) {
-      setMismatchError(`Total mismatch: AI detected ${totalWorkers} workers but your entries add up to ${enteredSum}. Please correct.`);
-      return;
-    }
-    setMismatchError("");
 
     setSubmitting(true);
     try {
@@ -329,7 +278,7 @@ function CaptureTab({
         attendanceDate: new Date().toISOString().split("T")[0],
         siteName,
         imageBase64: capturedImage,
-        totalWorkers,
+        totalWorkers: totalWorkers,
         maleMastriCount: maleMastri,
         femaleMastriCount: femaleMastri,
         maleHelperCount: maleHelper,
@@ -344,13 +293,11 @@ function CaptureTab({
       await siteAttendanceService.create(req);
       setSuccess(true);
       setCapturedImage(null);
-      setDetected(false);
-      setTotalWorkers(0);
       setMaleMastri(0);
       setFemaleMastri(0);
       setMaleHelper(0);
       setFemaleHelper(0);
-      setMismatchError("");
+      setTotalWorkers(0);
       setRemarks("");
       setTimeout(() => {
         setSuccess(false);
@@ -361,7 +308,7 @@ function CaptureTab({
     } finally {
       setSubmitting(false);
     }
-  }, [capturedImage, approverId, totalWorkers, maleMastri, femaleMastri, maleHelper, femaleHelper, siteName, remarks, myChain, onSubmitSuccess]);
+  }, [capturedImage, approverId, maleMastri, femaleMastri, maleHelper, femaleHelper, totalWorkers, siteName, remarks, myChain, onSubmitSuccess]);
 
   useEffect(() => {
     return () => stopCamera();
@@ -406,33 +353,15 @@ function CaptureTab({
 
             {capturedImage && (
               <div className="space-y-3">
-                <div className="relative">
-                  <img src={capturedImage} alt="Captured" className="w-full rounded-lg" />
-                  {detecting && (
-                    <div className="absolute inset-0 bg-black/50 rounded-lg flex flex-col items-center justify-center gap-3">
-                      <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                      <p className="text-white font-semibold text-sm">Detecting faces & classifying gender...</p>
-                      <p className="text-white/70 text-xs">First time may take 2-3 minutes to load AI models</p>
-                    </div>
-                  )}
-                </div>
+                <img src={capturedImage} alt="Captured" className="w-full rounded-lg" />
                 <div className="flex gap-3 justify-center">
-                  {(detected || detectionError) && !detecting && (
-                    <button onClick={runDetection} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-                      Re-detect (AI)
-                    </button>
-                  )}
                   <button
-                    onClick={() => { setCapturedImage(null); setDetected(false); setDetectionError(null); }}
-                    disabled={detecting}
-                    className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+                    onClick={() => { setCapturedImage(null); }}
+                    className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                   >
                     Retake
                   </button>
                 </div>
-                {detectionError && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm">{detectionError}</div>
-                )}
               </div>
             )}
           </div>
@@ -446,26 +375,14 @@ function CaptureTab({
         <div className="bg-white rounded-xl border border-gray-200">
           <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Worker Details</div>
           <div className="p-4 space-y-4">
-            {/* AI-detected total */}
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Total Workers (AI Detected)</label>
-              <input
-                type="number" min={0} value={totalWorkers}
-                onChange={(e) => { setTotalWorkers(Number(e.target.value)); setMismatchError(""); }}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-2xl font-bold text-center text-arcadia-800"
-              />
-              {detected && (
-                <p className="text-xs text-blue-600 mt-1">AI detected {totalWorkers} people in the photo. You can adjust if needed.</p>
-              )}
-            </div>
-
             {/* Mastri / Helper breakdown */}
+            <p className="text-xs text-gray-500">Enter worker counts below. Total is auto-calculated.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Male - Mastri</label>
                 <input
                   type="number" min={0} value={maleMastri}
-                  onChange={(e) => { setMaleMastri(Number(e.target.value)); setMismatchError(""); }}
+                  onChange={(e) => { setMaleMastri(Number(e.target.value)); }}
                   className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-blue-700"
                 />
               </div>
@@ -473,7 +390,7 @@ function CaptureTab({
                 <label className="text-xs text-gray-500 block mb-1">Female - Mastri</label>
                 <input
                   type="number" min={0} value={femaleMastri}
-                  onChange={(e) => { setFemaleMastri(Number(e.target.value)); setMismatchError(""); }}
+                  onChange={(e) => { setFemaleMastri(Number(e.target.value)); }}
                   className="w-full border border-pink-200 bg-pink-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-pink-700"
                 />
               </div>
@@ -481,7 +398,7 @@ function CaptureTab({
                 <label className="text-xs text-gray-500 block mb-1">Male - Helper</label>
                 <input
                   type="number" min={0} value={maleHelper}
-                  onChange={(e) => { setMaleHelper(Number(e.target.value)); setMismatchError(""); }}
+                  onChange={(e) => { setMaleHelper(Number(e.target.value)); }}
                   className="w-full border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-indigo-700"
                 />
               </div>
@@ -489,32 +406,21 @@ function CaptureTab({
                 <label className="text-xs text-gray-500 block mb-1">Female - Helper</label>
                 <input
                   type="number" min={0} value={femaleHelper}
-                  onChange={(e) => { setFemaleHelper(Number(e.target.value)); setMismatchError(""); }}
+                  onChange={(e) => { setFemaleHelper(Number(e.target.value)); }}
                   className="w-full border border-purple-200 bg-purple-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-purple-700"
                 />
               </div>
             </div>
 
-            {/* Sum vs Total comparison */}
-            {(() => {
-              const sum = maleMastri + femaleMastri + maleHelper + femaleHelper;
-              const match = sum === totalWorkers;
-              if (sum === 0 && totalWorkers === 0) return null;
-              return (
-                <div className={`rounded-lg px-4 py-2.5 text-sm font-medium flex justify-between items-center ${
-                  match ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
-                }`}>
-                  <span>Your entries: {sum}</span>
-                  <span>{match ? "Matches AI total" : `AI total: ${totalWorkers} (difference: ${Math.abs(totalWorkers - sum)})`}</span>
-                </div>
-              );
-            })()}
-
-            {mismatchError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-                {mismatchError}
-              </div>
-            )}
+            {/* Total Workers — editable, auto-updated from breakdown */}
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Total Workers</label>
+              <input
+                type="number" min={0} value={totalWorkers}
+                onChange={(e) => setTotalWorkers(Number(e.target.value))}
+                className="w-full border border-green-200 bg-green-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-green-700"
+              />
+            </div>
           </div>
         </div>
 
@@ -596,7 +502,7 @@ function CaptureTab({
 
             <button
               onClick={handleSubmit}
-              disabled={submitting || !capturedImage || (totalWorkers > 0 && (maleMastri + femaleMastri + maleHelper + femaleHelper) !== totalWorkers)}
+              disabled={submitting || !capturedImage || totalWorkers === 0}
               className="w-full bg-arcadia-600 text-white py-3 rounded-lg font-semibold hover:bg-arcadia-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Submitting..." : "Submit for Approval"}

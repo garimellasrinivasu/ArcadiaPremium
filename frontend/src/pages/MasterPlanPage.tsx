@@ -23,7 +23,7 @@ const ARCADIA_PRANEETH_SHARE = new Set([
 // Red villas removed — all villas are now blockable via the blocking feature
 // Villa 17's red fill was replaced with yellow directly in the PNG image
 
-const ARCADIA_PLOTS: PlotDef[] = [
+export const ARCADIA_PLOTS: PlotDef[] = [
   { villa: 1, left: 21.81, top: 27.19, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
   { villa: 2, left: 21.81, top: 29.5, width: 4.44, height: 2.25, sqYards: 200, facing: "West" },
   { villa: 3, left: 21.81, top: 31.83, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
@@ -266,22 +266,37 @@ const ARCADIA_PLOTS: PlotDef[] = [
 type VillaCategory = "praneeth" | "landlord";
 
 /** Check if a project name contains a known keyword (case-insensitive) */
-function isKalpavruksha(name: string): boolean {
+export function isKalpavruksha(name: string): boolean {
   return name.toLowerCase().includes("kalpavruksha");
 }
-function isArcadia(name: string): boolean {
+export function isArcadia(name: string): boolean {
   return name.toLowerCase().includes("arcadia");
 }
-function isAravindham(name: string): boolean {
+export function isAravindham(name: string): boolean {
   return name.toLowerCase().includes("arvindham");
 }
-function hasMasterPlan(projectName: string): boolean {
+export function hasMasterPlan(projectName: string): boolean {
   return isArcadia(projectName) || isKalpavruksha(projectName) || isAravindham(projectName);
 }
 /** Returns "Plot" for Aravindham, "Villa" for other projects */
-function plotLabel(projectName: string): string {
+export function plotLabel(projectName: string): string {
   return isAravindham(projectName) ? "Plot" : "Villa";
 }
+
+/* ------------------------------------------------------------------ */
+/*  Construction Phase Definitions (paired tabs)                      */
+/* ------------------------------------------------------------------ */
+export const CONSTRUCTION_PHASES: { key: string; label: string; activity1: string; activity2: string; single?: boolean }[] = [
+  { key: "EXCAVATION", label: "Excavation", activity1: "Excavation", activity2: "", single: true },
+  { key: "PCC_PUTTINGS", label: "PCC & Puttings", activity1: "PCC", activity2: "Puttings" },
+  { key: "NECK_COLUMNS", label: "Neck Columns", activity1: "Neck Columns", activity2: "", single: true },
+  { key: "PLINTH_BEAM", label: "Plinth Beam", activity1: "Plinth Beam", activity2: "", single: true },
+  { key: "BACK_FILLING_COMPACTION", label: "Back Filling & Compaction", activity1: "Back Filling & Compaction", activity2: "", single: true },
+  { key: "COLUMNS", label: "Columns", activity1: "Columns", activity2: "", single: true },
+  { key: "GROUND_FLOOR_SLAB", label: "Ground Floor Slab", activity1: "Ground Floor Slab", activity2: "", single: true },
+  { key: "FIRST_FLOOR_SLAB", label: "First Floor Slab", activity1: "First Floor Slab", activity2: "", single: true },
+  { key: "SECOND_FLOOR_SLAB", label: "Second Floor Slab", activity1: "Second Floor Slab", activity2: "", single: true },
+];
 
 export default function MasterPlanPage() {
   const navigate = useNavigate();
@@ -426,13 +441,10 @@ export default function MasterPlanPage() {
 
   const handlePlotClick = useCallback(
     (plot: PlotDef) => {
-      const cat = getVillaCategory(plot.villa);
-      if (cat === "landlord") return; // landlord villas disabled
       setSelected(plot);
       setShowBlockForm(false);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeShare]
+    []
   );
 
   const handleCreateSale = useCallback(() => {
@@ -803,6 +815,7 @@ export default function MasterPlanPage() {
         </div>
       </div>
 
+
       {/* No master plan available message */}
       {!projectHasMasterPlan && (
         <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
@@ -814,7 +827,7 @@ export default function MasterPlanPage() {
         </div>
       )}
 
-      {/* Legend — only show when master plan is available */}
+      {/* ===== SALES (colored map + blocking) ===== */}
       {projectHasMasterPlan && (
         <>
           <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs items-center">
@@ -879,23 +892,17 @@ export default function MasterPlanPage() {
 
               {/* Clickable plot overlays */}
               {activePlots.map((plot) => {
-                const cat = getVillaCategory(plot.villa);
                 const isBlocked = blockedVillas.has(plot.villa);
-                const isDisabled = cat === "landlord";
                 const isHovered = hovered === plot.villa;
                 const isSelected = selected?.villa === plot.villa;
 
                 let bg = "rgba(255,255,255,0.01)";
                 let border = "1px solid rgba(0,0,0,0.04)";
-                let cursor = "pointer";
+                const cursor = "pointer";
 
                 if (isBlocked) {
                   bg = "rgba(220, 38, 38, 0.7)";
                   border = "2px solid #b91c1c";
-                } else if (cat === "landlord") {
-                  bg = "rgba(0,0,0,0.01)";
-                  border = "1px solid rgba(0,0,0,0.04)";
-                  cursor = "not-allowed";
                 } else if (isSelected) {
                   bg = "rgba(37, 99, 235, 0.3)";
                   border = "2px solid #2563eb";
@@ -916,7 +923,7 @@ export default function MasterPlanPage() {
                         setShowBlockForm(false);
                         return;
                       }
-                      if (!isDisabled) handlePlotClick(plot);
+                      handlePlotClick(plot);
                     }}
                     onMouseEnter={(e) => {
                       setHovered(plot.villa);
@@ -1244,6 +1251,8 @@ export default function MasterPlanPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
+

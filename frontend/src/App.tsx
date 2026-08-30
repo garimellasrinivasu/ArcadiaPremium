@@ -72,6 +72,7 @@ import GroundLevelWorkPage from "./pages/GroundLevelWorkPage";
 import PaySlipPage from "./pages/PaySlipPage";
 import AccountsPage from "./pages/AccountsPage";
 import InvoiceBookPage from "./pages/InvoiceBookPage";
+import WorkExecutionUpdatesPage from "./pages/WorkExecutionUpdatesPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -119,6 +120,7 @@ export default function App() {
         <Route path="activities/puja-expenses" element={<PujaExpensesPage />} />
         <Route path="activities/initial-sales" element={<InitialSalesPage />} />
         <Route path="activities/master-plan" element={<MasterPlanPage />} />
+        <Route path="activities/work-execution" element={<WorkExecutionUpdatesPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
         <Route path="activities/documents" element={<ProjectDocumentsPage />} />
         <Route path="activities/partner-investment" element={<PartnerInvestmentPage />} />

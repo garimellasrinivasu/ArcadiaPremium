@@ -41,6 +41,7 @@ const menuSections: MenuSection[] = [
       { label: "Finance Spent", path: "/activities/finance-spent", pageKey: "FINANCE_SPENT" },
       { label: "Expenses Summary", path: "/activities/expenses", pageKey: "EXPENSES_SUMMARY" },
       { label: "Master Plan", path: "/activities/master-plan", pageKey: "MASTER_PLAN" },
+      { label: "Work Execution Updates", path: "/activities/work-execution", pageKey: "WORK_EXECUTION" },
       { label: "Site Attendance", path: "/activities/site-attendance", pageKey: "SITE_ATTENDANCE" },
       { label: "Project Documents", path: "/activities/documents", pageKey: "PROJECT_DOCUMENTS" },
       { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
