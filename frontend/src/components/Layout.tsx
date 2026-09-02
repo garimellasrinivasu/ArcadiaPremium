@@ -469,7 +469,7 @@ export default function Layout() {
           lg:transition-none
           shadow-xl lg:shadow-none
         `}>
-          <nav className="space-y-1">
+          <nav className="space-y-1 flex-1 overflow-y-auto">
             {menuSections.map((section) => (
               <CollapsibleSection
                 key={section.label}
@@ -480,24 +480,24 @@ export default function Layout() {
                 viewOnlyPages={viewOnlyPages}
               />
             ))}
-          </nav>
 
-          {/* Personal Documents */}
-          {(isAdmin || allowedPages.has("PERSONAL_DOCUMENTS") || viewOnlyPages.has("PERSONAL_DOCUMENTS")) && (
-            <div className="mb-1">
-              <Link
-                to="/personal-documents"
-                className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold rounded-lg transition ${
-                  location.pathname === "/personal-documents"
-                    ? "bg-teal-100 text-teal-800"
-                    : "text-teal-700 hover:bg-teal-50"
-                }`}
-              >
-                <span className="text-xs font-bold">&#128194;</span>
-                Personal Documents
-              </Link>
-            </div>
-          )}
+            {/* Personal Documents */}
+            {(isAdmin || allowedPages.has("PERSONAL_DOCUMENTS") || viewOnlyPages.has("PERSONAL_DOCUMENTS")) && (
+              <div className="mt-2">
+                <Link
+                  to="/personal-documents"
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold rounded-lg transition ${
+                    location.pathname === "/personal-documents"
+                      ? "bg-teal-100 text-teal-800"
+                      : "text-teal-700 hover:bg-teal-50"
+                  }`}
+                >
+                  <span className="text-xs font-bold">&#128194;</span>
+                  Personal Documents
+                </Link>
+              </div>
+            )}
+          </nav>
 
           {/* Tally — embedded page */}
           <div className="mb-1">
