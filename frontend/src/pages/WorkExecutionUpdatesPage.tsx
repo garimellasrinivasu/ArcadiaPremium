@@ -312,8 +312,8 @@ function ConstructionMapView({
                         width: "100%",
                         height: "100%",
                         background: a1
-                          ? "rgba(34, 197, 94, 0.85)"
-                          : "rgba(180, 180, 180, 0.95)",
+                          ? "rgba(34, 197, 94, 1)"
+                          : "rgba(220, 220, 220, 1)",
                         border: `1px solid ${a1 ? "#16a34a" : "#999"}`,
                         cursor: "pointer",
                         transition: "background 0.2s",
@@ -329,8 +329,8 @@ function ConstructionMapView({
                           width: "50%",
                           height: "100%",
                           background: a1
-                            ? "rgba(34, 197, 94, 0.85)"
-                            : "rgba(180, 180, 180, 0.95)",
+                            ? "rgba(34, 197, 94, 1)"
+                            : "rgba(220, 220, 220, 1)",
                           border: `1px solid ${a1 ? "#16a34a" : "#999"}`,
                           borderRight: "none",
                           cursor: "pointer",
@@ -353,8 +353,8 @@ function ConstructionMapView({
                           width: "50%",
                           height: "100%",
                           background: a2
-                            ? "rgba(34, 197, 94, 0.85)"
-                            : "rgba(180, 180, 180, 0.95)",
+                            ? "rgba(34, 197, 94, 1)"
+                            : "rgba(220, 220, 220, 1)",
                           border: `1px solid ${a2 ? "#16a34a" : "#999"}`,
                           borderLeft: "none",
                           cursor: "pointer",

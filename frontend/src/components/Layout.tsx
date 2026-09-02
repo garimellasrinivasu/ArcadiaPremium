@@ -482,6 +482,23 @@ export default function Layout() {
             ))}
           </nav>
 
+          {/* Personal Documents */}
+          {(isAdmin || allowedPages.has("PERSONAL_DOCUMENTS") || viewOnlyPages.has("PERSONAL_DOCUMENTS")) && (
+            <div className="mb-1">
+              <Link
+                to="/personal-documents"
+                className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold rounded-lg transition ${
+                  location.pathname === "/personal-documents"
+                    ? "bg-teal-100 text-teal-800"
+                    : "text-teal-700 hover:bg-teal-50"
+                }`}
+              >
+                <span className="text-xs font-bold">&#128194;</span>
+                Personal Documents
+              </Link>
+            </div>
+          )}
+
           {/* Tally — embedded page */}
           <div className="mb-1">
             <Link
