@@ -15,10 +15,14 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -27,6 +31,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -173,20 +178,22 @@ public class AttendanceExportService {
 
             // ---- Sheet 3: Detail Records ----
             Sheet detailSheet = wb.createSheet("Detail Records");
+            Drawing<?> drawing = detailSheet.createDrawingPatriarch();
+            CreationHelper helper = wb.getCreationHelper();
             row = 0;
 
             titleRow = detailSheet.createRow(row++);
             titleCell = titleRow.createCell(0);
             titleCell.setCellValue("Site Attendance Report - Detail Records");
             titleCell.setCellStyle(titleStyle);
-            detailSheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
+            detailSheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 16));
 
             dateRow = detailSheet.createRow(row++);
             dateRow.createCell(0).setCellValue("Period: " +
                     report.getFromDate().format(DATE_FMT) + " to " + report.getToDate().format(DATE_FMT));
             row++;
 
-            String[] detailHeaders = {"Date", "Captured At", "Site Name", "Submitted By", "Total Workers", "M-Mastri", "F-Mastri", "M-Helper", "F-Helper", "Remarks", "Approved By"};
+            String[] detailHeaders = {"Photo", "Date", "Captured At", "Site Name", "Work Type", "Mastri Leader", "Submitted By", "Submitted At", "Total Workers", "M-Mastri", "F-Mastri", "M-Helper", "F-Helper", "Status", "Remarks", "Approved By", "Approved At"};
             Row detailHeaderRow = detailSheet.createRow(row++);
             for (int i = 0; i < detailHeaders.length; i++) {
                 Cell c = detailHeaderRow.createCell(i);
@@ -194,22 +201,55 @@ public class AttendanceExportService {
                 c.setCellStyle(headerStyle);
             }
 
+            // Set photo column width (~80px = ~11 chars width)
+            detailSheet.setColumnWidth(0, 3500);
+
             for (AttendanceRecordDto rec : report.getRecords()) {
-                Row r = detailSheet.createRow(row++);
-                createDataCell(r, 0, rec.getAttendanceDate().format(DATE_FMT), dataStyle);
-                createDataCell(r, 1, rec.getCapturedAt() != null ? rec.getCapturedAt().format(DATETIME_FMT) : "", dataStyle);
-                createDataCell(r, 2, rec.getSiteName(), dataStyle);
-                createDataCell(r, 3, rec.getSubmittedByName() != null ? rec.getSubmittedByName() : "", dataStyle);
-                createDataCell(r, 4, rec.getTotalWorkers(), dataStyle);
-                createDataCell(r, 5, rec.getMaleMastriCount(), dataStyle);
-                createDataCell(r, 6, rec.getFemaleMastriCount(), dataStyle);
-                createDataCell(r, 7, rec.getMaleHelperCount(), dataStyle);
-                createDataCell(r, 8, rec.getFemaleHelperCount(), dataStyle);
-                createDataCell(r, 9, rec.getRemarks() != null ? rec.getRemarks() : "", dataStyle);
-                createDataCell(r, 10, rec.getApproverName() != null ? rec.getApproverName() : "", dataStyle);
+                Row r = detailSheet.createRow(row);
+                // Set row height for image (~60px = 45 points)
+                r.setHeightInPoints(55);
+
+                // Column 0: Photo
+                createDataCell(r, 0, "", dataStyle);
+                if (rec.getImageBase64() != null && !rec.getImageBase64().isEmpty()) {
+                    try {
+                        byte[] imgBytes = decodeBase64Image(rec.getImageBase64());
+                        if (imgBytes != null && imgBytes.length > 0) {
+                            int pictureIdx = wb.addPicture(imgBytes, getPictureType(rec.getImageBase64()));
+                            ClientAnchor anchor = helper.createClientAnchor();
+                            anchor.setCol1(0);
+                            anchor.setRow1(row);
+                            anchor.setCol2(1);
+                            anchor.setRow2(row + 1);
+                            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+                            drawing.createPicture(anchor, pictureIdx);
+                        }
+                    } catch (Exception ignored) {
+                        // Skip image if decoding fails
+                    }
+                }
+
+                createDataCell(r, 1, rec.getAttendanceDate().format(DATE_FMT), dataStyle);
+                createDataCell(r, 2, rec.getCapturedAt() != null ? rec.getCapturedAt().format(DATETIME_FMT) : "", dataStyle);
+                createDataCell(r, 3, rec.getSiteName(), dataStyle);
+                createDataCell(r, 4, rec.getAttendanceType() != null ? rec.getAttendanceType() : "REGULAR", dataStyle);
+                createDataCell(r, 5, rec.getMastriLeaderName() != null ? rec.getMastriLeaderName() : "", dataStyle);
+                createDataCell(r, 6, rec.getSubmittedByName() != null ? rec.getSubmittedByName() : "", dataStyle);
+                createDataCell(r, 7, rec.getSubmittedAt() != null ? rec.getSubmittedAt().format(DATETIME_FMT) : "", dataStyle);
+                createDataCell(r, 8, rec.getTotalWorkers(), dataStyle);
+                createDataCell(r, 9, rec.getMaleMastriCount(), dataStyle);
+                createDataCell(r, 10, rec.getFemaleMastriCount(), dataStyle);
+                createDataCell(r, 11, rec.getMaleHelperCount(), dataStyle);
+                createDataCell(r, 12, rec.getFemaleHelperCount(), dataStyle);
+                createDataCell(r, 13, rec.getStatus() != null ? ("APPROVED".equals(rec.getStatus()) ? "Approved" : "REJECTED".equals(rec.getStatus()) ? "Rejected" : "Pending") : "", dataStyle);
+                createDataCell(r, 14, rec.getRemarks() != null ? rec.getRemarks() : "", dataStyle);
+                createDataCell(r, 15, rec.getApproverName() != null ? rec.getApproverName() : "", dataStyle);
+                createDataCell(r, 16, rec.getApprovedAt() != null ? rec.getApprovedAt().format(DATETIME_FMT) : "", dataStyle);
+                row++;
             }
 
-            for (int i = 0; i < detailHeaders.length; i++) detailSheet.autoSizeColumn(i);
+            // Auto-size all columns except photo (col 0, already set)
+            for (int i = 1; i < detailHeaders.length; i++) detailSheet.autoSizeColumn(i);
 
             wb.write(out);
             return out.toByteArray();
@@ -299,23 +339,55 @@ public class AttendanceExportService {
             doc.add(new Paragraph(period, subtitleFont));
             doc.add(new Paragraph(" "));
 
-            PdfPTable detailTable = new PdfPTable(new float[]{1.5f, 1.3f, 2f, 2f, 1f, 1f, 1f, 1f, 1f, 2f, 2f});
+            PdfPTable detailTable = new PdfPTable(new float[]{1.1f, 1f, 0.9f, 1.3f, 0.8f, 1.1f, 1.1f, 1f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.7f, 1.1f, 1.1f, 1f});
             detailTable.setWidthPercentage(100);
 
-            addPdfHeader(detailTable, headerFont, "Date", "Captured", "Site", "Submitted By", "Total", "M-Mastri", "F-Mastri", "M-Helper", "F-Helper", "Remarks", "Approved By");
+            addPdfHeader(detailTable, headerFont, "Photo", "Date", "Captured", "Site", "Work Type", "Mastri Leader", "Submitted By", "Submitted At", "Total", "M-Mastri", "F-Mastri", "M-Helper", "F-Helper", "Status", "Remarks", "Approved By", "Approved At");
             for (AttendanceRecordDto rec : report.getRecords()) {
+                String statusLabel = rec.getStatus() != null
+                        ? ("APPROVED".equals(rec.getStatus()) ? "Approved" : "REJECTED".equals(rec.getStatus()) ? "Rejected" : "Pending")
+                        : "";
+
+                // Photo cell
+                PdfPCell photoCell = new PdfPCell();
+                photoCell.setPadding(2);
+                photoCell.setFixedHeight(50);
+                if (rec.getImageBase64() != null && !rec.getImageBase64().isEmpty()) {
+                    try {
+                        byte[] imgBytes = decodeBase64Image(rec.getImageBase64());
+                        if (imgBytes != null && imgBytes.length > 0) {
+                            com.lowagie.text.Image img = com.lowagie.text.Image.getInstance(imgBytes);
+                            img.scaleToFit(45, 45);
+                            photoCell.setImage(img);
+                            photoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                            photoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                        }
+                    } catch (Exception ignored) {
+                        photoCell.setPhrase(new Phrase("-", dataFont));
+                    }
+                } else {
+                    photoCell.setPhrase(new Phrase("-", dataFont));
+                }
+                detailTable.addCell(photoCell);
+
+                // Remaining data cells
                 addPdfRow(detailTable, dataFont,
                         rec.getAttendanceDate().format(DATE_FMT),
                         rec.getCapturedAt() != null ? rec.getCapturedAt().format(DATETIME_FMT) : "",
                         rec.getSiteName(),
+                        rec.getAttendanceType() != null ? rec.getAttendanceType() : "REGULAR",
+                        rec.getMastriLeaderName() != null ? rec.getMastriLeaderName() : "",
                         rec.getSubmittedByName() != null ? rec.getSubmittedByName() : "",
+                        rec.getSubmittedAt() != null ? rec.getSubmittedAt().format(DATETIME_FMT) : "",
                         String.valueOf(rec.getTotalWorkers()),
                         String.valueOf(rec.getMaleMastriCount()),
                         String.valueOf(rec.getFemaleMastriCount()),
                         String.valueOf(rec.getMaleHelperCount()),
                         String.valueOf(rec.getFemaleHelperCount()),
+                        statusLabel,
                         rec.getRemarks() != null ? rec.getRemarks() : "",
-                        rec.getApproverName() != null ? rec.getApproverName() : "");
+                        rec.getApproverName() != null ? rec.getApproverName() : "",
+                        rec.getApprovedAt() != null ? rec.getApprovedAt().format(DATETIME_FMT) : "");
             }
             doc.add(detailTable);
 
@@ -355,5 +427,31 @@ public class AttendanceExportService {
             cell.setPadding(5);
             table.addCell(cell);
         }
+    }
+
+    // ===================== IMAGE HELPERS =====================
+
+    /**
+     * Decode a base64 data URI (e.g. "data:image/jpeg;base64,/9j/4AAQ...") to raw bytes.
+     */
+    private byte[] decodeBase64Image(String dataUri) {
+        if (dataUri == null || dataUri.isEmpty()) return null;
+        String base64Data;
+        if (dataUri.contains(",")) {
+            base64Data = dataUri.substring(dataUri.indexOf(",") + 1);
+        } else {
+            base64Data = dataUri;
+        }
+        return Base64.getDecoder().decode(base64Data);
+    }
+
+    /**
+     * Determine POI picture type from the data URI mime type.
+     */
+    private int getPictureType(String dataUri) {
+        if (dataUri != null && dataUri.contains("image/png")) {
+            return Workbook.PICTURE_TYPE_PNG;
+        }
+        return Workbook.PICTURE_TYPE_JPEG;
     }
 }

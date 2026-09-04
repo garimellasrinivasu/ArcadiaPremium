@@ -74,6 +74,7 @@ import AccountsPage from "./pages/AccountsPage";
 import InvoiceBookPage from "./pages/InvoiceBookPage";
 import WorkExecutionUpdatesPage from "./pages/WorkExecutionUpdatesPage";
 import PersonalDocumentsPage from "./pages/PersonalDocumentsPage";
+import MastriLeaderAdminPage from "./pages/MastriLeaderAdminPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -134,6 +135,7 @@ export default function App() {
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />
         <Route path="admin/project-estimation" element={<ProjectEstimationPage />} />
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
+        <Route path="admin/mastri-leaders" element={<MastriLeaderAdminPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
         <Route path="accounts/ledger" element={<AccountsPage />} />
         <Route path="accounts/invoice-book" element={<InvoiceBookPage />} />

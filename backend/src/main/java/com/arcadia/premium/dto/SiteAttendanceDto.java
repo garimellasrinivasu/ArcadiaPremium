@@ -18,6 +18,14 @@ public class SiteAttendanceDto {
     private int femaleMastriCount;
     private int maleHelperCount;
     private int femaleHelperCount;
+    private int maleMastriHalfDay;
+    private int femaleMastriHalfDay;
+    private int maleHelperHalfDay;
+    private int femaleHelperHalfDay;
+    private String attendanceType;
+    private Long mastriLeaderId;
+    private String mastriLeaderName;
+    private LocalDateTime captureDateTime;
     private String remarks;
     private String status;
     private Long submittedById;
@@ -62,6 +70,22 @@ public class SiteAttendanceDto {
     public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
     public int getFemaleHelperCount() { return femaleHelperCount; }
     public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
+    public int getMaleMastriHalfDay() { return maleMastriHalfDay; }
+    public void setMaleMastriHalfDay(int v) { this.maleMastriHalfDay = v; }
+    public int getFemaleMastriHalfDay() { return femaleMastriHalfDay; }
+    public void setFemaleMastriHalfDay(int v) { this.femaleMastriHalfDay = v; }
+    public int getMaleHelperHalfDay() { return maleHelperHalfDay; }
+    public void setMaleHelperHalfDay(int v) { this.maleHelperHalfDay = v; }
+    public int getFemaleHelperHalfDay() { return femaleHelperHalfDay; }
+    public void setFemaleHelperHalfDay(int v) { this.femaleHelperHalfDay = v; }
+    public String getAttendanceType() { return attendanceType; }
+    public void setAttendanceType(String attendanceType) { this.attendanceType = attendanceType; }
+    public Long getMastriLeaderId() { return mastriLeaderId; }
+    public void setMastriLeaderId(Long mastriLeaderId) { this.mastriLeaderId = mastriLeaderId; }
+    public String getMastriLeaderName() { return mastriLeaderName; }
+    public void setMastriLeaderName(String mastriLeaderName) { this.mastriLeaderName = mastriLeaderName; }
+    public LocalDateTime getCaptureDateTime() { return captureDateTime; }
+    public void setCaptureDateTime(LocalDateTime captureDateTime) { this.captureDateTime = captureDateTime; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }

@@ -17,6 +17,7 @@ import {
   type AttendanceReportDto,
 } from "../services/attendanceReportService";
 import { projectService, type ProjectDto } from "../services/projectService";
+import { mastriLeaderService, type MastriLeaderDto } from "../services/mastriLeaderService";
 import type { User } from "../types/user";
 
 
@@ -39,12 +40,13 @@ function displayRole(code: string) {
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 
-type Tab = "capture" | "submissions" | "approvals" | "reports";
+type Tab = "capture" | "submissions" | "approvals" | "all-approved" | "reports";
 
 const TAB_LABELS: Record<Tab, string> = {
   capture: "Capture Attendance",
   submissions: "My Submissions",
   approvals: "Pending Approvals",
+  "all-approved": "All Approved",
   reports: "Reports",
 };
 
@@ -67,10 +69,14 @@ export default function SiteAttendancePage() {
 
   // Check if user can see reports (Admin, Partner, or Accounting)
   const canViewReports = ["ADMIN", "PARTNER", "ACCOUNTING"].includes(currentUser?.role?.name ?? "");
+  const isAdmin = currentUser?.role?.name === "ADMIN";
 
-  const visibleTabs: Tab[] = canViewReports
-    ? ["capture", "submissions", "approvals", "reports"]
-    : ["capture", "submissions", "approvals"];
+  const visibleTabs: Tab[] = (() => {
+    const tabs: Tab[] = ["capture", "submissions", "approvals"];
+    if (isAdmin) tabs.push("all-approved");
+    if (canViewReports) tabs.push("reports");
+    return tabs;
+  })();
 
   return (
     <div className="space-y-6">
@@ -97,6 +103,7 @@ export default function SiteAttendancePage() {
       )}
       {tab === "submissions" && <SubmissionsTab key={submissionKey} currentUser={currentUser} />}
       {tab === "approvals" && <ApprovalsTab currentUser={currentUser} />}
+      {tab === "all-approved" && <AllApprovedTab currentUser={currentUser} />}
       {tab === "reports" && <ReportsTab />}
     </div>
   );
@@ -121,17 +128,33 @@ function CaptureTab({
 
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [captureDateTime, setCaptureDateTime] = useState<string | null>(null);
 
+  // Attendance type toggle
+  const [attendanceType, setAttendanceType] = useState<"REGULAR" | "OT">("REGULAR");
+
+  // Mastri Leader
+  const [mastriLeaders, setMastriLeaders] = useState<MastriLeaderDto[]>([]);
+  const [mastriLeaderId, setMastriLeaderId] = useState<number>(0);
+
+  // Full Day counts
   const [maleMastri, setMaleMastri] = useState(0);
   const [femaleMastri, setFemaleMastri] = useState(0);
   const [maleHelper, setMaleHelper] = useState(0);
   const [femaleHelper, setFemaleHelper] = useState(0);
+
+  // Half Day counts
+  const [maleMastriHalf, setMaleMastriHalf] = useState(0);
+  const [femaleMastriHalf, setFemaleMastriHalf] = useState(0);
+  const [maleHelperHalf, setMaleHelperHalf] = useState(0);
+  const [femaleHelperHalf, setFemaleHelperHalf] = useState(0);
+
   const [totalWorkers, setTotalWorkers] = useState(0);
 
   // Auto-update total when breakdown changes
   useEffect(() => {
-    setTotalWorkers(maleMastri + femaleMastri + maleHelper + femaleHelper);
-  }, [maleMastri, femaleMastri, maleHelper, femaleHelper]);
+    setTotalWorkers(maleMastri + femaleMastri + maleHelper + femaleHelper + maleMastriHalf + femaleMastriHalf + maleHelperHalf + femaleHelperHalf);
+  }, [maleMastri, femaleMastri, maleHelper, femaleHelper, maleMastriHalf, femaleMastriHalf, maleHelperHalf, femaleHelperHalf]);
 
   const [siteName, setSiteName] = useState("");
   const [projectList, setProjectList] = useState<ProjectDto[]>([]);
@@ -147,6 +170,11 @@ function CaptureTab({
   const [approverId, setApproverId] = useState<number>(0);
   const approvers = users.filter((u) => u.id !== currentUser?.id && u.active);
 
+  // Load mastri leaders
+  useEffect(() => {
+    mastriLeaderService.getActive().then(setMastriLeaders).catch(() => {});
+  }, []);
+
   // Load the user's approval chain on mount
   useEffect(() => {
     if (!currentUser) return;
@@ -155,7 +183,6 @@ function CaptureTab({
       .getAll()
       .then((chains) => {
         const userRoles = currentUser.role ? [currentUser.role.name] : [];
-        // Find a chain that matches the user's role AND has all steps with users assigned
         const matched = chains.find(
           (c) =>
             c.active &&
@@ -174,7 +201,8 @@ function CaptureTab({
     projectService.getActiveProjects().then((projects) => {
       setProjectList(projects);
       if (projects.length > 0 && !siteName) {
-        setSiteName(projects[0].name);
+        const arcadia = projects.find((p) => p.name.toLowerCase().includes("arcadia"));
+        setSiteName(arcadia ? arcadia.name : projects[0].name);
       }
     }).catch(() => {});
   }, []);
@@ -182,19 +210,16 @@ function CaptureTab({
   /* Start camera */
   const startCamera = useCallback(async () => {
     try {
-      // Check if mediaDevices API is available (requires HTTPS)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Camera API not available. Make sure you are using HTTPS.");
         return;
       }
-      // Try rear camera first (mobile), fall back to any camera (desktop/Mac)
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
         });
       } catch {
-        // Fallback: request any available camera
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
       streamRef.current = stream;
@@ -241,11 +266,8 @@ function CaptureTab({
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImage(dataUrl);
+    setCaptureDateTime(new Date().toISOString());
     stopCamera();
-    setMaleMastri(0);
-    setFemaleMastri(0);
-    setMaleHelper(0);
-    setFemaleHelper(0);
   }, [stopCamera]);
 
   const handleFileUpload = useCallback(
@@ -255,10 +277,7 @@ function CaptureTab({
       const reader = new FileReader();
       reader.onload = () => {
         setCapturedImage(reader.result as string);
-        setMaleMastri(0);
-        setFemaleMastri(0);
-        setMaleHelper(0);
-        setFemaleHelper(0);
+        setCaptureDateTime(new Date().toISOString());
         stopCamera();
       };
       reader.readAsDataURL(file);
@@ -266,9 +285,26 @@ function CaptureTab({
     [stopCamera]
   );
 
+  const resetForm = useCallback(() => {
+    setCapturedImage(null);
+    setCaptureDateTime(null);
+    setMaleMastri(0);
+    setFemaleMastri(0);
+    setMaleHelper(0);
+    setFemaleHelper(0);
+    setMaleMastriHalf(0);
+    setFemaleMastriHalf(0);
+    setMaleHelperHalf(0);
+    setFemaleHelperHalf(0);
+    setTotalWorkers(0);
+    setRemarks("");
+    setMastriLeaderId(0);
+  }, []);
+
   const handleSubmit = useCallback(async () => {
     if (!capturedImage) return alert("Please capture an image first.");
     if (!siteName) return alert("Please select a project / site name.");
+    if (mastriLeaderId === 0) return alert("Please select a Mastri Leader.");
     if (totalWorkers === 0) return alert("Please enter worker counts.");
     if (!myChain && approverId === 0) return alert("Please select an approver.");
 
@@ -278,13 +314,20 @@ function CaptureTab({
         attendanceDate: new Date().toISOString().split("T")[0],
         siteName,
         imageBase64: capturedImage,
-        totalWorkers: totalWorkers,
+        totalWorkers,
         maleMastriCount: maleMastri,
         femaleMastriCount: femaleMastri,
         maleHelperCount: maleHelper,
         femaleHelperCount: femaleHelper,
-        maleCount: maleMastri + maleHelper,
-        femaleCount: femaleMastri + femaleHelper,
+        maleCount: maleMastri + maleHelper + maleMastriHalf + maleHelperHalf,
+        femaleCount: femaleMastri + femaleHelper + femaleMastriHalf + femaleHelperHalf,
+        maleMastriHalfDay: maleMastriHalf,
+        femaleMastriHalfDay: femaleMastriHalf,
+        maleHelperHalfDay: maleHelperHalf,
+        femaleHelperHalfDay: femaleHelperHalf,
+        attendanceType,
+        mastriLeaderId: mastriLeaderId > 0 ? mastriLeaderId : undefined,
+        captureDateTime: captureDateTime || undefined,
         remarks,
       };
       if (!myChain && approverId > 0) {
@@ -292,23 +335,17 @@ function CaptureTab({
       }
       await siteAttendanceService.create(req);
       setSuccess(true);
-      setCapturedImage(null);
-      setMaleMastri(0);
-      setFemaleMastri(0);
-      setMaleHelper(0);
-      setFemaleHelper(0);
-      setTotalWorkers(0);
-      setRemarks("");
+      resetForm();
       setTimeout(() => {
         setSuccess(false);
-        onSubmitSuccess(); // Switch to My Submissions tab
+        onSubmitSuccess();
       }, 1500);
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.message || "Failed to submit.");
     } finally {
       setSubmitting(false);
     }
-  }, [capturedImage, approverId, maleMastri, femaleMastri, maleHelper, femaleHelper, totalWorkers, siteName, remarks, myChain, onSubmitSuccess]);
+  }, [capturedImage, approverId, maleMastri, femaleMastri, maleHelper, femaleHelper, maleMastriHalf, femaleMastriHalf, maleHelperHalf, femaleHelperHalf, totalWorkers, siteName, remarks, myChain, onSubmitSuccess, attendanceType, mastriLeaderId, captureDateTime, resetForm]);
 
   useEffect(() => {
     return () => stopCamera();
@@ -318,13 +355,36 @@ function CaptureTab({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* LEFT — Camera / Image */}
       <div className="space-y-4">
+        {/* REGULAR / OT Toggle */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+          {(["REGULAR", "OT"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setAttendanceType(t)}
+              className={`px-5 py-2 rounded-md text-sm font-semibold transition ${attendanceType === t
+                ? t === "REGULAR" ? "bg-arcadia-600 text-white shadow" : "bg-orange-500 text-white shadow"
+                : "text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {t === "REGULAR" ? "REGULAR (9AM - 6PM)" : "OT (6PM - 9PM)"}
+            </button>
+          ))}
+        </div>
+
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Camera Capture</div>
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <span className="font-semibold text-gray-700">Camera Capture</span>
+            {attendanceType === "OT" && (
+              <span className="text-xs font-semibold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Overtime</span>
+            )}
+          </div>
           <div className="p-4 space-y-4">
             {!capturedImage && !cameraActive && (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
                 <div className="text-6xl text-gray-300">&#128247;</div>
-                <p className="text-gray-500">Capture a photo of workers at the site</p>
+                <p className="text-gray-500">
+                  Capture {attendanceType === "OT" ? "OT (Overtime)" : "Regular"} attendance photo
+                </p>
                 <div className="flex gap-3">
                   <button onClick={startCamera} className="px-5 py-2.5 bg-arcadia-600 text-white rounded-lg font-medium hover:bg-arcadia-700 transition">
                     Open Camera
@@ -354,9 +414,14 @@ function CaptureTab({
             {capturedImage && (
               <div className="space-y-3">
                 <img src={capturedImage} alt="Captured" className="w-full rounded-lg" />
+                {captureDateTime && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Captured: {new Date(captureDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+                  </p>
+                )}
                 <div className="flex gap-3 justify-center">
                   <button
-                    onClick={() => { setCapturedImage(null); }}
+                    onClick={() => { setCapturedImage(null); setCaptureDateTime(null); }}
                     className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                   >
                     Retake
@@ -369,57 +434,106 @@ function CaptureTab({
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      {/* RIGHT — Detection Results & Form */}
+      {/* RIGHT — Worker Details & Form */}
       <div className="space-y-4">
-        {/* Detection Results & Worker Breakdown */}
+        {/* Mastri Leader Dropdown */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Mastri Leader</div>
+          <div className="p-4">
+            <select
+              value={mastriLeaderId}
+              onChange={(e) => setMastriLeaderId(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-arcadia-500"
+            >
+              <option value={0}>-- Select Mastri Leader --</option>
+              {mastriLeaders.map((ml) => (
+                <option key={ml.id} value={ml.id}>{ml.name}{ml.phone ? ` (${ml.phone})` : ""}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Worker Details with Full Day / Half Day */}
         <div className="bg-white rounded-xl border border-gray-200">
           <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Worker Details</div>
           <div className="p-4 space-y-4">
-            {/* Mastri / Helper breakdown */}
-            <p className="text-xs text-gray-500">Enter worker counts below. Total is auto-calculated.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Male - Mastri</label>
-                <input
-                  type="number" min={0} value={maleMastri}
-                  onChange={(e) => { setMaleMastri(Number(e.target.value)); }}
-                  className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-blue-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Female - Mastri</label>
-                <input
-                  type="number" min={0} value={femaleMastri}
-                  onChange={(e) => { setFemaleMastri(Number(e.target.value)); }}
-                  className="w-full border border-pink-200 bg-pink-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-pink-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Male - Helper</label>
-                <input
-                  type="number" min={0} value={maleHelper}
-                  onChange={(e) => { setMaleHelper(Number(e.target.value)); }}
-                  className="w-full border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-indigo-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Female - Helper</label>
-                <input
-                  type="number" min={0} value={femaleHelper}
-                  onChange={(e) => { setFemaleHelper(Number(e.target.value)); }}
-                  className="w-full border border-purple-200 bg-purple-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-purple-700"
-                />
-              </div>
+            <p className="text-xs text-gray-500">Enter Full Day and Half Day counts. Total is auto-calculated.</p>
+
+            {/* Header row */}
+            <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-gray-500">
+              <div></div>
+              <div className="text-center">Full Day</div>
+              <div className="text-center">Half Day</div>
             </div>
 
-            {/* Total Workers — editable, auto-updated from breakdown */}
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Total Workers</label>
+            {/* Male Mastri */}
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-sm text-blue-700 font-medium">Male - Mastri</label>
               <input
-                type="number" min={0} value={totalWorkers}
-                onChange={(e) => setTotalWorkers(Number(e.target.value))}
-                className="w-full border border-green-200 bg-green-50 rounded-lg px-3 py-2.5 text-xl font-bold text-center text-green-700"
+                type="number" min={0} value={maleMastri}
+                onChange={(e) => setMaleMastri(Number(e.target.value))}
+                className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-lg font-bold text-center text-blue-700"
               />
+              <input
+                type="number" min={0} value={maleMastriHalf}
+                onChange={(e) => setMaleMastriHalf(Number(e.target.value))}
+                className="w-full border border-blue-100 bg-blue-50/50 rounded-lg px-3 py-2 text-lg font-bold text-center text-blue-500"
+              />
+            </div>
+
+            {/* Female Mastri */}
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-sm text-pink-700 font-medium">Female - Mastri</label>
+              <input
+                type="number" min={0} value={femaleMastri}
+                onChange={(e) => setFemaleMastri(Number(e.target.value))}
+                className="w-full border border-pink-200 bg-pink-50 rounded-lg px-3 py-2 text-lg font-bold text-center text-pink-700"
+              />
+              <input
+                type="number" min={0} value={femaleMastriHalf}
+                onChange={(e) => setFemaleMastriHalf(Number(e.target.value))}
+                className="w-full border border-pink-100 bg-pink-50/50 rounded-lg px-3 py-2 text-lg font-bold text-center text-pink-500"
+              />
+            </div>
+
+            {/* Male Helper */}
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-sm text-indigo-700 font-medium">Male - Helper</label>
+              <input
+                type="number" min={0} value={maleHelper}
+                onChange={(e) => setMaleHelper(Number(e.target.value))}
+                className="w-full border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 text-lg font-bold text-center text-indigo-700"
+              />
+              <input
+                type="number" min={0} value={maleHelperHalf}
+                onChange={(e) => setMaleHelperHalf(Number(e.target.value))}
+                className="w-full border border-indigo-100 bg-indigo-50/50 rounded-lg px-3 py-2 text-lg font-bold text-center text-indigo-500"
+              />
+            </div>
+
+            {/* Female Helper */}
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-sm text-purple-700 font-medium">Female - Helper</label>
+              <input
+                type="number" min={0} value={femaleHelper}
+                onChange={(e) => setFemaleHelper(Number(e.target.value))}
+                className="w-full border border-purple-200 bg-purple-50 rounded-lg px-3 py-2 text-lg font-bold text-center text-purple-700"
+              />
+              <input
+                type="number" min={0} value={femaleHelperHalf}
+                onChange={(e) => setFemaleHelperHalf(Number(e.target.value))}
+                className="w-full border border-purple-100 bg-purple-50/50 rounded-lg px-3 py-2 text-lg font-bold text-center text-purple-500"
+              />
+            </div>
+
+            {/* Total Workers */}
+            <div className="pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-green-700 font-semibold">Total Workers</label>
+                <div className="text-2xl font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg px-6 py-2">
+                  {totalWorkers}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -442,7 +556,7 @@ function CaptureTab({
               </select>
             </div>
 
-            {/* Approval Chain Info — shown disabled so user sees who it goes to */}
+            {/* Approval Chain Info */}
             {chainLoading ? (
               <div className="text-sm text-gray-400">Loading approval chain...</div>
             ) : myChain ? (
@@ -452,12 +566,9 @@ function CaptureTab({
                   {myChain.steps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-1">
                       {idx > 0 && <span className="text-gray-300">&rarr;</span>}
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${step.blocking ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                        }`}>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${step.blocking ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
                         {step.approverUserName || displayRole(step.approverRoleName)}
-                        <span className="font-normal text-gray-500 ml-1">
-                          ({displayRole(step.approverRoleName)})
-                        </span>
+                        <span className="font-normal text-gray-500 ml-1">({displayRole(step.approverRoleName)})</span>
                       </span>
                     </div>
                   ))}
@@ -467,7 +578,6 @@ function CaptureTab({
                 </p>
               </div>
             ) : (
-              /* Legacy approver dropdown */
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Send for Approval to</label>
                 <select
@@ -502,10 +612,14 @@ function CaptureTab({
 
             <button
               onClick={handleSubmit}
-              disabled={submitting || !capturedImage || totalWorkers === 0}
-              className="w-full bg-arcadia-600 text-white py-3 rounded-lg font-semibold hover:bg-arcadia-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={submitting || !capturedImage || totalWorkers === 0 || mastriLeaderId === 0}
+              className={`w-full py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                attendanceType === "OT"
+                  ? "bg-orange-500 text-white hover:bg-orange-600"
+                  : "bg-arcadia-600 text-white hover:bg-arcadia-700"
+              }`}
             >
-              {submitting ? "Submitting..." : "Submit for Approval"}
+              {submitting ? "Submitting..." : `Submit ${attendanceType === "OT" ? "OT" : "Regular"} Attendance`}
             </button>
           </div>
         </div>
@@ -589,6 +703,46 @@ function ApprovalsTab({ currentUser }: { currentUser: User | null }) {
     <div className="space-y-3">
       {records.map((r) => (
         <AttendanceCard key={r.id} record={r} showApproveActions onActionDone={loadData} currentUser={currentUser} />
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  ALL APPROVED TAB (Admin only)                                     */
+/* ------------------------------------------------------------------ */
+
+function AllApprovedTab({ currentUser }: { currentUser: User | null }) {
+  const [records, setRecords] = useState<SiteAttendanceDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(() => {
+    setLoading(true);
+    siteAttendanceService
+      .getAllApproved()
+      .then(setRecords)
+      .catch(() => { })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-gray-500 py-6">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
+        Loading approved records...
+      </div>
+    );
+  }
+  if (records.length === 0) return <p className="text-gray-500 py-6">No approved records found.</p>;
+
+  return (
+    <div className="space-y-3">
+      {records.map((r) => (
+        <AttendanceCard key={r.id} record={r} showApproveActions={false} currentUser={currentUser} onActionDone={loadData} />
       ))}
     </div>
   );
@@ -685,7 +839,6 @@ function AttendanceCard({
   record,
   showApproveActions,
   onActionDone,
-  // @ts-ignore
   currentUser,
 }: {
   record: SiteAttendanceDto;
@@ -697,8 +850,12 @@ function AttendanceCard({
   const [actionRemarks, setActionRemarks] = useState("");
   const [acting, setActing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const isAdmin = currentUser?.role?.name === "ADMIN";
+  const isSubmitter = currentUser?.id === record.submittedById;
+  const isPreApproval = record.status === "PENDING" || record.status === "IN_APPROVAL";
+  const canEdit = (isSubmitter && isPreApproval) || isAdmin;
 
   const handleAction = async (action: "APPROVED" | "REJECTED") => {
     setActing(true);
@@ -743,18 +900,33 @@ function AttendanceCard({
     showApproveActions &&
     (record.status === "PENDING" || record.status === "IN_APPROVAL");
 
+  const hasHalfDay = (record.maleMastriHalfDay || 0) + (record.femaleMastriHalfDay || 0) + (record.maleHelperHalfDay || 0) + (record.femaleHelperHalfDay || 0) > 0;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div className={`bg-white rounded-xl border p-4 ${record.attendanceType === "OT" ? "border-orange-200" : "border-gray-200"}`}>
       <div className="flex justify-between items-start">
         <div>
-          <div className="font-semibold text-gray-800">{record.siteName}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-800">{record.siteName}</span>
+            {record.attendanceType === "OT" && (
+              <span className="text-xs font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">OT</span>
+            )}
+          </div>
           <div className="text-xs text-gray-500 mt-0.5">
             {record.attendanceDate} &middot; by {record.submittedByName}
           </div>
-          {record.createdAt && (
+          {record.captureDateTime && (
             <div className="text-xs text-gray-400 mt-0.5">
-              Captured: {new Date(record.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+              Captured: {new Date(record.captureDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
             </div>
+          )}
+          {!record.captureDateTime && record.createdAt && (
+            <div className="text-xs text-gray-400 mt-0.5">
+              Submitted: {new Date(record.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+            </div>
+          )}
+          {record.mastriLeaderName && (
+            <div className="text-xs text-arcadia-600 mt-0.5">Mastri Leader: {record.mastriLeaderName}</div>
           )}
           {record.approvalChainName && (
             <div className="text-xs text-arcadia-600 mt-0.5">Chain: {record.approvalChainName}</div>
@@ -770,10 +942,14 @@ function AttendanceCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2 mt-3">
+      {/* Total + Worker counts — Full Day */}
+      <div className="flex items-center justify-between mt-3 mb-1">
+        <span className="text-sm font-semibold text-gray-700">Total Workers: <span className="text-arcadia-800 text-lg">{record.totalWorkers}</span></span>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
         <div className="bg-gray-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-gray-500">Total</div>
-          <div className="text-lg font-bold text-arcadia-800">{record.totalWorkers}</div>
+          <div className="text-xs text-gray-500">Full Day</div>
+          <div className="text-lg font-bold text-arcadia-800">{record.maleMastriCount + record.femaleMastriCount + record.maleHelperCount + record.femaleHelperCount}</div>
         </div>
         <div className="bg-blue-50 rounded-lg p-2 text-center">
           <div className="text-xs text-blue-500">M-Mastri</div>
@@ -792,6 +968,28 @@ function AttendanceCard({
           <div className="text-lg font-bold text-purple-700">{record.femaleHelperCount}</div>
         </div>
       </div>
+
+      {/* Half Day counts if any */}
+      {hasHalfDay && (
+        <div className="grid grid-cols-5 gap-2 mt-1">
+          <div className="rounded-lg p-1 text-center">
+            <div className="text-xs text-gray-400">Half Day</div>
+            <div className="text-sm font-semibold text-gray-500">{(record.maleMastriHalfDay || 0) + (record.femaleMastriHalfDay || 0) + (record.maleHelperHalfDay || 0) + (record.femaleHelperHalfDay || 0)}</div>
+          </div>
+          <div className="bg-blue-50/50 rounded-lg p-1 text-center">
+            <div className="text-sm font-semibold text-blue-500">{record.maleMastriHalfDay || 0}</div>
+          </div>
+          <div className="bg-pink-50/50 rounded-lg p-1 text-center">
+            <div className="text-sm font-semibold text-pink-500">{record.femaleMastriHalfDay || 0}</div>
+          </div>
+          <div className="bg-indigo-50/50 rounded-lg p-1 text-center">
+            <div className="text-sm font-semibold text-indigo-500">{record.maleHelperHalfDay || 0}</div>
+          </div>
+          <div className="bg-purple-50/50 rounded-lg p-1 text-center">
+            <div className="text-sm font-semibold text-purple-500">{record.femaleHelperHalfDay || 0}</div>
+          </div>
+        </div>
+      )}
 
       {/* Approval Chain Progress */}
       {record.approvalSteps && record.approvalSteps.length > 0 && (
@@ -833,10 +1031,18 @@ function AttendanceCard({
           </div>
         ))}
 
-      <div className="mt-3 flex gap-2 items-center">
+      <div className="mt-3 flex gap-2 items-center flex-wrap">
         <button onClick={() => setShowImage(!showImage)} className="text-xs text-arcadia-600 underline">
           {showImage ? "Hide Photo" : "View Photo"}
         </button>
+        {canEdit && (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition"
+          >
+            Edit Counts
+          </button>
+        )}
         {isAdmin && (
           <button
             onClick={handleDelete}
@@ -879,6 +1085,180 @@ function AttendanceCard({
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <EditAttendanceModal
+          record={record}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => { setShowEditModal(false); onActionDone?.(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  EDIT ATTENDANCE MODAL                                              */
+/* ------------------------------------------------------------------ */
+
+function EditAttendanceModal({
+  record,
+  onClose,
+  onSaved,
+}: {
+  record: SiteAttendanceDto;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [maleMastri, setMaleMastri] = useState(record.maleMastriCount);
+  const [femaleMastri, setFemaleMastri] = useState(record.femaleMastriCount);
+  const [maleHelper, setMaleHelper] = useState(record.maleHelperCount);
+  const [femaleHelper, setFemaleHelper] = useState(record.femaleHelperCount);
+  const [maleMastriHalf, setMaleMastriHalf] = useState(record.maleMastriHalfDay || 0);
+  const [femaleMastriHalf, setFemaleMastriHalf] = useState(record.femaleMastriHalfDay || 0);
+  const [maleHelperHalf, setMaleHelperHalf] = useState(record.maleHelperHalfDay || 0);
+  const [femaleHelperHalf, setFemaleHelperHalf] = useState(record.femaleHelperHalfDay || 0);
+  const [editRemarks, setEditRemarks] = useState(record.remarks || "");
+  const [editAttendanceType, setEditAttendanceType] = useState<"REGULAR" | "OT">((record.attendanceType as "REGULAR" | "OT") || "REGULAR");
+  const [saving, setSaving] = useState(false);
+
+  const total = maleMastri + femaleMastri + maleHelper + femaleHelper + maleMastriHalf + femaleMastriHalf + maleHelperHalf + femaleHelperHalf;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const req: CreateSiteAttendanceRequest = {
+        attendanceDate: record.attendanceDate,
+        siteName: record.siteName,
+        imageBase64: record.imageBase64,
+        totalWorkers: total,
+        maleMastriCount: maleMastri,
+        femaleMastriCount: femaleMastri,
+        maleHelperCount: maleHelper,
+        femaleHelperCount: femaleHelper,
+        maleCount: maleMastri + maleHelper + maleMastriHalf + maleHelperHalf,
+        femaleCount: femaleMastri + femaleHelper + femaleMastriHalf + femaleHelperHalf,
+        maleMastriHalfDay: maleMastriHalf,
+        femaleMastriHalfDay: femaleMastriHalf,
+        maleHelperHalfDay: maleHelperHalf,
+        femaleHelperHalfDay: femaleHelperHalf,
+        attendanceType: editAttendanceType,
+        mastriLeaderId: record.mastriLeaderId || undefined,
+        captureDateTime: record.captureDateTime || undefined,
+        remarks: editRemarks,
+      };
+      await siteAttendanceService.edit(record.id, req);
+      onSaved();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || "Failed to save.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
+          <h3 className="text-sm font-semibold text-gray-700">Edit Worker Counts</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none px-2">&times;</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-xs text-gray-500">
+            {record.siteName} &middot; {record.attendanceDate}
+          </p>
+
+          {/* Work Type Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Work Type:</span>
+            {(["REGULAR", "OT"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setEditAttendanceType(t)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition ${editAttendanceType === t
+                  ? t === "REGULAR" ? "bg-arcadia-600 text-white" : "bg-orange-500 text-white"
+                  : "text-gray-500 bg-gray-100 hover:bg-gray-200"
+                }`}
+              >
+                {t === "OT" ? "OT (Overtime)" : "Regular"}
+              </button>
+            ))}
+          </div>
+
+          {/* Header */}
+          <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-gray-500">
+            <div></div>
+            <div className="text-center">Full Day</div>
+            <div className="text-center">Half Day</div>
+          </div>
+
+          {/* Male Mastri */}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-sm text-blue-700 font-medium">Male - Mastri</label>
+            <input type="number" min={0} value={maleMastri} onChange={(e) => setMaleMastri(Number(e.target.value))}
+              className="w-full border border-blue-200 bg-blue-50 rounded-lg px-2 py-2 text-lg font-bold text-center text-blue-700" />
+            <input type="number" min={0} value={maleMastriHalf} onChange={(e) => setMaleMastriHalf(Number(e.target.value))}
+              className="w-full border border-blue-100 bg-blue-50/50 rounded-lg px-2 py-2 text-lg font-bold text-center text-blue-500" />
+          </div>
+
+          {/* Female Mastri */}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-sm text-pink-700 font-medium">Female - Mastri</label>
+            <input type="number" min={0} value={femaleMastri} onChange={(e) => setFemaleMastri(Number(e.target.value))}
+              className="w-full border border-pink-200 bg-pink-50 rounded-lg px-2 py-2 text-lg font-bold text-center text-pink-700" />
+            <input type="number" min={0} value={femaleMastriHalf} onChange={(e) => setFemaleMastriHalf(Number(e.target.value))}
+              className="w-full border border-pink-100 bg-pink-50/50 rounded-lg px-2 py-2 text-lg font-bold text-center text-pink-500" />
+          </div>
+
+          {/* Male Helper */}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-sm text-indigo-700 font-medium">Male - Helper</label>
+            <input type="number" min={0} value={maleHelper} onChange={(e) => setMaleHelper(Number(e.target.value))}
+              className="w-full border border-indigo-200 bg-indigo-50 rounded-lg px-2 py-2 text-lg font-bold text-center text-indigo-700" />
+            <input type="number" min={0} value={maleHelperHalf} onChange={(e) => setMaleHelperHalf(Number(e.target.value))}
+              className="w-full border border-indigo-100 bg-indigo-50/50 rounded-lg px-2 py-2 text-lg font-bold text-center text-indigo-500" />
+          </div>
+
+          {/* Female Helper */}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-sm text-purple-700 font-medium">Female - Helper</label>
+            <input type="number" min={0} value={femaleHelper} onChange={(e) => setFemaleHelper(Number(e.target.value))}
+              className="w-full border border-purple-200 bg-purple-50 rounded-lg px-2 py-2 text-lg font-bold text-center text-purple-700" />
+            <input type="number" min={0} value={femaleHelperHalf} onChange={(e) => setFemaleHelperHalf(Number(e.target.value))}
+              className="w-full border border-purple-100 bg-purple-50/50 rounded-lg px-2 py-2 text-lg font-bold text-center text-purple-500" />
+          </div>
+
+          {/* Total */}
+          <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm font-semibold text-green-700">Total Workers</span>
+            <span className="text-2xl font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg px-6 py-1">{total}</span>
+          </div>
+
+          {/* Remarks */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Remarks</label>
+            <textarea value={editRemarks} onChange={(e) => setEditRemarks(e.target.value)} rows={2}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Optional notes..." />
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition">
+              Cancel
+            </button>
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 bg-arcadia-600 text-white py-2.5 rounded-lg font-semibold hover:bg-arcadia-700 transition disabled:opacity-50">
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1054,7 +1434,7 @@ function ReportsTab() {
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
           <div className="text-4xl text-gray-300 mb-3">&#128202;</div>
           <p className="text-gray-500">Select a date range and click "Search" to view reports.</p>
-          <p className="text-sm text-gray-400 mt-1">Only approved attendance records are included in reports.</p>
+          <p className="text-sm text-gray-400 mt-1">All attendance records (approved and pending) are included in reports.</p>
         </div>
       )}
     </div>
@@ -1122,7 +1502,7 @@ function SiteSummaryTable({ report }: { report: AttendanceReportDto }) {
         </table>
       </div>
       {report.siteSummaries.length === 0 && (
-        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+        <p className="text-center py-8 text-gray-400">No records found for this period.</p>
       )}
     </div>
   );
@@ -1178,7 +1558,7 @@ function DateSummaryTable({ report }: { report: AttendanceReportDto }) {
         </table>
       </div>
       {report.dateSummaries.length === 0 && (
-        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+        <p className="text-center py-8 text-gray-400">No records found for this period.</p>
       )}
     </div>
   );
@@ -1198,14 +1578,19 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Date</th>
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Captured At</th>
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Site</th>
+              <th className="text-center px-3 py-3 font-semibold text-gray-700">Work Type</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Mastri Leader</th>
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Submitted By</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Submitted At</th>
               <th className="text-right px-3 py-3 font-semibold text-gray-700">Total</th>
               <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Mastri</th>
               <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Mastri</th>
               <th className="text-right px-3 py-3 font-semibold text-gray-700">M-Helper</th>
               <th className="text-right px-3 py-3 font-semibold text-gray-700">F-Helper</th>
+              <th className="text-center px-3 py-3 font-semibold text-gray-700">Status</th>
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Remarks</th>
               <th className="text-left px-3 py-3 font-semibold text-gray-700">Approved By</th>
+              <th className="text-left px-3 py-3 font-semibold text-gray-700">Approved At</th>
             </tr>
           </thead>
           <tbody>
@@ -1242,21 +1627,48 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
                   }) : "-"}
                 </td>
                 <td className="px-3 py-2.5">{r.siteName}</td>
+                <td className="px-3 py-2.5 text-center">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    r.attendanceType === "OT" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {r.attendanceType || "REGULAR"}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5">{r.mastriLeaderName || "-"}</td>
                 <td className="px-3 py-2.5">{r.submittedByName}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
+                  {r.submittedAt ? new Date(r.submittedAt).toLocaleString("en-IN", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
+                  }) : "-"}
+                </td>
                 <td className="px-3 py-2.5 text-right font-semibold">{r.totalWorkers}</td>
                 <td className="px-3 py-2.5 text-right">{r.maleMastriCount}</td>
                 <td className="px-3 py-2.5 text-right">{r.femaleMastriCount}</td>
                 <td className="px-3 py-2.5 text-right">{r.maleHelperCount}</td>
                 <td className="px-3 py-2.5 text-right">{r.femaleHelperCount}</td>
+                <td className="px-3 py-2.5 text-center">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    r.status === "APPROVED" ? "bg-green-100 text-green-700"
+                    : r.status === "REJECTED" ? "bg-red-100 text-red-700"
+                    : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {r.status === "APPROVED" ? "Approved" : r.status === "REJECTED" ? "Rejected" : "Pending"}
+                  </span>
+                </td>
                 <td className="px-3 py-2.5 text-gray-500 max-w-[200px] truncate">{r.remarks || "-"}</td>
                 <td className="px-3 py-2.5">{r.approverName || "-"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
+                  {r.approvedAt ? new Date(r.approvedAt).toLocaleString("en-IN", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
+                  }) : "-"}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {report.records.length === 0 && (
-        <p className="text-center py-8 text-gray-400">No approved records found for this period.</p>
+        <p className="text-center py-8 text-gray-400">No records found for this period.</p>
       )}
       {report.records.length > 0 && (
         <div className="border-t px-4 py-2 bg-gray-50 text-xs text-gray-500">

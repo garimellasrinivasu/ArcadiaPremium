@@ -37,11 +37,15 @@ export interface AttendanceRecord {
   femaleMastriCount: number;
   maleHelperCount: number;
   femaleHelperCount: number;
+  attendanceType: string | null;
+  mastriLeaderName: string | null;
   remarks: string;
   submittedByName: string;
   status: string;
+  submittedAt: string | null;
   approverName: string;
   approvedDate: string;
+  approvedAt: string | null;
   imageBase64: string | null;
   capturedAt: string | null;
 }

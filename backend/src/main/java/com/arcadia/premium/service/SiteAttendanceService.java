@@ -6,6 +6,7 @@ import com.arcadia.premium.dto.CreateSiteAttendanceRequest;
 import com.arcadia.premium.dto.SiteAttendanceDto;
 import com.arcadia.premium.model.*;
 import com.arcadia.premium.repository.ApprovalStepRepository;
+import com.arcadia.premium.repository.MastriLeaderRepository;
 import com.arcadia.premium.repository.SiteAttendanceRepository;
 import com.arcadia.premium.repository.UserRepository;
 import org.slf4j.Logger;
@@ -26,17 +27,20 @@ public class SiteAttendanceService {
     private final SiteAttendanceRepository attendanceRepo;
     private final ApprovalStepRepository approvalStepRepo;
     private final UserRepository userRepo;
+    private final MastriLeaderRepository mastriLeaderRepo;
     private final NotificationService notificationService;
     private final ApprovalChainService approvalChainService;
 
     public SiteAttendanceService(SiteAttendanceRepository attendanceRepo,
                                   ApprovalStepRepository approvalStepRepo,
                                   UserRepository userRepo,
+                                  MastriLeaderRepository mastriLeaderRepo,
                                   NotificationService notificationService,
                                   ApprovalChainService approvalChainService) {
         this.attendanceRepo = attendanceRepo;
         this.approvalStepRepo = approvalStepRepo;
         this.userRepo = userRepo;
+        this.mastriLeaderRepo = mastriLeaderRepo;
         this.notificationService = notificationService;
         this.approvalChainService = approvalChainService;
     }
@@ -50,14 +54,16 @@ public class SiteAttendanceService {
         User submitter = userRepo.findByEmail(submitterEmail)
                 .orElseThrow(() -> new RuntimeException("Submitter not found"));
 
-        // Validate: sum of mastri/helper must equal totalWorkers
+        // Validate: sum of full-day + half-day counts must equal totalWorkers
         int enteredSum = req.getMaleMastriCount() + req.getFemaleMastriCount()
-                       + req.getMaleHelperCount() + req.getFemaleHelperCount();
+                       + req.getMaleHelperCount() + req.getFemaleHelperCount()
+                       + req.getMaleMastriHalfDay() + req.getFemaleMastriHalfDay()
+                       + req.getMaleHelperHalfDay() + req.getFemaleHelperHalfDay();
         if (enteredSum != req.getTotalWorkers()) {
-            throw new RuntimeException("Worker count mismatch: M-Mastri(" + req.getMaleMastriCount()
-                + ") + F-Mastri(" + req.getFemaleMastriCount()
-                + ") + M-Helper(" + req.getMaleHelperCount()
-                + ") + F-Helper(" + req.getFemaleHelperCount()
+            throw new RuntimeException("Worker count mismatch: Full Day ("
+                + (req.getMaleMastriCount() + req.getFemaleMastriCount() + req.getMaleHelperCount() + req.getFemaleHelperCount())
+                + ") + Half Day ("
+                + (req.getMaleMastriHalfDay() + req.getFemaleMastriHalfDay() + req.getMaleHelperHalfDay() + req.getFemaleHelperHalfDay())
                 + ") = " + enteredSum + ", but Total Workers = " + req.getTotalWorkers());
         }
 
@@ -70,9 +76,30 @@ public class SiteAttendanceService {
         a.setFemaleMastriCount(req.getFemaleMastriCount());
         a.setMaleHelperCount(req.getMaleHelperCount());
         a.setFemaleHelperCount(req.getFemaleHelperCount());
+        a.setMaleMastriHalfDay(req.getMaleMastriHalfDay());
+        a.setFemaleMastriHalfDay(req.getFemaleMastriHalfDay());
+        a.setMaleHelperHalfDay(req.getMaleHelperHalfDay());
+        a.setFemaleHelperHalfDay(req.getFemaleHelperHalfDay());
         // Auto-compute legacy male/female totals
         a.setMaleCount(req.getMaleMastriCount() + req.getMaleHelperCount());
         a.setFemaleCount(req.getFemaleMastriCount() + req.getFemaleHelperCount());
+        // Attendance type (REGULAR / OT)
+        a.setAttendanceType(req.getAttendanceType() != null ? req.getAttendanceType() : "REGULAR");
+        // Mastri Leader
+        if (req.getMastriLeaderId() != null) {
+            MastriLeader leader = mastriLeaderRepo.findById(req.getMastriLeaderId()).orElse(null);
+            a.setMastriLeader(leader);
+        }
+        // Capture date/time
+        if (req.getCaptureDateTime() != null && !req.getCaptureDateTime().isEmpty()) {
+            try {
+                a.setCaptureDateTime(LocalDateTime.parse(req.getCaptureDateTime()));
+            } catch (Exception e) {
+                a.setCaptureDateTime(LocalDateTime.now());
+            }
+        } else {
+            a.setCaptureDateTime(LocalDateTime.now());
+        }
         a.setRemarks(req.getRemarks());
         a.setSubmittedBy(submitter);
 
@@ -427,6 +454,85 @@ public class SiteAttendanceService {
                 .stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<SiteAttendanceDto> getAllApproved() {
+        return attendanceRepo.findByStatusOrderByCreatedAtDesc("APPROVED")
+                .stream().map(this::toDto).toList();
+    }
+
+    /**
+     * Edit an attendance record's worker counts.
+     * Allowed before approval (by submitter) or anytime by admin.
+     */
+    @Transactional
+    public SiteAttendanceDto edit(Long id, CreateSiteAttendanceRequest req, String editorEmail) {
+        SiteAttendance a = attendanceRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found: " + id));
+
+        User editor = userRepo.findByEmail(editorEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isAdmin = editor.getRoles().stream().anyMatch(r -> "ADMIN".equals(r.getName()));
+        boolean isSubmitter = a.getSubmittedBy().getId().equals(editor.getId());
+        boolean isApproved = "APPROVED".equals(a.getStatus());
+
+        if (isApproved && !isAdmin) {
+            throw new RuntimeException("This record is already approved. Only admin can edit approved records.");
+        }
+        if (!isSubmitter && !isAdmin) {
+            throw new RuntimeException("You can only edit your own submissions.");
+        }
+
+        // Update worker counts
+        a.setMaleMastriCount(req.getMaleMastriCount());
+        a.setFemaleMastriCount(req.getFemaleMastriCount());
+        a.setMaleHelperCount(req.getMaleHelperCount());
+        a.setFemaleHelperCount(req.getFemaleHelperCount());
+        a.setMaleMastriHalfDay(req.getMaleMastriHalfDay());
+        a.setFemaleMastriHalfDay(req.getFemaleMastriHalfDay());
+        a.setMaleHelperHalfDay(req.getMaleHelperHalfDay());
+        a.setFemaleHelperHalfDay(req.getFemaleHelperHalfDay());
+        a.setTotalWorkers(req.getTotalWorkers());
+        a.setMaleCount(req.getMaleMastriCount() + req.getMaleHelperCount());
+        a.setFemaleCount(req.getFemaleMastriCount() + req.getFemaleHelperCount());
+
+        // Update mastri leader if provided
+        if (req.getMastriLeaderId() != null) {
+            MastriLeader leader = mastriLeaderRepo.findById(req.getMastriLeaderId()).orElse(null);
+            a.setMastriLeader(leader);
+        }
+
+        if (req.getRemarks() != null) {
+            a.setRemarks(req.getRemarks());
+        }
+
+        // Reset approval workflow — send back to PENDING for re-approval
+        boolean wasApproved = "APPROVED".equals(a.getStatus()) || "IN_APPROVAL".equals(a.getStatus());
+        a.setStatus("PENDING");
+        a.setApprovedAt(null);
+        a.setCurrentStepOrder(1);
+
+        // Reset all approval steps back to PENDING
+        if (a.getApprovalSteps() != null && !a.getApprovalSteps().isEmpty()) {
+            for (ApprovalStep step : a.getApprovalSteps()) {
+                step.setStatus("PENDING");
+                step.setActedBy(null);
+                step.setRemarks(null);
+                step.setActionAt(null);
+            }
+        }
+
+        // Set first step's approver for display
+        if (a.getApprovalChain() != null && !a.getApprovalChain().getSteps().isEmpty()
+                && a.getApprovalChain().getSteps().get(0).getApproverUser() != null) {
+            a.setApprover(a.getApprovalChain().getSteps().get(0).getApproverUser());
+        }
+
+        a = attendanceRepo.save(a);
+        log.info("Attendance #{} edited by {} — approval reset to PENDING", id, editorEmail);
+        return toDto(a);
+    }
+
     /**
      * Delete an attendance record (admin only).
      * Cascading deletes approval steps via orphanRemoval.
@@ -536,6 +642,16 @@ public class SiteAttendanceService {
         d.setFemaleMastriCount(a.getFemaleMastriCount());
         d.setMaleHelperCount(a.getMaleHelperCount());
         d.setFemaleHelperCount(a.getFemaleHelperCount());
+        d.setMaleMastriHalfDay(a.getMaleMastriHalfDay());
+        d.setFemaleMastriHalfDay(a.getFemaleMastriHalfDay());
+        d.setMaleHelperHalfDay(a.getMaleHelperHalfDay());
+        d.setFemaleHelperHalfDay(a.getFemaleHelperHalfDay());
+        d.setAttendanceType(a.getAttendanceType() != null ? a.getAttendanceType() : "REGULAR");
+        if (a.getMastriLeader() != null) {
+            d.setMastriLeaderId(a.getMastriLeader().getId());
+            d.setMastriLeaderName(a.getMastriLeader().getName());
+        }
+        d.setCaptureDateTime(a.getCaptureDateTime());
         d.setRemarks(a.getRemarks());
         d.setStatus(a.getStatus());
         d.setSubmittedById(a.getSubmittedBy().getId());

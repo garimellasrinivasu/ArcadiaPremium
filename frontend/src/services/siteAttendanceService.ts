@@ -25,6 +25,14 @@ export interface SiteAttendanceDto {
   femaleMastriCount: number;
   maleHelperCount: number;
   femaleHelperCount: number;
+  maleMastriHalfDay: number;
+  femaleMastriHalfDay: number;
+  maleHelperHalfDay: number;
+  femaleHelperHalfDay: number;
+  attendanceType: string;
+  mastriLeaderId: number | null;
+  mastriLeaderName: string | null;
+  captureDateTime: string | null;
   remarks: string;
   status: string;
   submittedById: number;
@@ -53,6 +61,13 @@ export interface CreateSiteAttendanceRequest {
   femaleMastriCount: number;
   maleHelperCount: number;
   femaleHelperCount: number;
+  maleMastriHalfDay: number;
+  femaleMastriHalfDay: number;
+  maleHelperHalfDay: number;
+  femaleHelperHalfDay: number;
+  attendanceType: string;
+  mastriLeaderId?: number;
+  captureDateTime?: string;
   remarks: string;
   approverId?: number;
 }
@@ -80,6 +95,12 @@ export const siteAttendanceService = {
 
   getAll: () =>
     api.get<SiteAttendanceDto[]>("/site-attendance").then((r) => r.data),
+
+  edit: (id: number, req: CreateSiteAttendanceRequest) =>
+    api.put<SiteAttendanceDto>(`/site-attendance/${id}/edit`, req).then((r) => r.data),
+
+  getAllApproved: () =>
+    api.get<SiteAttendanceDto[]>("/site-attendance/all-approved").then((r) => r.data),
 
   deleteRecord: (id: number) =>
     api.delete(`/site-attendance/${id}`).then((r) => r.data),

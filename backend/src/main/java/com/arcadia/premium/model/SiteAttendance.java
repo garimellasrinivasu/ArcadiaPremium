@@ -36,7 +36,7 @@ public class SiteAttendance {
     @Column(nullable = false)
     private int femaleCount;
 
-    // New Mastri/Helper breakdown fields
+    // New Mastri/Helper breakdown fields (full day)
     @Column(columnDefinition = "integer default 0")
     private int maleMastriCount;
 
@@ -48,6 +48,31 @@ public class SiteAttendance {
 
     @Column(columnDefinition = "integer default 0")
     private int femaleHelperCount;
+
+    // Half-day breakdown fields
+    @Column(columnDefinition = "integer default 0")
+    private int maleMastriHalfDay;
+
+    @Column(columnDefinition = "integer default 0")
+    private int femaleMastriHalfDay;
+
+    @Column(columnDefinition = "integer default 0")
+    private int maleHelperHalfDay;
+
+    @Column(columnDefinition = "integer default 0")
+    private int femaleHelperHalfDay;
+
+    // Attendance type: REGULAR or OT (overtime)
+    @Column(columnDefinition = "varchar(20) default 'REGULAR'")
+    private String attendanceType = "REGULAR";
+
+    // Mastri Leader reference
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "mastri_leader_id")
+    private MastriLeader mastriLeader;
+
+    // Capture date/time (when the photo was taken)
+    private LocalDateTime captureDateTime;
 
     private String remarks;
 
@@ -113,6 +138,20 @@ public class SiteAttendance {
     public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
     public int getFemaleHelperCount() { return femaleHelperCount; }
     public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
+    public int getMaleMastriHalfDay() { return maleMastriHalfDay; }
+    public void setMaleMastriHalfDay(int maleMastriHalfDay) { this.maleMastriHalfDay = maleMastriHalfDay; }
+    public int getFemaleMastriHalfDay() { return femaleMastriHalfDay; }
+    public void setFemaleMastriHalfDay(int femaleMastriHalfDay) { this.femaleMastriHalfDay = femaleMastriHalfDay; }
+    public int getMaleHelperHalfDay() { return maleHelperHalfDay; }
+    public void setMaleHelperHalfDay(int maleHelperHalfDay) { this.maleHelperHalfDay = maleHelperHalfDay; }
+    public int getFemaleHelperHalfDay() { return femaleHelperHalfDay; }
+    public void setFemaleHelperHalfDay(int femaleHelperHalfDay) { this.femaleHelperHalfDay = femaleHelperHalfDay; }
+    public String getAttendanceType() { return attendanceType; }
+    public void setAttendanceType(String attendanceType) { this.attendanceType = attendanceType; }
+    public MastriLeader getMastriLeader() { return mastriLeader; }
+    public void setMastriLeader(MastriLeader mastriLeader) { this.mastriLeader = mastriLeader; }
+    public LocalDateTime getCaptureDateTime() { return captureDateTime; }
+    public void setCaptureDateTime(LocalDateTime captureDateTime) { this.captureDateTime = captureDateTime; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getStatus() { return status; }

@@ -59,6 +59,20 @@ public class SiteAttendanceController {
         return ResponseEntity.ok(service.getAll());
     }
 
+    @GetMapping("/all-approved")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'SITE_ATTENDANCE')")
+    public ResponseEntity<List<SiteAttendanceDto>> getAllApproved() {
+        return ResponseEntity.ok(service.getAllApproved());
+    }
+
+    @PutMapping("/{id}/edit")
+    public ResponseEntity<SiteAttendanceDto> edit(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateSiteAttendanceRequest request,
+            Authentication auth) {
+        return ResponseEntity.ok(service.edit(id, request, auth.getName()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'SITE_ATTENDANCE')")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {

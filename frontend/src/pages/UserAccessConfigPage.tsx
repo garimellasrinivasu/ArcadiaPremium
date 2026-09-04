@@ -145,6 +145,7 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "CAPITOL_FUND", label: "Capital Fund", path: "/admin/capitol-fund" },
       { key: "PROJECT_ESTIMATION", label: "Project Estimation", path: "/admin/project-estimation" },
       { key: "USER_ACCESS_CONFIG", label: "User Access Config", path: "/admin/user-access" },
+      { key: "MASTRI_LEADERS", label: "Mastri Leaders", path: "/admin/mastri-leaders" },
     ],
   },
 ];

@@ -21,6 +21,8 @@ public interface SiteAttendanceRepository extends JpaRepository<SiteAttendance, 
 
     List<SiteAttendance> findAllByOrderByCreatedAtDesc();
 
+    List<SiteAttendance> findByStatusOrderByCreatedAtDesc(String status);
+
     /**
      * Find attendance records that are pending approval at a step matching the given role.
      * Used for multi-level approval: finds records where currentStepOrder matches
@@ -45,24 +47,44 @@ public interface SiteAttendanceRepository extends JpaRepository<SiteAttendance, 
 
     long countByApprovalChainId(Long approvalChainId);
 
-    // ---- Report queries (approved records only) ----
+    // ---- Report queries (all non-REJECTED records) ----
 
-    @Query("SELECT a FROM SiteAttendance a WHERE a.status = 'APPROVED' " +
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status <> 'REJECTED' " +
            "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
            "ORDER BY a.attendanceDate DESC, a.siteName ASC")
-    List<SiteAttendance> findApprovedBetweenDates(
+    List<SiteAttendance> findAllBetweenDates(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
 
-    @Query("SELECT a FROM SiteAttendance a WHERE a.status = 'APPROVED' " +
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status <> 'REJECTED' " +
            "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
            "AND LOWER(a.siteName) = LOWER(:siteName) " +
            "ORDER BY a.attendanceDate DESC")
-    List<SiteAttendance> findApprovedBetweenDatesAndSite(
+    List<SiteAttendance> findAllBetweenDatesAndSite(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("siteName") String siteName);
 
-    @Query("SELECT DISTINCT a.siteName FROM SiteAttendance a WHERE a.status = 'APPROVED' ORDER BY a.siteName")
-    List<String> findDistinctApprovedSiteNames();
+    @Query("SELECT DISTINCT a.siteName FROM SiteAttendance a WHERE a.status <> 'REJECTED' ORDER BY a.siteName")
+    List<String> findDistinctAllSiteNames();
+
+    // Filter by mastri leader
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status <> 'REJECTED' " +
+           "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
+           "AND a.mastriLeader.id = :leaderId " +
+           "ORDER BY a.attendanceDate DESC")
+    List<SiteAttendance> findByMastriLeader(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("leaderId") Long leaderId);
+
+    // Filter by attendance type
+    @Query("SELECT a FROM SiteAttendance a WHERE a.status <> 'REJECTED' " +
+           "AND a.attendanceDate BETWEEN :fromDate AND :toDate " +
+           "AND a.attendanceType = :attendanceType " +
+           "ORDER BY a.attendanceDate DESC")
+    List<SiteAttendance> findByType(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("attendanceType") String attendanceType);
 }

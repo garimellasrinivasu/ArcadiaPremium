@@ -151,11 +151,15 @@ public class AttendanceReportDto {
         private int femaleMastriCount;
         private int maleHelperCount;
         private int femaleHelperCount;
+        private String attendanceType;      // REGULAR or OT
+        private String mastriLeaderName;
         private String remarks;
         private String submittedByName;
         private String status;
+        private LocalDateTime submittedAt;      // when the request was submitted
         private String approverName;
         private LocalDate approvedDate;
+        private LocalDateTime approvedAt;       // full approval date+time
         private String imageBase64;
         private LocalDateTime capturedAt;
 
@@ -179,16 +183,24 @@ public class AttendanceReportDto {
         public void setMaleHelperCount(int maleHelperCount) { this.maleHelperCount = maleHelperCount; }
         public int getFemaleHelperCount() { return femaleHelperCount; }
         public void setFemaleHelperCount(int femaleHelperCount) { this.femaleHelperCount = femaleHelperCount; }
+        public String getAttendanceType() { return attendanceType; }
+        public void setAttendanceType(String attendanceType) { this.attendanceType = attendanceType; }
+        public String getMastriLeaderName() { return mastriLeaderName; }
+        public void setMastriLeaderName(String mastriLeaderName) { this.mastriLeaderName = mastriLeaderName; }
         public String getRemarks() { return remarks; }
         public void setRemarks(String remarks) { this.remarks = remarks; }
         public String getSubmittedByName() { return submittedByName; }
         public void setSubmittedByName(String submittedByName) { this.submittedByName = submittedByName; }
+        public LocalDateTime getSubmittedAt() { return submittedAt; }
+        public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
         public String getApproverName() { return approverName; }
         public void setApproverName(String approverName) { this.approverName = approverName; }
         public LocalDate getApprovedDate() { return approvedDate; }
         public void setApprovedDate(LocalDate approvedDate) { this.approvedDate = approvedDate; }
+        public LocalDateTime getApprovedAt() { return approvedAt; }
+        public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
         public String getImageBase64() { return imageBase64; }
         public void setImageBase64(String imageBase64) { this.imageBase64 = imageBase64; }
         public LocalDateTime getCapturedAt() { return capturedAt; }

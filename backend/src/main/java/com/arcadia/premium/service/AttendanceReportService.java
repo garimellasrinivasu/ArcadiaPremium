@@ -25,9 +25,9 @@ public class AttendanceReportService {
         List<SiteAttendance> records;
 
         if (siteName != null && !siteName.isBlank()) {
-            records = attendanceRepo.findApprovedBetweenDatesAndSite(fromDate, toDate, siteName.trim());
+            records = attendanceRepo.findAllBetweenDatesAndSite(fromDate, toDate, siteName.trim());
         } else {
-            records = attendanceRepo.findApprovedBetweenDates(fromDate, toDate);
+            records = attendanceRepo.findAllBetweenDates(fromDate, toDate);
         }
 
         AttendanceReportDto report = new AttendanceReportDto();
@@ -56,7 +56,7 @@ public class AttendanceReportService {
 
     @Transactional(readOnly = true)
     public List<String> getApprovedSiteNames() {
-        return attendanceRepo.findDistinctApprovedSiteNames();
+        return attendanceRepo.findDistinctAllSiteNames();
     }
 
     private List<SiteSummary> buildSiteSummaries(List<SiteAttendance> records) {
@@ -125,8 +125,14 @@ public class AttendanceReportService {
         if (a.getApprover() != null) {
             dto.setApproverName(a.getApprover().getFirstName() + " " + a.getApprover().getLastName());
         }
+        dto.setSubmittedAt(a.getCreatedAt());     // submission datetime
         if (a.getApprovedAt() != null) {
             dto.setApprovedDate(a.getApprovedAt().toLocalDate());
+            dto.setApprovedAt(a.getApprovedAt());   // full approval datetime
+        }
+        dto.setAttendanceType(a.getAttendanceType() != null ? a.getAttendanceType() : "REGULAR");
+        if (a.getMastriLeader() != null) {
+            dto.setMastriLeaderName(a.getMastriLeader().getName());
         }
         dto.setImageBase64(a.getImageBase64());
         dto.setCapturedAt(a.getCreatedAt());
