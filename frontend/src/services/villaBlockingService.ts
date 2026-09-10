@@ -17,7 +17,8 @@ export interface VillaBlockingDto {
 
 export const villaBlockingService = {
   async getAll(projectName?: string): Promise<VillaBlockingDto[]> {
-    const params = projectName ? { projectName } : {};
+    if (!projectName || projectName.trim() === "") return [];
+    const params = { projectName };
     const { data } = await api.get<VillaBlockingDto[]>("/villa-blocking", { params });
     return data;
   },

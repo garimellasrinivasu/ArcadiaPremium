@@ -315,6 +315,7 @@ export default function MasterPlanPage() {
   const [showBlockForm, setShowBlockForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastError, setToastError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Project selection state
@@ -479,6 +480,7 @@ export default function MasterPlanPage() {
         next.set(selected.villa, saved);
         return next;
       });
+      setToastError(false);
       setToast(`${plotLabel(selectedProject)} ${selected.villa} blocked for ${blockName.trim()}`);
       setTimeout(() => setToast(null), 3000);
       setBlockName("");
@@ -494,6 +496,7 @@ export default function MasterPlanPage() {
       const msg =
         axErr?.response?.data?.message ||
         (err instanceof Error ? err.message : "Failed to block villa");
+      setToastError(true);
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
@@ -508,6 +511,7 @@ export default function MasterPlanPage() {
         next.delete(villaNum);
         return next;
       });
+      setToastError(false);
       setToast(`${plotLabel(selectedProject)} ${villaNum} unblocked`);
       setTimeout(() => setToast(null), 3000);
       setSelected(null);
@@ -517,6 +521,7 @@ export default function MasterPlanPage() {
       const msg =
         axErr?.response?.data?.message ||
         (err instanceof Error ? err.message : "Failed to unblock villa");
+      setToastError(true);
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
@@ -552,6 +557,7 @@ export default function MasterPlanPage() {
         next.set(selected.villa, saved);
         return next;
       });
+      setToastError(false);
       setToast(`${plotLabel(selectedProject)} ${selected.villa} details updated`);
       setTimeout(() => setToast(null), 3000);
       setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes("");
@@ -559,6 +565,7 @@ export default function MasterPlanPage() {
     } catch (err: unknown) {
       const axErr = err as any;
       const msg = axErr?.response?.data?.message || (err instanceof Error ? err.message : "Failed to update");
+      setToastError(true);
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
@@ -747,7 +754,7 @@ export default function MasterPlanPage() {
     <div className="space-y-2 sm:space-y-4">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-[100] bg-green-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg shadow-lg text-sm font-medium text-center sm:text-left">
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-[100] ${toastError ? "bg-red-600" : "bg-green-600"} text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg shadow-lg text-sm font-medium text-center sm:text-left`}>
           {toast}
         </div>
       )}
