@@ -427,7 +427,13 @@ function ConstructionMapView({
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-gray-700">Status</label>
                 <button
-                  onClick={() => setModalDone(!modalDone)}
+                  onClick={() => {
+                    const newDone = !modalDone;
+                    setModalDone(newDone);
+                    if (newDone && !modalActualDate) {
+                      setModalActualDate(new Date().toISOString().slice(0, 10));
+                    }
+                  }}
                   className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
                     modalDone
                       ? "bg-green-100 text-green-700 border border-green-300"
@@ -450,55 +456,64 @@ function ConstructionMapView({
                 />
               </div>
 
-              {/* Planned Target Date */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Planned Target Date</label>
-                <input
-                  type="date"
-                  value={modalPlannedDate}
-                  onChange={(e) => setModalPlannedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                />
-              </div>
-
-              {/* Revised Planned Target Date */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Revised Planned Target Date</label>
-                <input
-                  type="date"
-                  value={modalRevisedDate}
-                  onChange={(e) => setModalRevisedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                />
-              </div>
-
-              {/* Delay in Days (auto-calculated) */}
-              {modalPlannedDate && modalRevisedDate && (
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5">
-                  <label className="text-sm font-semibold text-gray-700">Delay in Days</label>
-                  <span className={`text-sm font-bold ${
-                    (() => {
-                      const d = Math.round((new Date(modalRevisedDate).getTime() - new Date(modalPlannedDate).getTime()) / 86400000);
-                      return d > 0 ? "text-red-600" : d < 0 ? "text-green-600" : "text-gray-600";
-                    })()
-                  }`}>
-                    {(() => {
-                      const d = Math.round((new Date(modalRevisedDate).getTime() - new Date(modalPlannedDate).getTime()) / 86400000);
-                      return d > 0 ? `+${d} days` : d < 0 ? `${d} days (ahead)` : "On schedule";
-                    })()}
-                  </span>
+              {/* Row 1: Planned Target Date | Revised Planned Target Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Planned Target Date</label>
+                  <input
+                    type="date"
+                    value={modalPlannedDate}
+                    onChange={(e) => setModalPlannedDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Revised Planned Target Date</label>
+                  <input
+                    type="date"
+                    value={modalRevisedDate}
+                    onChange={(e) => setModalRevisedDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                  />
+                </div>
+              </div>
 
-              {/* Actual Completion Date */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Actual Date of Completion</label>
-                <input
-                  type="date"
-                  value={modalActualDate}
-                  onChange={(e) => setModalActualDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                />
+              {/* Row 2: Actual Date of Completion | Delay in Days */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Actual Date of Completion</label>
+                  <input
+                    type="date"
+                    value={modalActualDate}
+                    onChange={(e) => setModalActualDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Delay in Days</label>
+                  {(() => {
+                    // Calculate delay: Actual Completion Date - Planned Target Date
+                    let delay: number | null = null;
+                    if (modalPlannedDate && modalActualDate && modalPlannedDate.length >= 10 && modalActualDate.length >= 10) {
+                      const planned = new Date(modalPlannedDate + "T00:00:00");
+                      const actual = new Date(modalActualDate + "T00:00:00");
+                      if (!isNaN(planned.getTime()) && !isNaN(actual.getTime())) {
+                        delay = Math.round((actual.getTime() - planned.getTime()) / 86400000);
+                      }
+                    }
+                    // Fallback to backend-calculated value if available
+                    if (delay === null && modalVilla) {
+                      const status = statuses.get(modalVilla.villa);
+                      if (status?.delayInDays != null) delay = Number(status.delayInDays);
+                    }
+                    if (delay !== null) {
+                      const color = delay > 0 ? "bg-red-50 text-red-600 border border-red-200" : delay < 0 ? "bg-green-50 text-green-600 border border-green-200" : "bg-gray-50 text-gray-600 border border-gray-200";
+                      const label = delay > 0 ? `+${delay} days` : delay < 0 ? `${delay} days (ahead)` : "On schedule";
+                      return <div className={`px-3 py-2 rounded-lg text-sm font-bold text-center ${color}`}>{label}</div>;
+                    }
+                    return <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400 text-center">—</div>;
+                  })()}
+                </div>
               </div>
             </div>
 

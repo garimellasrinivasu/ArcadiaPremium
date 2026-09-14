@@ -34,8 +34,8 @@ public class VillaConstructionStatusDto {
         d.incharge = e.getIncharge();
         d.plannedTargetDate = e.getPlannedTargetDate() != null ? e.getPlannedTargetDate().toString() : null;
         d.revisedPlannedDate = e.getRevisedPlannedDate() != null ? e.getRevisedPlannedDate().toString() : null;
-        if (e.getPlannedTargetDate() != null && e.getRevisedPlannedDate() != null) {
-            d.delayInDays = ChronoUnit.DAYS.between(e.getPlannedTargetDate(), e.getRevisedPlannedDate());
+        if (e.getPlannedTargetDate() != null && e.getActualCompletionDate() != null) {
+            d.delayInDays = ChronoUnit.DAYS.between(e.getPlannedTargetDate(), e.getActualCompletionDate());
         }
         d.actualCompletionDate = e.getActualCompletionDate() != null ? e.getActualCompletionDate().toString() : null;
         d.updatedAt = e.getUpdatedAt() != null

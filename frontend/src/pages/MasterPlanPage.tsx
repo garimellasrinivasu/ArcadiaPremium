@@ -432,6 +432,8 @@ export default function MasterPlanPage() {
   // Load blocked villas from backend — reload when project changes
   useEffect(() => {
     if (!selectedProject) return; // wait for project to be set
+    // CRITICAL: clear old project's blocking data immediately to prevent cross-project leakage
+    setBlockedVillas(new Map());
     setLoading(true);
     setSelected(null);
     setShowBlockForm(false);
@@ -443,7 +445,10 @@ export default function MasterPlanPage() {
         list.forEach((b) => map.set(b.villaNumber, b));
         setBlockedVillas(map);
       })
-      .catch(() => {})
+      .catch(() => {
+        // On error, ensure blockedVillas stays empty (already cleared above)
+        setBlockedVillas(new Map());
+      })
       .finally(() => setLoading(false));
   }, [selectedProject]);
 
