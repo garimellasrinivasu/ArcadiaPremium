@@ -66,31 +66,31 @@ const col1Lower: PlotDef[] = [
 // Upper: Plots 33 (top) -> 25 (bottom)
 // Lower: Plots 24 (top) -> 17 (bottom)
 // ---------------------------------------------------------------------------
-const COL2L_LEFT = 37.8;
-const COL2L_WIDTH = 5.2;
+const COL2L_LEFT = 38.1;
+const COL2L_WIDTH = 4.9;
 const COL2L_FACING = "East";
 
 const col2LUpper: PlotDef[] = [
-  { villa: 33, left: COL2L_LEFT, top: 9.1,  width: COL2L_WIDTH, height: 1.9, sqYards: 167, facing: COL2L_FACING },
-  { villa: 32, left: COL2L_LEFT, top: 11.0, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 31, left: COL2L_LEFT, top: 13.1, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 30, left: COL2L_LEFT, top: 15.2, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 29, left: COL2L_LEFT, top: 17.4, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 28, left: COL2L_LEFT, top: 19.4, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 27, left: COL2L_LEFT, top: 21.6, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 26, left: COL2L_LEFT, top: 23.7, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 25, left: COL2L_LEFT, top: 25.8, width: COL2L_WIDTH, height: 2.2, sqYards: 223, facing: COL2L_FACING },
+  { villa: 33, left: COL2L_LEFT, top: 9.7,  width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 32, left: COL2L_LEFT, top: 11.8, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 31, left: COL2L_LEFT, top: 14.0, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 30, left: COL2L_LEFT, top: 16.1, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 29, left: COL2L_LEFT, top: 18.2, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 28, left: COL2L_LEFT, top: 20.3, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 27, left: COL2L_LEFT, top: 22.4, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 26, left: COL2L_LEFT, top: 24.5, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 25, left: COL2L_LEFT, top: 26.6, width: COL2L_WIDTH, height: 2.2, sqYards: 223, facing: COL2L_FACING },
 ];
 
 const col2LLower: PlotDef[] = [
-  { villa: 24, left: COL2L_LEFT, top: 30.5, width: COL2L_WIDTH, height: 2.4, sqYards: 223, facing: COL2L_FACING },
-  { villa: 23, left: COL2L_LEFT, top: 33.0, width: COL2L_WIDTH, height: 2.4, sqYards: 167, facing: COL2L_FACING },
-  { villa: 22, left: COL2L_LEFT, top: 35.3, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 21, left: COL2L_LEFT, top: 37.4, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 20, left: COL2L_LEFT, top: 39.5, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 19, left: COL2L_LEFT, top: 41.7, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 18, left: COL2L_LEFT, top: 43.8, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
-  { villa: 17, left: COL2L_LEFT, top: 45.9, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 24, left: COL2L_LEFT, top: 32.4, width: COL2L_WIDTH, height: 2.1, sqYards: 223, facing: COL2L_FACING },
+  { villa: 23, left: COL2L_LEFT, top: 34.5, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 22, left: COL2L_LEFT, top: 36.6, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 21, left: COL2L_LEFT, top: 38.7, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 20, left: COL2L_LEFT, top: 40.8, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 19, left: COL2L_LEFT, top: 42.9, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 18, left: COL2L_LEFT, top: 45.0, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
+  { villa: 17, left: COL2L_LEFT, top: 47.1, width: COL2L_WIDTH, height: 2.1, sqYards: 167, facing: COL2L_FACING },
 ];
 
 // ---------------------------------------------------------------------------
@@ -99,30 +99,30 @@ const col2LLower: PlotDef[] = [
 // Lower: Plots 43 (top) -> 50 (bottom)
 // ---------------------------------------------------------------------------
 const COL2R_LEFT = 43.0;
-const COL2R_WIDTH = 5.2;
+const COL2R_WIDTH = 5.0;
 const COL2R_FACING = "West";
 
 const col2RUpper: PlotDef[] = [
-  { villa: 34, left: COL2R_LEFT, top: 9.1,  width: COL2R_WIDTH, height: 1.9, sqYards: 167, facing: COL2R_FACING },
-  { villa: 35, left: COL2R_LEFT, top: 11.0, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 36, left: COL2R_LEFT, top: 13.1, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 37, left: COL2R_LEFT, top: 15.2, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 38, left: COL2R_LEFT, top: 17.4, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 39, left: COL2R_LEFT, top: 19.4, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 40, left: COL2R_LEFT, top: 21.6, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 41, left: COL2R_LEFT, top: 23.7, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 42, left: COL2R_LEFT, top: 25.8, width: COL2R_WIDTH, height: 2.2, sqYards: 223, facing: COL2R_FACING },
+  { villa: 34, left: COL2R_LEFT, top: 9.7,  width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 35, left: COL2R_LEFT, top: 11.8, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 36, left: COL2R_LEFT, top: 14.0, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 37, left: COL2R_LEFT, top: 16.1, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 38, left: COL2R_LEFT, top: 18.2, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 39, left: COL2R_LEFT, top: 20.3, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 40, left: COL2R_LEFT, top: 22.4, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 41, left: COL2R_LEFT, top: 24.5, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 42, left: COL2R_LEFT, top: 26.6, width: COL2R_WIDTH, height: 2.2, sqYards: 223, facing: COL2R_FACING },
 ];
 
 const col2RLower: PlotDef[] = [
-  { villa: 43, left: COL2R_LEFT, top: 30.5, width: COL2R_WIDTH, height: 2.4, sqYards: 223, facing: COL2R_FACING },
-  { villa: 44, left: COL2R_LEFT, top: 33.0, width: COL2R_WIDTH, height: 2.4, sqYards: 167, facing: COL2R_FACING },
-  { villa: 45, left: COL2R_LEFT, top: 35.3, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 46, left: COL2R_LEFT, top: 37.4, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 47, left: COL2R_LEFT, top: 39.5, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 48, left: COL2R_LEFT, top: 41.7, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 49, left: COL2R_LEFT, top: 43.8, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
-  { villa: 50, left: COL2R_LEFT, top: 45.9, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 43, left: COL2R_LEFT, top: 32.4, width: COL2R_WIDTH, height: 2.1, sqYards: 223, facing: COL2R_FACING },
+  { villa: 44, left: COL2R_LEFT, top: 34.5, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 45, left: COL2R_LEFT, top: 36.6, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 46, left: COL2R_LEFT, top: 38.7, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 47, left: COL2R_LEFT, top: 40.8, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 48, left: COL2R_LEFT, top: 42.9, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 49, left: COL2R_LEFT, top: 45.0, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
+  { villa: 50, left: COL2R_LEFT, top: 47.1, width: COL2R_WIDTH, height: 2.1, sqYards: 167, facing: COL2R_FACING },
 ];
 
 // ---------------------------------------------------------------------------
@@ -130,33 +130,33 @@ const col2RLower: PlotDef[] = [
 // Upper: Plots 69 (top) -> 60 (bottom)
 // Lower: Plots 59 (top) -> 51 (bottom)
 // ---------------------------------------------------------------------------
-const COL3L_LEFT = 50.9;
-const COL3L_WIDTH = 5.1;
+const COL3L_LEFT = 51.0;
+const COL3L_WIDTH = 5.0;
 const COL3L_FACING = "East";
 
 const col3LUpper: PlotDef[] = [
-  { villa: 69, left: COL3L_LEFT, top: 5.0,  width: COL3L_WIDTH, height: 3.8, sqYards: 167, facing: COL3L_FACING },
-  { villa: 68, left: COL3L_LEFT, top: 8.8,  width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 67, left: COL3L_LEFT, top: 10.9, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 66, left: COL3L_LEFT, top: 13.0, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 65, left: COL3L_LEFT, top: 15.1, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 64, left: COL3L_LEFT, top: 17.2, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 63, left: COL3L_LEFT, top: 19.4, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 62, left: COL3L_LEFT, top: 21.5, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 61, left: COL3L_LEFT, top: 23.6, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 60, left: COL3L_LEFT, top: 25.7, width: COL3L_WIDTH, height: 2.3, sqYards: 204, facing: COL3L_FACING },
+  { villa: 69, left: COL3L_LEFT, top: 5.4,  width: COL3L_WIDTH, height: 2.5, sqYards: 167, facing: COL3L_FACING },
+  { villa: 68, left: COL3L_LEFT, top: 7.9,  width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 67, left: COL3L_LEFT, top: 10.0, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 66, left: COL3L_LEFT, top: 12.1, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 65, left: COL3L_LEFT, top: 14.2, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 64, left: COL3L_LEFT, top: 16.3, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 63, left: COL3L_LEFT, top: 18.4, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 62, left: COL3L_LEFT, top: 20.5, width: COL3L_WIDTH, height: 2.2, sqYards: 167, facing: COL3L_FACING },
+  { villa: 61, left: COL3L_LEFT, top: 22.7, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 60, left: COL3L_LEFT, top: 24.8, width: COL3L_WIDTH, height: 2.1, sqYards: 204, facing: COL3L_FACING },
 ];
 
 const col3LLower: PlotDef[] = [
-  { villa: 59, left: COL3L_LEFT, top: 30.5, width: COL3L_WIDTH, height: 2.3, sqYards: 190, facing: COL3L_FACING },
-  { villa: 58, left: COL3L_LEFT, top: 32.8, width: COL3L_WIDTH, height: 2.2, sqYards: 167, facing: COL3L_FACING },
-  { villa: 57, left: COL3L_LEFT, top: 35.0, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 56, left: COL3L_LEFT, top: 37.1, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 55, left: COL3L_LEFT, top: 39.2, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 54, left: COL3L_LEFT, top: 41.3, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 53, left: COL3L_LEFT, top: 43.4, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 52, left: COL3L_LEFT, top: 45.5, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
-  { villa: 51, left: COL3L_LEFT, top: 47.6, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 59, left: COL3L_LEFT, top: 31.9, width: COL3L_WIDTH, height: 2.1, sqYards: 190, facing: COL3L_FACING },
+  { villa: 58, left: COL3L_LEFT, top: 34.0, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 57, left: COL3L_LEFT, top: 36.1, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 56, left: COL3L_LEFT, top: 38.3, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 55, left: COL3L_LEFT, top: 40.4, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 54, left: COL3L_LEFT, top: 42.5, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 53, left: COL3L_LEFT, top: 44.6, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 52, left: COL3L_LEFT, top: 46.7, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
+  { villa: 51, left: COL3L_LEFT, top: 48.8, width: COL3L_WIDTH, height: 2.1, sqYards: 167, facing: COL3L_FACING },
 ];
 
 // ---------------------------------------------------------------------------
@@ -166,37 +166,37 @@ const col3LLower: PlotDef[] = [
 // Lower: Plots 81 (top) -> 90 (bottom)
 // ---------------------------------------------------------------------------
 const COL3R_LEFT = 56.0;
-const COL3R_WIDTH = 5.1;
+const COL3R_WIDTH = 4.9;
 const COL3R_FACING = "West";
 
 const col3RSpecial: PlotDef[] = [
-  { villa: 70, left: COL3R_LEFT, top: 3.0, width: COL3R_WIDTH, height: 2.7, sqYards: 199, facing: COL3R_FACING },
+  { villa: 70, left: COL3R_LEFT, top: 3.0, width: COL3R_WIDTH, height: 2.4, sqYards: 199, facing: COL3R_FACING },
 ];
 
 const col3RUpper: PlotDef[] = [
-  { villa: 71, left: COL3R_LEFT, top: 5.6,  width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 72, left: COL3R_LEFT, top: 7.8,  width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 73, left: COL3R_LEFT, top: 10.0, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 74, left: COL3R_LEFT, top: 12.2, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 75, left: COL3R_LEFT, top: 14.4, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 76, left: COL3R_LEFT, top: 16.6, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 77, left: COL3R_LEFT, top: 18.8, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 78, left: COL3R_LEFT, top: 21.0, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 79, left: COL3R_LEFT, top: 23.1, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 80, left: COL3R_LEFT, top: 25.3, width: COL3R_WIDTH, height: 2.7, sqYards: 204, facing: COL3R_FACING },
+  { villa: 71, left: COL3R_LEFT, top: 5.4,  width: COL3R_WIDTH, height: 2.5, sqYards: 167, facing: COL3R_FACING },
+  { villa: 72, left: COL3R_LEFT, top: 7.9,  width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 73, left: COL3R_LEFT, top: 10.0, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 74, left: COL3R_LEFT, top: 12.1, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 75, left: COL3R_LEFT, top: 14.2, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 76, left: COL3R_LEFT, top: 16.3, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 77, left: COL3R_LEFT, top: 18.4, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 78, left: COL3R_LEFT, top: 20.5, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
+  { villa: 79, left: COL3R_LEFT, top: 22.7, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 80, left: COL3R_LEFT, top: 24.8, width: COL3R_WIDTH, height: 2.1, sqYards: 204, facing: COL3R_FACING },
 ];
 
 const col3RLower: PlotDef[] = [
-  { villa: 81, left: COL3R_LEFT, top: 30.5, width: COL3R_WIDTH, height: 2.3, sqYards: 190, facing: COL3R_FACING },
-  { villa: 82, left: COL3R_LEFT, top: 32.8, width: COL3R_WIDTH, height: 2.2, sqYards: 167, facing: COL3R_FACING },
-  { villa: 83, left: COL3R_LEFT, top: 35.0, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 84, left: COL3R_LEFT, top: 37.0, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 85, left: COL3R_LEFT, top: 39.2, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 86, left: COL3R_LEFT, top: 41.3, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 87, left: COL3R_LEFT, top: 43.4, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 88, left: COL3R_LEFT, top: 45.5, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 89, left: COL3R_LEFT, top: 47.6, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
-  { villa: 90, left: COL3R_LEFT, top: 49.8, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 81, left: COL3R_LEFT, top: 31.9, width: COL3R_WIDTH, height: 2.1, sqYards: 190, facing: COL3R_FACING },
+  { villa: 82, left: COL3R_LEFT, top: 34.0, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 83, left: COL3R_LEFT, top: 36.1, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 84, left: COL3R_LEFT, top: 38.3, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 85, left: COL3R_LEFT, top: 40.4, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 86, left: COL3R_LEFT, top: 42.5, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 87, left: COL3R_LEFT, top: 44.6, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 88, left: COL3R_LEFT, top: 46.7, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 89, left: COL3R_LEFT, top: 48.8, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
+  { villa: 90, left: COL3R_LEFT, top: 50.9, width: COL3R_WIDTH, height: 2.1, sqYards: 167, facing: COL3R_FACING },
 ];
 
 // ---------------------------------------------------------------------------
@@ -204,35 +204,35 @@ const col3RLower: PlotDef[] = [
 // Upper: Plots 111 (top) -> 101 (bottom)
 // Lower: Plots 100 (top) -> 91 (bottom)
 // ---------------------------------------------------------------------------
-const COL4_LEFT = 64.8;
-const COL4_WIDTH = 5.1;
+const COL4_LEFT = 64.9;
+const COL4_WIDTH = 5.0;
 const COL4_FACING = "West";
 
 const col4Upper: PlotDef[] = [
-  { villa: 111, left: COL4_LEFT, top: 4.6,  width: COL4_WIDTH, height: 2.4, sqYards: 187, facing: COL4_FACING },
-  { villa: 110, left: COL4_LEFT, top: 7.0,  width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 109, left: COL4_LEFT, top: 9.1,  width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 108, left: COL4_LEFT, top: 11.2, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 107, left: COL4_LEFT, top: 13.2, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 106, left: COL4_LEFT, top: 15.3, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 105, left: COL4_LEFT, top: 17.4, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 104, left: COL4_LEFT, top: 19.5, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 103, left: COL4_LEFT, top: 21.6, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 102, left: COL4_LEFT, top: 23.6, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 101, left: COL4_LEFT, top: 25.7, width: COL4_WIDTH, height: 2.3, sqYards: 180, facing: COL4_FACING },
+  { villa: 111, left: COL4_LEFT, top: 5.5,  width: COL4_WIDTH, height: 2.4, sqYards: 187, facing: COL4_FACING },
+  { villa: 110, left: COL4_LEFT, top: 7.9,  width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 109, left: COL4_LEFT, top: 10.0, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 108, left: COL4_LEFT, top: 12.1, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 107, left: COL4_LEFT, top: 14.2, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 106, left: COL4_LEFT, top: 16.3, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 105, left: COL4_LEFT, top: 18.4, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 104, left: COL4_LEFT, top: 20.5, width: COL4_WIDTH, height: 2.2, sqYards: 167, facing: COL4_FACING },
+  { villa: 103, left: COL4_LEFT, top: 22.7, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 102, left: COL4_LEFT, top: 24.8, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 101, left: COL4_LEFT, top: 26.9, width: COL4_WIDTH, height: 2.3, sqYards: 180, facing: COL4_FACING },
 ];
 
 const col4Lower: PlotDef[] = [
-  { villa: 100, left: COL4_LEFT, top: 30.5, width: COL4_WIDTH, height: 2.3, sqYards: 167, facing: COL4_FACING },
-  { villa: 99,  left: COL4_LEFT, top: 32.8, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 98,  left: COL4_LEFT, top: 34.9, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 97,  left: COL4_LEFT, top: 37.0, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 96,  left: COL4_LEFT, top: 39.1, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 95,  left: COL4_LEFT, top: 41.2, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 94,  left: COL4_LEFT, top: 43.4, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 93,  left: COL4_LEFT, top: 45.5, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 92,  left: COL4_LEFT, top: 47.6, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
-  { villa: 91,  left: COL4_LEFT, top: 49.7, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 100, left: COL4_LEFT, top: 31.9, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 99,  left: COL4_LEFT, top: 34.0, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 98,  left: COL4_LEFT, top: 36.1, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 97,  left: COL4_LEFT, top: 38.3, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 96,  left: COL4_LEFT, top: 40.4, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 95,  left: COL4_LEFT, top: 42.5, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 94,  left: COL4_LEFT, top: 44.6, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 93,  left: COL4_LEFT, top: 46.7, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 92,  left: COL4_LEFT, top: 48.8, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
+  { villa: 91,  left: COL4_LEFT, top: 50.9, width: COL4_WIDTH, height: 2.1, sqYards: 167, facing: COL4_FACING },
 ];
 
 // ---------------------------------------------------------------------------
