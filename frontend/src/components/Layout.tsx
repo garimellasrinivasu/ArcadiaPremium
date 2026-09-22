@@ -130,6 +130,7 @@ const menuSections: MenuSection[] = [
       { label: "Project Estimation", path: "/admin/project-estimation", pageKey: "PROJECT_ESTIMATION" },
       { label: "User Access Config", path: "/admin/user-access", pageKey: "USER_ACCESS_CONFIG" },
       { label: "Mastri Leaders", path: "/admin/mastri-leaders", pageKey: "MASTRI_LEADERS" },
+      { label: "Notifications", path: "/admin/notifications", pageKey: "NOTIFICATION_CONFIG" },
     ],
   },
 ];

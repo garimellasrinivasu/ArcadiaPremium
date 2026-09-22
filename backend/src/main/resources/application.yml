@@ -29,12 +29,12 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
-  # Email configuration (Gmail example — update with your SMTP credentials)
+  # Email configuration — Gmail SMTP
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:garimella.srinivasu@gmail.com}
-    password: ${MAIL_PASSWORD:your-app-password-here}
+    password: ${MAIL_PASSWORD:tpcsdzpyqnotslvn}
     properties:
       mail:
         smtp:
@@ -42,9 +42,10 @@ spring:
           starttls:
             enabled: true
             required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+        from: ${MAIL_FROM:garimella.srinivasu@gmail.com}
 
   servlet:
     multipart:
@@ -95,3 +96,10 @@ logging:
   level:
     com.arcadia.premium: DEBUG
     org.springframework.security: INFO
+
+# WhatsApp Cloud API configuration
+whatsapp:
+  api:
+    url: ${WHATSAPP_API_URL:https://graph.facebook.com/v25.0}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:}

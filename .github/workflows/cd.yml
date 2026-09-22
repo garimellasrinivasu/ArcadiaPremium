@@ -61,11 +61,15 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
+          WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: ZOHO_SMTP_PASSWORD
+          envs: ZOHO_SMTP_PASSWORD,WHATSAPP_PHONE_NUMBER_ID,WHATSAPP_ACCESS_TOKEN,MAIL_USERNAME,MAIL_PASSWORD
           command_timeout: 5m
           script: |
             set -e
@@ -75,6 +79,16 @@ jobs:
             chmod 600 ~/.backup_secrets
 
             cd ~/arcadia-app
+
+            # Create/update .env with WhatsApp + Gmail credentials from GitHub Secrets
+            echo "MAIL_HOST=smtp.gmail.com" > .env
+            echo "MAIL_PORT=587" >> .env
+            echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env
+            echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env
+            echo "WHATSAPP_API_URL=https://graph.facebook.com/v25.0" >> .env
+            echo "WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}" >> .env
+            echo "WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}" >> .env
+            chmod 600 .env
 
             # Login to registry
             echo "Logging into GHCR..."
