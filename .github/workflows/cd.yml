@@ -48,13 +48,18 @@ jobs:
 
       - name: Copy Docker Compose to Server
         if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,scripts/"
-          target: "~/arcadia-app"
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          SSH_OPTS="-o StrictHostKeyChecking=no -i /tmp/deploy_key"
+          ssh $SSH_OPTS ${SERVER_USER}@${SERVER_IP} "mkdir -p ~/arcadia-app/scripts"
+          scp $SSH_OPTS docker-compose.yml ${SERVER_USER}@${SERVER_IP}:~/arcadia-app/
+          scp $SSH_OPTS -r scripts/ ${SERVER_USER}@${SERVER_IP}:~/arcadia-app/
+          rm -f /tmp/deploy_key
 
       - name: Deploy via SSH
         if: steps.check_ci.outputs.ready == 'true' || github.event_name == 'workflow_dispatch'
