@@ -158,15 +158,6 @@ export default function NotificationConfigPage() {
     }
   }
 
-  async function handleDownloadExcel() {
-    if (!selectedProject) return;
-    try {
-      await notificationConfigService.downloadExcel(selectedProject);
-    } catch {
-      setError("Failed to download Excel");
-    }
-  }
-
   async function handleDownloadVillaWiseExcel() {
     if (!selectedProject) return;
     try {
