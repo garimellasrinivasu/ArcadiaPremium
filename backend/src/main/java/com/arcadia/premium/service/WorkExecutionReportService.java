@@ -65,11 +65,12 @@ public class WorkExecutionReportService {
 
         for (String phase : PHASES) {
             List<VillaConstructionStatus> statuses = byPhase.getOrDefault(phase, Collections.emptyList());
-            long completed = statuses.stream().filter(s -> s.isActivity1Done() && s.isActivity2Done()).count();
-            long inProgress = statuses.stream().filter(s -> (s.isActivity1Done() || s.isActivity2Done()) && !(s.isActivity1Done() && s.isActivity2Done())).count();
+            // All phases are single-activity: completed = activity1Done
+            long completed = statuses.stream().filter(VillaConstructionStatus::isActivity1Done).count();
+            long inProgress = 0; // single-activity phases have no "in progress" state
             long delayed = statuses.stream().filter(s -> {
                 LocalDate target = s.getRevisedPlannedDate() != null ? s.getRevisedPlannedDate() : s.getPlannedTargetDate();
-                return target != null && target.isBefore(LocalDate.now()) && !(s.isActivity1Done() && s.isActivity2Done());
+                return target != null && target.isBefore(LocalDate.now()) && !s.isActivity1Done();
             }).count();
 
             Map<String, Object> summary = new LinkedHashMap<>();
@@ -78,7 +79,7 @@ public class WorkExecutionReportService {
             summary.put("total", statuses.size());
             summary.put("completed", completed);
             summary.put("inProgress", inProgress);
-            summary.put("notStarted", statuses.size() - completed - inProgress);
+            summary.put("notStarted", statuses.size() - completed);
             summary.put("delayed", delayed);
             phaseSummaries.add(summary);
 
@@ -142,11 +143,12 @@ public class WorkExecutionReportService {
             int rowIdx = 4;
             for (String phase : PHASES) {
                 List<VillaConstructionStatus> statuses = byPhase.getOrDefault(phase, Collections.emptyList());
-                long completed = statuses.stream().filter(s -> s.isActivity1Done() && s.isActivity2Done()).count();
-                long inProgress = statuses.stream().filter(s -> (s.isActivity1Done() || s.isActivity2Done()) && !(s.isActivity1Done() && s.isActivity2Done())).count();
+                // All phases are single-activity: completed = activity1Done
+                long completed = statuses.stream().filter(VillaConstructionStatus::isActivity1Done).count();
+                long inProgress = 0; // single-activity phases have no "in progress" state
                 long delayed = statuses.stream().filter(s -> {
                     LocalDate target = s.getRevisedPlannedDate() != null ? s.getRevisedPlannedDate() : s.getPlannedTargetDate();
-                    return target != null && target.isBefore(LocalDate.now()) && !(s.isActivity1Done() && s.isActivity2Done());
+                    return target != null && target.isBefore(LocalDate.now()) && !s.isActivity1Done();
                 }).count();
 
                 Row row = summarySheet.createRow(rowIdx++);
@@ -154,7 +156,7 @@ public class WorkExecutionReportService {
                 row.createCell(1).setCellValue(statuses.size());
                 row.createCell(2).setCellValue(completed);
                 row.createCell(3).setCellValue(inProgress);
-                row.createCell(4).setCellValue(statuses.size() - completed - inProgress);
+                row.createCell(4).setCellValue(statuses.size() - completed);
                 row.createCell(5).setCellValue(delayed);
             }
 
@@ -188,8 +190,8 @@ public class WorkExecutionReportService {
                     row.createCell(1).setCellValue(s.isActivity1Done() ? "Done" : "Not Done");
                     row.createCell(2).setCellValue(s.isActivity2Done() ? "Done" : "Not Done");
 
-                    String status = (s.isActivity1Done() && s.isActivity2Done()) ? "Completed"
-                            : (s.isActivity1Done() || s.isActivity2Done()) ? "In Progress" : "Not Started";
+                    // All phases are single-activity: only check activity1Done
+                    String status = s.isActivity1Done() ? "Completed" : "Not Started";
                     row.createCell(3).setCellValue(status);
                     row.createCell(4).setCellValue(s.getIncharge() != null ? s.getIncharge() : "");
                     row.createCell(5).setCellValue(s.getPlannedTargetDate() != null ? s.getPlannedTargetDate().format(fmt) : "");
@@ -276,7 +278,7 @@ public class WorkExecutionReportService {
         for (VillaConstructionStatus s : allStatuses) {
             villaPhaseMap
                     .computeIfAbsent(s.getVillaNumber(), k -> new HashMap<>())
-                    .put(s.getPhase(), s.isActivity1Done() && s.isActivity2Done());
+                    .put(s.getPhase(), s.isActivity1Done());
         }
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {

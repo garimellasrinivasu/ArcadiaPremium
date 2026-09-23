@@ -443,16 +443,15 @@ public class SummaryImageGenerator {
 
         for (String phase : PHASES) {
             List<VillaConstructionStatus> statuses = byPhase.getOrDefault(phase, Collections.emptyList());
+            // All phases are single-activity: completed = activity1Done
             long completed = statuses.stream()
-                    .filter(s -> s.isActivity1Done() && s.isActivity2Done()).count();
-            long inProgress = statuses.stream()
-                    .filter(s -> (s.isActivity1Done() || s.isActivity2Done())
-                            && !(s.isActivity1Done() && s.isActivity2Done())).count();
+                    .filter(VillaConstructionStatus::isActivity1Done).count();
+            long inProgress = 0; // single-activity phases have no "in progress" state
             long delayed = statuses.stream().filter(s -> {
                 LocalDate target = s.getRevisedPlannedDate() != null
                         ? s.getRevisedPlannedDate() : s.getPlannedTargetDate();
                 return target != null && target.isBefore(LocalDate.now())
-                        && !(s.isActivity1Done() && s.isActivity2Done());
+                        && !s.isActivity1Done();
             }).count();
 
             Map<String, Object> ps = new LinkedHashMap<>();
@@ -496,8 +495,9 @@ public class SummaryImageGenerator {
         List<Map<String, Object>> phaseList = new ArrayList<>();
         for (String phase : PHASES) {
             List<VillaConstructionStatus> statuses = byPhase.getOrDefault(phase, Collections.emptyList());
+            // All phases are single-activity: completed = activity1Done
             int completed = (int) statuses.stream()
-                    .filter(s -> s.isActivity1Done() && s.isActivity2Done()).count();
+                    .filter(VillaConstructionStatus::isActivity1Done).count();
             clusterCompleted += completed;
 
             Map<String, Object> pd = new LinkedHashMap<>();
