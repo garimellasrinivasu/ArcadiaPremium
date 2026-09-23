@@ -2,7 +2,9 @@ package com.arcadia.premium.service;
 
 import com.arcadia.premium.dto.VillaConstructionStatusDto;
 import com.arcadia.premium.model.VillaConstructionStatus;
+import com.arcadia.premium.model.VillaInchargeLog;
 import com.arcadia.premium.repository.VillaConstructionStatusRepository;
+import com.arcadia.premium.repository.VillaInchargeLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,9 +22,12 @@ public class VillaConstructionStatusService {
     private static final Logger log = LoggerFactory.getLogger(VillaConstructionStatusService.class);
 
     private final VillaConstructionStatusRepository repository;
+    private final VillaInchargeLogRepository inchargeLogRepository;
 
-    public VillaConstructionStatusService(VillaConstructionStatusRepository repository) {
+    public VillaConstructionStatusService(VillaConstructionStatusRepository repository,
+                                          VillaInchargeLogRepository inchargeLogRepository) {
         this.repository = repository;
+        this.inchargeLogRepository = inchargeLogRepository;
     }
 
     public List<VillaConstructionStatusDto> getAllByProject(String projectName) {
@@ -94,6 +99,25 @@ public class VillaConstructionStatusService {
             entity.setActivity1Done(done);
         } else if (activityIndex == 2) {
             entity.setActivity2Done(done);
+        }
+
+        // Log incharge change if different
+        String oldIncharge = entity.getIncharge();
+        String newIncharge = incharge;
+        boolean inchargeChanged = (oldIncharge == null && newIncharge != null && !newIncharge.isEmpty())
+                || (oldIncharge != null && !oldIncharge.equals(newIncharge != null ? newIncharge : ""));
+        if (inchargeChanged) {
+            VillaInchargeLog logEntry = new VillaInchargeLog();
+            logEntry.setProjectName(projectName);
+            logEntry.setVillaNumber(villaNumber);
+            logEntry.setPhase(phase);
+            logEntry.setOldIncharge(oldIncharge != null ? oldIncharge : "");
+            logEntry.setNewIncharge(newIncharge != null ? newIncharge : "");
+            logEntry.setChangedBy(username);
+            logEntry.setChangedAt(LocalDateTime.now());
+            inchargeLogRepository.save(logEntry);
+            log.info("Incharge changed: project={}, villa={}, phase={}, '{}' -> '{}' by {}",
+                    projectName, villaNumber, phase, oldIncharge, newIncharge, username);
         }
 
         entity.setIncharge(incharge);

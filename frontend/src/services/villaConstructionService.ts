@@ -16,6 +16,17 @@ export interface VillaConstructionStatusDto {
   updatedBy?: string;
 }
 
+export interface VillaInchargeLogDto {
+  id: number;
+  projectName: string;
+  villaNumber: number;
+  phase: string;
+  oldIncharge: string;
+  newIncharge: string;
+  changedBy: string;
+  changedAt: string;
+}
+
 export const villaConstructionService = {
   getAllByProject: async (projectName: string): Promise<VillaConstructionStatusDto[]> => {
     const res = await api.get("/villa-construction", { params: { projectName } });
@@ -71,6 +82,16 @@ export const villaConstructionService = {
     projectName: string
   ): Promise<Record<string, VillaConstructionStatusDto[]>> => {
     const res = await api.get("/villa-construction/summary", { params: { projectName } });
+    return res.data;
+  },
+
+  getInchargeLogs: async (
+    projectName: string,
+    villaNumber?: number
+  ): Promise<VillaInchargeLogDto[]> => {
+    const params: Record<string, string | number> = { projectName };
+    if (villaNumber !== undefined) params.villaNumber = villaNumber;
+    const res = await api.get("/villa-construction/incharge-logs", { params });
     return res.data;
   },
 };

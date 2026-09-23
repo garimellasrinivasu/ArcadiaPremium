@@ -131,6 +131,7 @@ const menuSections: MenuSection[] = [
       { label: "User Access Config", path: "/admin/user-access", pageKey: "USER_ACCESS_CONFIG" },
       { label: "Mastri Leaders", path: "/admin/mastri-leaders", pageKey: "MASTRI_LEADERS" },
       { label: "Notifications", path: "/admin/notifications", pageKey: "NOTIFICATION_CONFIG" },
+      { label: "Cluster Incharges", path: "/admin/cluster-incharges", pageKey: "CLUSTER_INCHARGES" },
     ],
   },
 ];

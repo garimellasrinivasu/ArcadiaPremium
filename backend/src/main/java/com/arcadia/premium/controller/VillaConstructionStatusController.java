@@ -1,6 +1,8 @@
 package com.arcadia.premium.controller;
 
 import com.arcadia.premium.dto.VillaConstructionStatusDto;
+import com.arcadia.premium.model.VillaInchargeLog;
+import com.arcadia.premium.repository.VillaInchargeLogRepository;
 import com.arcadia.premium.service.VillaConstructionStatusService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,9 +17,12 @@ import java.util.stream.Collectors;
 public class VillaConstructionStatusController {
 
     private final VillaConstructionStatusService service;
+    private final VillaInchargeLogRepository inchargeLogRepository;
 
-    public VillaConstructionStatusController(VillaConstructionStatusService service) {
+    public VillaConstructionStatusController(VillaConstructionStatusService service,
+                                              VillaInchargeLogRepository inchargeLogRepository) {
         this.service = service;
+        this.inchargeLogRepository = inchargeLogRepository;
     }
 
     @GetMapping
@@ -102,5 +107,18 @@ public class VillaConstructionStatusController {
         Map<String, List<VillaConstructionStatusDto>> grouped = all.stream()
                 .collect(Collectors.groupingBy(VillaConstructionStatusDto::getPhase));
         return ResponseEntity.ok(grouped);
+    }
+
+    @GetMapping("/incharge-logs")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'WORK_EXECUTION')")
+    public ResponseEntity<List<VillaInchargeLog>> getInchargeLogs(
+            @RequestParam String projectName,
+            @RequestParam(required = false) Integer villaNumber) {
+        if (villaNumber != null) {
+            return ResponseEntity.ok(
+                    inchargeLogRepository.findByProjectNameAndVillaNumberOrderByChangedAtDesc(projectName, villaNumber));
+        }
+        return ResponseEntity.ok(
+                inchargeLogRepository.findByProjectNameOrderByChangedAtDesc(projectName));
     }
 }

@@ -76,6 +76,7 @@ import WorkExecutionUpdatesPage from "./pages/WorkExecutionUpdatesPage";
 import PersonalDocumentsPage from "./pages/PersonalDocumentsPage";
 import MastriLeaderAdminPage from "./pages/MastriLeaderAdminPage";
 import NotificationConfigPage from "./pages/NotificationConfigPage";
+import ClusterInchargeAdminPage from "./pages/ClusterInchargeAdminPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -138,6 +139,7 @@ export default function App() {
         <Route path="admin/user-access" element={<UserAccessConfigPage />} />
         <Route path="admin/mastri-leaders" element={<MastriLeaderAdminPage />} />
         <Route path="admin/notifications" element={<NotificationConfigPage />} />
+        <Route path="admin/cluster-incharges" element={<ClusterInchargeAdminPage />} />
         <Route path="reports/attendance" element={<AttendanceReportsPage />} />
         <Route path="accounts/ledger" element={<AccountsPage />} />
         <Route path="accounts/invoice-book" element={<InvoiceBookPage />} />

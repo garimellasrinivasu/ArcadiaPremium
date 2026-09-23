@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { villaConstructionService } from "../services/villaConstructionService";
-import type { VillaConstructionStatusDto } from "../services/villaConstructionService";
+import type { VillaConstructionStatusDto, VillaInchargeLogDto } from "../services/villaConstructionService";
 import {
   ARCADIA_PLOTS,
   CONSTRUCTION_PHASES,
@@ -15,6 +15,7 @@ import {
 import { KALPAVRUKSHA_PLOTS } from "../data/kalpavrukshaPlots";
 import type { PlotDef } from "../data/kalpavrukshaPlots";
 import { ARAVINDHAM_PLOTS } from "../data/aravindhamPlots";
+import { clusterInchargeService, type ClusterInchargeDto } from "../services/clusterInchargeService";
 
 type WETab = "construction" | "summary";
 
@@ -138,6 +139,7 @@ function ConstructionMapView({
   const [statuses, setStatuses] = useState<Map<number, VillaConstructionStatusDto>>(new Map());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [clusterIncharges, setClusterIncharges] = useState<ClusterInchargeDto[]>([]);
 
   // Modal state
   const [modalVilla, setModalVilla] = useState<PlotDef | null>(null);
@@ -147,8 +149,16 @@ function ConstructionMapView({
   const [modalPlannedDate, setModalPlannedDate] = useState("");
   const [modalRevisedDate, setModalRevisedDate] = useState("");
   const [modalActualDate, setModalActualDate] = useState("");
+  const [inchargeLogs, setInchargeLogs] = useState<VillaInchargeLogDto[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const phaseInfo = CONSTRUCTION_PHASES.find((p) => p.key === phase)!;
+
+  // Load cluster incharges once
+  useEffect(() => {
+    clusterInchargeService.getActive().then(setClusterIncharges).catch(() => {});
+  }, []);
 
   // Load statuses for this phase
   useEffect(() => {
@@ -164,16 +174,36 @@ function ConstructionMapView({
       .finally(() => setLoading(false));
   }, [projectName, phase]);
 
+  /** Find cluster incharge name for a villa number */
+  const getClusterIncharge = useCallback((villaNum: number): string => {
+    for (const ci of clusterIncharges) {
+      if (!ci.villaNumbers) continue;
+      const villas = ci.villaNumbers.split(",").map((v) => parseInt(v.trim(), 10));
+      if (villas.includes(villaNum)) return ci.inchargeName;
+    }
+    return "";
+  }, [clusterIncharges]);
+
   const openModal = useCallback((plot: PlotDef, actIdx: number) => {
     const status = statuses.get(plot.villa);
     setModalVilla(plot);
     setModalActivity(actIdx);
     setModalDone(actIdx === 1 ? (status?.activity1Done ?? false) : (status?.activity2Done ?? false));
-    setModalIncharge(status?.incharge ?? "");
+    // Auto-populate incharge from cluster data if no existing incharge saved
+    const existingIncharge = status?.incharge ?? "";
+    setModalIncharge(existingIncharge || getClusterIncharge(plot.villa));
     setModalPlannedDate(status?.plannedTargetDate ?? "");
     setModalRevisedDate(status?.revisedPlannedDate ?? "");
     setModalActualDate(status?.actualCompletionDate ?? "");
-  }, [statuses]);
+    // Reset saved state and fetch incharge change logs for this villa
+    setSaved(false);
+    setInchargeLogs([]);
+    setLogsLoading(true);
+    villaConstructionService.getInchargeLogs(projectName, plot.villa)
+      .then(setInchargeLogs)
+      .catch(() => {})
+      .finally(() => setLogsLoading(false));
+  }, [statuses, getClusterIncharge, projectName]);
 
   const closeModal = useCallback(() => setModalVilla(null), []);
 
@@ -190,14 +220,18 @@ function ConstructionMapView({
         next.set(modalVilla.villa, updated);
         return next;
       });
-      closeModal();
+      setSaved(true);
+      // Refresh incharge logs after save to show latest change
+      villaConstructionService.getInchargeLogs(projectName, modalVilla.villa)
+        .then(setInchargeLogs)
+        .catch(() => {});
     } catch (err: any) {
       console.error("Save failed:", err);
       alert("Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
-  }, [projectName, phase, modalVilla, modalActivity, modalDone, modalIncharge, modalPlannedDate, modalRevisedDate, modalActualDate, closeModal]);
+  }, [projectName, phase, modalVilla, modalActivity, modalDone, modalIncharge, modalPlannedDate, modalRevisedDate, modalActualDate]);
 
   // Count completed activities
   const a1Done = Array.from(statuses.values()).filter((s) => s.activity1Done).length;
@@ -447,14 +481,65 @@ function ConstructionMapView({
               {/* Incharge */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Incharge</label>
-                <input
-                  type="text"
+                <select
                   value={modalIncharge}
                   onChange={(e) => setModalIncharge(e.target.value)}
-                  placeholder="Enter incharge name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-white"
+                >
+                  <option value="">-- Select Incharge --</option>
+                  {clusterIncharges
+                    .filter((ci) => ci.active)
+                    .map((ci) => (
+                      <option key={ci.id} value={ci.inchargeName}>
+                        {ci.inchargeName} (Cluster {ci.clusterNumber})
+                      </option>
+                    ))}
+                  {/* Show current value if it doesn't match any active incharge */}
+                  {modalIncharge &&
+                    !clusterIncharges.some((ci) => ci.active && ci.inchargeName === modalIncharge) && (
+                      <option value={modalIncharge}>{modalIncharge}</option>
+                    )}
+                </select>
               </div>
+
+              {/* Incharge Change Log */}
+              {inchargeLogs.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Incharge Change History
+                  </label>
+                  <div className="max-h-28 overflow-y-auto border border-gray-200 rounded-lg">
+                    <table className="min-w-full text-xs">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="px-2 py-1 text-left text-gray-500 font-medium">From</th>
+                          <th className="px-2 py-1 text-left text-gray-500 font-medium">To</th>
+                          <th className="px-2 py-1 text-left text-gray-500 font-medium">By</th>
+                          <th className="px-2 py-1 text-left text-gray-500 font-medium">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {inchargeLogs.map((log) => (
+                          <tr key={log.id}>
+                            <td className="px-2 py-1 text-red-600">{log.oldIncharge || <span className="text-gray-400 italic">(Not Set)</span>}</td>
+                            <td className="px-2 py-1 text-green-600 font-medium">{log.newIncharge || "—"}</td>
+                            <td className="px-2 py-1 text-gray-600">{log.changedBy}</td>
+                            <td className="px-2 py-1 text-gray-500">
+                              {new Date(log.changedAt).toLocaleDateString("en-IN", {
+                                day: "2-digit", month: "short", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {logsLoading && (
+                <p className="text-xs text-gray-400">Loading change history...</p>
+              )}
 
               {/* Row 1: Planned Target Date | Revised Planned Target Date */}
               <div className="grid grid-cols-2 gap-3">
@@ -523,15 +608,21 @@ function ConstructionMapView({
                 onClick={closeModal}
                 className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100"
               >
-                Cancel
+                {saved ? "Close" : "Cancel"}
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
+              {saved ? (
+                <span className="px-5 py-2 text-sm text-white bg-green-600 rounded-lg font-medium inline-flex items-center gap-1">
+                  Saved &#10003;
+                </span>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-5 py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -609,7 +700,7 @@ function ConstructionSummaryView({
   const overallPercent = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
 
   // Cluster-wise summary
-  const clusterColors = ["#2563eb", "#16a34a", "#d97706"];
+  const clusterColors = ["#2563eb", "#16a34a", "#d97706", "#9333ea"];
   const clusterSummary = ARCADIA_CLUSTERS.map((cluster) => {
     const clusterPlots = plots.filter((p) => cluster.villas.includes(p.villa));
     const clusterTotal = clusterPlots.length * totalActs;
@@ -656,7 +747,7 @@ function ConstructionSummaryView({
       {/* Cluster-wise Summary */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Cluster-wise Summary</div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
           {clusterSummary.map((cluster, idx) => (
             <div key={cluster.name} className="p-4 space-y-3">
               <div className="flex items-center justify-between">

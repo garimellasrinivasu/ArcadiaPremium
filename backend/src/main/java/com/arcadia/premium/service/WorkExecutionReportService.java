@@ -247,7 +247,9 @@ public class WorkExecutionReportService {
     };
     private static final int[] CLUSTER_3 = {
             5,6,7,8,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
-            74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,
+            74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93
+    };
+    private static final int[] CLUSTER_4 = {
             121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,
             175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,
             230,231,232,233,234,235,236,237
@@ -258,6 +260,7 @@ public class WorkExecutionReportService {
         for (int v : CLUSTER_1) VILLA_CLUSTER_MAP.put(v, "C1");
         for (int v : CLUSTER_2) VILLA_CLUSTER_MAP.put(v, "C2");
         for (int v : CLUSTER_3) VILLA_CLUSTER_MAP.put(v, "C3");
+        for (int v : CLUSTER_4) VILLA_CLUSTER_MAP.put(v, "C4");
     }
 
     /**
@@ -373,6 +376,16 @@ public class WorkExecutionReportService {
             c3Font.setFontHeightInPoints((short) 10);
             c3Style.setFont(c3Font);
 
+            XSSFCellStyle c4Style = workbook.createCellStyle();
+            c4Style.cloneStyleFrom(dataCellStyle);
+            c4Style.setFillForegroundColor(new XSSFColor(new byte[]{(byte)0xF3,(byte)0xE8,(byte)0xFF}, null));
+            c4Style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFFont c4Font = workbook.createFont();
+            c4Font.setColor(new XSSFColor(new byte[]{(byte)0x93,(byte)0x33,(byte)0xEA}, null));
+            c4Font.setBold(true);
+            c4Font.setFontHeightInPoints((short) 10);
+            c4Style.setFont(c4Font);
+
             // Status column styles
             XSSFCellStyle statusGreenStyle = workbook.createCellStyle();
             statusGreenStyle.cloneStyleFrom(dataCellStyle);
@@ -446,6 +459,7 @@ public class WorkExecutionReportService {
                     case "C1": clusterCell.setCellStyle(c1Style); break;
                     case "C2": clusterCell.setCellStyle(c2Style); break;
                     case "C3": clusterCell.setCellStyle(c3Style); break;
+                    case "C4": clusterCell.setCellStyle(c4Style); break;
                     default: clusterCell.setCellStyle(dataCellStyle);
                 }
 

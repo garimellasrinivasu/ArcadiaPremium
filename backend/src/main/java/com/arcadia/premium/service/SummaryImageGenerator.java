@@ -40,10 +40,12 @@ public class SummaryImageGenerator {
     private static final Color COLOR_BLUE = new Color(37, 99, 235);            // #2563eb
     private static final Color COLOR_GREEN = new Color(22, 163, 74);           // #16a34a
     private static final Color COLOR_ORANGE = new Color(217, 119, 6);          // #d97706
+    private static final Color COLOR_PURPLE = new Color(147, 51, 234);         // #9333ea
     private static final Color COLOR_RED = new Color(220, 38, 38);             // #dc2626
     private static final Color COLOR_BLUE_LIGHT = new Color(219, 234, 254);    // #dbeafe
     private static final Color COLOR_GREEN_LIGHT = new Color(220, 252, 231);   // #dcfce7
     private static final Color COLOR_ORANGE_LIGHT = new Color(254, 243, 199);  // #fef3c7
+    private static final Color COLOR_PURPLE_LIGHT = new Color(243, 232, 255);  // #f3e8ff
     private static final Color COLOR_PROGRESS_BG = new Color(243, 244, 246);   // #f3f4f6
 
     // --- Phases ---
@@ -88,7 +90,10 @@ public class SummaryImageGenerator {
 
     private static final int[] CLUSTER_3_VILLAS = {
             5,6,7,8,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
-            74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,
+            74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93
+    };
+
+    private static final int[] CLUSTER_4_VILLAS = {
             121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,
             175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,
             230,231,232,233,234,235,236,237
@@ -121,17 +126,19 @@ public class SummaryImageGenerator {
         Set<Integer> villaSet1 = toSet(CLUSTER_1_VILLAS);
         Set<Integer> villaSet2 = toSet(CLUSTER_2_VILLAS);
         Set<Integer> villaSet3 = toSet(CLUSTER_3_VILLAS);
+        Set<Integer> villaSet4 = toSet(CLUSTER_4_VILLAS);
 
         Map<String, Object> cluster1 = buildClusterData("Cluster 1", villaSet1, allStatuses);
         Map<String, Object> cluster2 = buildClusterData("Cluster 2", villaSet2, allStatuses);
         Map<String, Object> cluster3 = buildClusterData("Cluster 3", villaSet3, allStatuses);
+        Map<String, Object> cluster4 = buildClusterData("Cluster 4", villaSet4, allStatuses);
 
         // --- Calculate dynamic image height ---
         // Section 1: Overall progress
         int section1Height = 140;
-        // Section 2: Cluster-wise summary
+        // Section 2: Cluster-wise summary (2 rows of 2 cluster cards)
         int clusterCardHeight = 60 + TOTAL_PHASES * 28 + 20; // header + phase rows + bottom padding
-        int section2Height = 50 + clusterCardHeight + 20; // title + card + gap
+        int section2Height = 50 + clusterCardHeight * 2 + 20 + 20; // title + 2 card rows + inter-row gap + bottom
         // Section 3: Phase-wise summary
         int phaseCardHeight = 100;
         int section3Height = 50 + phaseCardHeight * 2 + 15 + 20; // title + 2 rows + gap between rows + bottom
@@ -163,7 +170,7 @@ public class SummaryImageGenerator {
         // ============================================================
         // SECTION 2: Cluster-wise Summary
         // ============================================================
-        y = drawClusterSection(g, y, cluster1, cluster2, cluster3);
+        y = drawClusterSection(g, y, cluster1, cluster2, cluster3, cluster4);
 
         y += SECTION_GAP;
 
@@ -235,7 +242,7 @@ public class SummaryImageGenerator {
     }
 
     private int drawClusterSection(Graphics2D g, int y, Map<String, Object> c1,
-                                   Map<String, Object> c2, Map<String, Object> c3) {
+                                   Map<String, Object> c2, Map<String, Object> c3, Map<String, Object> c4) {
         int cx = PADDING;
 
         // Section title
@@ -245,20 +252,27 @@ public class SummaryImageGenerator {
         g.drawString("Cluster-wise Summary", cx, y + 18);
         y += 36;
 
-        // 3 cluster cards side by side
+        // 4 cluster cards: 2 per row
         int gap = 20;
-        int totalGaps = gap * 2;
-        int cardW = (IMG_WIDTH - 2 * PADDING - totalGaps) / 3;
+        int cardW = (IMG_WIDTH - 2 * PADDING - gap) / 2;
         int phaseRowHeight = 28;
         int cardH = 70 + TOTAL_PHASES * phaseRowHeight + 10;
 
-        Color[] accentColors = {COLOR_BLUE, COLOR_GREEN, COLOR_ORANGE};
-        Color[] lightColors = {COLOR_BLUE_LIGHT, COLOR_GREEN_LIGHT, COLOR_ORANGE_LIGHT};
+        Color[] accentColors = {COLOR_BLUE, COLOR_GREEN, COLOR_ORANGE, COLOR_PURPLE};
+        Color[] lightColors = {COLOR_BLUE_LIGHT, COLOR_GREEN_LIGHT, COLOR_ORANGE_LIGHT, COLOR_PURPLE_LIGHT};
         @SuppressWarnings("unchecked")
-        Map<String, Object>[] clusters = new Map[]{c1, c2, c3};
+        Map<String, Object>[] clusters = new Map[]{c1, c2, c3, c4};
 
-        for (int i = 0; i < 3; i++) {
+        // Row 1: clusters 1 & 2
+        for (int i = 0; i < 2; i++) {
             int cardX = PADDING + i * (cardW + gap);
+            drawClusterCard(g, cardX, y, cardW, cardH, clusters[i], accentColors[i], lightColors[i], phaseRowHeight);
+        }
+        y += cardH + gap;
+
+        // Row 2: clusters 3 & 4
+        for (int i = 2; i < 4; i++) {
+            int cardX = PADDING + (i - 2) * (cardW + gap);
             drawClusterCard(g, cardX, y, cardW, cardH, clusters[i], accentColors[i], lightColors[i], phaseRowHeight);
         }
 
