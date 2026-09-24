@@ -44,6 +44,8 @@ function FolderTreeNode({
   onSelect,
   expandedIds,
   onToggle,
+  canShare,
+  onShare,
 }: {
   folder: FolderDto;
   depth: number;
@@ -51,6 +53,8 @@ function FolderTreeNode({
   onSelect: (id: number) => void;
   expandedIds: Set<number>;
   onToggle: (id: number) => void;
+  canShare?: boolean;
+  onShare?: (folder: { id: number; name: string }) => void;
 }) {
   const isSelected = selectedFolderId === folder.id;
   const isExpanded = expandedIds.has(folder.id);
@@ -59,7 +63,7 @@ function FolderTreeNode({
   return (
     <div>
       <div
-        className={`flex items-center gap-1 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition
+        className={`group/tree flex items-center gap-1 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition
           ${isSelected ? "bg-arcadia-100 text-arcadia-800 font-semibold" : "hover:bg-gray-100 text-gray-700"}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(folder.id)}
@@ -75,7 +79,19 @@ function FolderTreeNode({
           <span className="w-4 flex-shrink-0" />
         )}
         <span className="flex-shrink-0">{isExpanded && hasChildren ? "\u{1F4C2}" : "\u{1F4C1}"}</span>
-        <span className="truncate">{folder.name}</span>
+        <span className="truncate flex-1">{folder.name}</span>
+        {canShare && onShare && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onShare({ id: folder.id, name: folder.name }); }}
+            className="hidden group-hover/tree:inline-flex items-center justify-center w-5 h-5 text-gray-400 hover:text-arcadia-600 flex-shrink-0"
+            title={`Share "${folder.name}"`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M13 4.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zm2.5-1a1 1 0 100 2 1 1 0 000-2zM13 15.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zm2.5-1a1 1 0 100 2 1 1 0 000-2zM2 10a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zm2.5-1a1 1 0 100 2 1 1 0 000-2z"/>
+              <path d="M6.72 8.72l5.06-2.94M6.72 11.28l5.06 2.94" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+            </svg>
+          </button>
+        )}
       </div>
       {isExpanded && hasChildren && (
         <div>
@@ -88,6 +104,8 @@ function FolderTreeNode({
               onSelect={onSelect}
               expandedIds={expandedIds}
               onToggle={onToggle}
+              canShare={canShare}
+              onShare={onShare}
             />
           ))}
         </div>
@@ -1864,6 +1882,8 @@ export default function ProjectDocumentsPage() {
                   onSelect={(id) => { handleFolderSelect(id); setShowFolderPanel(false); }}
                   expandedIds={expandedIds}
                   onToggle={toggleExpand}
+                  canShare={!isViewOnly && isAdminOrPartner}
+                  onShare={(f) => setSharingFolder(f)}
                 />
               ))}
 
