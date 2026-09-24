@@ -24,19 +24,22 @@ public class WorkExecutionReportService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkExecutionReportService.class);
 
+    private static final int TOTAL_VILLAS = 237;
+
     private static final String[] PHASES = {
-            "EXCAVATION", "PCC_PUTTINGS", "NECK_COLUMNS", "PLINTH_BEAM",
-            "BACK_FILLING_COMPACTION", "COLUMNS", "GROUND_FLOOR_SLAB",
+            "EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION",
+            "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB",
             "FIRST_FLOOR_SLAB", "SECOND_FLOOR_SLAB"
     };
 
     private static final Map<String, String> PHASE_LABELS = new LinkedHashMap<>();
     static {
         PHASE_LABELS.put("EXCAVATION", "Excavation");
-        PHASE_LABELS.put("PCC_PUTTINGS", "PCC & Puttings");
+        PHASE_LABELS.put("PCC", "PCC");
+        PHASE_LABELS.put("FOOTINGS", "Footings");
         PHASE_LABELS.put("NECK_COLUMNS", "Neck Columns");
-        PHASE_LABELS.put("PLINTH_BEAM", "Plinth Beam");
         PHASE_LABELS.put("BACK_FILLING_COMPACTION", "Back Filling & Compaction");
+        PHASE_LABELS.put("PLINTH_BEAM", "Plinth Beam");
         PHASE_LABELS.put("COLUMNS", "Columns");
         PHASE_LABELS.put("GROUND_FLOOR_SLAB", "Ground Floor Slab");
         PHASE_LABELS.put("FIRST_FLOOR_SLAB", "First Floor Slab");
@@ -76,16 +79,16 @@ public class WorkExecutionReportService {
             Map<String, Object> summary = new LinkedHashMap<>();
             summary.put("phase", phase);
             summary.put("phaseLabel", PHASE_LABELS.getOrDefault(phase, phase));
-            summary.put("total", statuses.size());
+            summary.put("total", TOTAL_VILLAS);
             summary.put("completed", completed);
             summary.put("inProgress", inProgress);
-            summary.put("notStarted", statuses.size() - completed);
+            summary.put("notStarted", TOTAL_VILLAS - completed);
             summary.put("delayed", delayed);
             phaseSummaries.add(summary);
 
             totalCompleted += completed;
             totalInProgress += inProgress;
-            totalNotStarted += (statuses.size() - completed - inProgress);
+            totalNotStarted += (TOTAL_VILLAS - completed - inProgress);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -153,10 +156,10 @@ public class WorkExecutionReportService {
 
                 Row row = summarySheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(PHASE_LABELS.getOrDefault(phase, phase));
-                row.createCell(1).setCellValue(statuses.size());
+                row.createCell(1).setCellValue(TOTAL_VILLAS);
                 row.createCell(2).setCellValue(completed);
                 row.createCell(3).setCellValue(inProgress);
-                row.createCell(4).setCellValue(statuses.size() - completed);
+                row.createCell(4).setCellValue(TOTAL_VILLAS - completed);
                 row.createCell(5).setCellValue(delayed);
             }
 
@@ -221,17 +224,6 @@ public class WorkExecutionReportService {
             return new byte[0];
         }
     }
-
-    // --- Correct 10-phase definitions (matching frontend) ---
-    private static final String[] PHASES_10 = {
-            "EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION",
-            "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_SLAB"
-    };
-
-    private static final String[] PHASE_10_LABELS = {
-            "Excavation", "PCC", "Footings", "Neck Columns", "Back Filling & Compaction",
-            "Plinth Beam", "Columns", "Ground Floor Slab", "First Floor Slab", "Second Floor Slab"
-    };
 
     // --- Cluster definitions ---
     private static final int[] CLUSTER_1 = {
@@ -433,7 +425,7 @@ public class WorkExecutionReportService {
             headers[0] = "Villa";
             headers[1] = "Cluster";
             for (int i = 0; i < 10; i++) {
-                headers[i + 2] = PHASE_10_LABELS[i];
+                headers[i + 2] = PHASE_LABELS.getOrDefault(PHASES[i], PHASES[i]);
             }
             headers[12] = "Status";
 
@@ -468,7 +460,7 @@ public class WorkExecutionReportService {
                 // Phase columns
                 int completedCount = 0;
                 for (int p = 0; p < 10; p++) {
-                    String phase = PHASES_10[p];
+                    String phase = PHASES[p];
                     boolean done = phaseStatus.getOrDefault(phase, false);
                     Cell phaseCell = row.createCell(p + 2);
                     if (done) {
