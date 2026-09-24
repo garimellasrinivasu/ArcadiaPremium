@@ -85,6 +85,7 @@ public class FolderPermissionService {
     /**
      * Get all permissions for a folder, with user names resolved.
      */
+    @Transactional(readOnly = true)
     public List<FolderPermissionDto> getPermissionsForFolder(Long folderId) {
         List<FolderPermission> permissions = permissionRepository.findByFolderId(folderId);
         return permissions.stream().map(fp -> {

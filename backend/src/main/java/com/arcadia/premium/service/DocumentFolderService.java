@@ -123,21 +123,9 @@ public class DocumentFolderService {
             return result;
         }
 
-        // Non-admin: filter by access
-        // Load admin/partner emails so their folders are visible to everyone
-        Set<String> adminPartnerEmails = new java.util.HashSet<>();
-        try {
-            List<User> allUsers = userRepository.findAll();
-            for (User u : allUsers) {
-                if (u.getRole() != null && ("ADMIN".equals(u.getRole().getName()) || "PARTNER".equals(u.getRole().getName()))) {
-                    adminPartnerEmails.add(u.getEmail().toLowerCase());
-                }
-            }
-        } catch (Exception e) {
-            log.warn("getTree: failed to load admin/partner emails: {}", e.getMessage());
-        }
-
+        // Non-admin: filter by access — only show folders the user created or has explicit permission for
         Set<Long> accessibleIds = new java.util.HashSet<>(userPermMap.keySet());
+        Set<String> adminPartnerEmails = java.util.Collections.emptySet(); // no longer bypass by creator role
         List<DocumentFolderDto> result = roots.stream()
                 .map(root -> filterTreeByAccess(root, userEmail, accessibleIds, userPermMap, isAdmin, adminPartnerEmails))
                 .filter(Objects::nonNull)
