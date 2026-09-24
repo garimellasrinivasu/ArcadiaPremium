@@ -4,6 +4,7 @@ import com.arcadia.premium.model.VillaConstructionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,7 @@ public interface VillaConstructionStatusRepository extends JpaRepository<VillaCo
 
     Optional<VillaConstructionStatus> findByProjectNameAndVillaNumberAndPhase(
             String projectName, Integer villaNumber, String phase);
+
+    List<VillaConstructionStatus> findByProjectNameAndActivity1DoneAndUpdatedAtAfter(
+            String projectName, boolean activity1Done, LocalDateTime after);
 }

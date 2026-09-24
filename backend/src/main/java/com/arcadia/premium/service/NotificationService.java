@@ -208,6 +208,15 @@ public class NotificationService {
             log.error("Failed to generate summary image: {}", e.getMessage());
         }
 
+        // Generate latest updates image (daily delta — last 24 hours)
+        byte[] latestUpdatesImage = null;
+        try {
+            latestUpdatesImage = summaryImageGenerator.generateLatestUpdatesImage(projectName);
+            log.info("Latest updates image generated: {} bytes", latestUpdatesImage != null ? latestUpdatesImage.length : 0);
+        } catch (Exception e) {
+            log.error("Failed to generate latest updates image: {}", e.getMessage());
+        }
+
         List<Map<String, Object>> results = new ArrayList<>();
 
         // Send to WhatsApp recipients
@@ -225,6 +234,14 @@ public class NotificationService {
                         recipient.getRecipientValue(), summaryImage,
                         "Work Execution Summary - " + projectName + " - " + dateStr);
                 result.put("imageSent", imgResult.get("success"));
+            }
+
+            // Send latest updates image (daily delta)
+            if (latestUpdatesImage != null && latestUpdatesImage.length > 0) {
+                Map<String, Object> updatesResult = whatsAppService.sendImage(
+                        recipient.getRecipientValue(), latestUpdatesImage,
+                        "Latest Updates (Last 24hrs) - " + projectName + " - " + dateStr);
+                result.put("latestUpdatesSent", updatesResult.get("success"));
             }
 
             // Send Villa-wise Status Excel
@@ -251,7 +268,7 @@ public class NotificationService {
                     emailAddresses,
                     "Work Execution Updates - " + projectName + " - " + dateStr,
                     buildHtmlEmailBody(projectName),
-                    summaryImage,
+                    summaryImage, latestUpdatesImage,
                     villaWiseExcel, villaWiseFileName);
 
             for (NotificationConfig recipient : emailRecipients) {
@@ -274,6 +291,7 @@ public class NotificationService {
 
     private boolean sendEmailWithImageAndAttachments(List<String> toAddresses, String subject,
                                                      String htmlBody, byte[] summaryImage,
+                                                     byte[] latestUpdatesImage,
                                                      byte[] villaWiseExcel, String villaWiseFileName) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -282,27 +300,44 @@ public class NotificationService {
             helper.setTo(toAddresses.toArray(new String[0]));
             helper.setSubject(subject);
 
-            // Build HTML with inline summary image
-            String fullHtml = htmlBody;
-            if (summaryImage != null && summaryImage.length > 0) {
-                fullHtml = "<html><body style='font-family: Arial, sans-serif;'>" +
-                        "<h2 style='color: #1a56db;'>Work Execution Summary Dashboard</h2>" +
-                        "<img src='cid:summaryImage' style='max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;' />" +
-                        "<hr style='border: 1px solid #eee; margin: 20px 0;'/>" +
-                        htmlBody.replace("<html><body style='font-family: Arial, sans-serif;'>", "")
-                                .replace("</body></html>", "") +
-                        "</body></html>";
-            }
-            helper.setText(fullHtml, true);
+            // Build HTML with inline summary image + latest updates image
+            StringBuilder fullHtml = new StringBuilder();
+            fullHtml.append("<html><body style='font-family: Arial, sans-serif;'>");
 
-            // Add inline summary image
+            if (summaryImage != null && summaryImage.length > 0) {
+                fullHtml.append("<h2 style='color: #1a56db;'>Work Execution Summary Dashboard</h2>");
+                fullHtml.append("<img src='cid:summaryImage' style='max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;' />");
+                fullHtml.append("<hr style='border: 1px solid #eee; margin: 20px 0;'/>");
+            }
+
+            if (latestUpdatesImage != null && latestUpdatesImage.length > 0) {
+                fullHtml.append("<h2 style='color: #16a34a;'>Latest Updates (Last 24 Hours)</h2>");
+                fullHtml.append("<img src='cid:latestUpdatesImage' style='max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;' />");
+                fullHtml.append("<hr style='border: 1px solid #eee; margin: 20px 0;'/>");
+            }
+
+            // Append the table-based summary
+            String bodyContent = htmlBody.replace("<html><body style='font-family: Arial, sans-serif;'>", "")
+                    .replace("</body></html>", "");
+            fullHtml.append(bodyContent);
+            fullHtml.append("</body></html>");
+
+            helper.setText(fullHtml.toString(), true);
+
+            // Add inline images
             if (summaryImage != null && summaryImage.length > 0) {
                 helper.addInline("summaryImage", new ByteArrayResource(summaryImage), "image/png");
             }
+            if (latestUpdatesImage != null && latestUpdatesImage.length > 0) {
+                helper.addInline("latestUpdatesImage", new ByteArrayResource(latestUpdatesImage), "image/png");
+            }
 
-            // Attach summary image as downloadable file too
+            // Attach images as downloadable files
             if (summaryImage != null && summaryImage.length > 0) {
                 helper.addAttachment("WorkExecution_Summary.png", new ByteArrayResource(summaryImage), "image/png");
+            }
+            if (latestUpdatesImage != null && latestUpdatesImage.length > 0) {
+                helper.addAttachment("Latest_Updates.png", new ByteArrayResource(latestUpdatesImage), "image/png");
             }
 
             if (villaWiseExcel != null && villaWiseExcel.length > 0) {
@@ -311,7 +346,7 @@ public class NotificationService {
             }
 
             mailSender.send(message);
-            log.info("Email with summary image sent to {} recipients: {}", toAddresses.size(), subject);
+            log.info("Email with summary + latest updates sent to {} recipients: {}", toAddresses.size(), subject);
             return true;
         } catch (Exception e) {
             log.error("Failed to send email with image: {}", e.getMessage(), e);

@@ -12,6 +12,7 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -559,5 +560,228 @@ public class SummaryImageGenerator {
             set.add(v);
         }
         return set;
+    }
+
+    // ================================================================
+    // Latest Updates Image (daily delta)
+    // ================================================================
+
+    /**
+     * Generate a PNG image showing work completed since yesterday (last 24 hours).
+     * Shows phase-wise counts with villa numbers for each phase.
+     */
+    public byte[] generateLatestUpdatesImage(String projectName) {
+        LocalDateTime since = LocalDateTime.now().minusHours(24);
+
+        // Query activities completed in the last 24 hours
+        List<VillaConstructionStatus> recentlyCompleted = repository
+                .findByProjectNameAndActivity1DoneAndUpdatedAtAfter(projectName, true, since);
+
+        // Group by phase -> list of villa numbers
+        Map<String, List<Integer>> phaseVillas = new LinkedHashMap<>();
+        for (String phase : PHASES) {
+            phaseVillas.put(phase, new ArrayList<>());
+        }
+        for (VillaConstructionStatus s : recentlyCompleted) {
+            phaseVillas.computeIfAbsent(s.getPhase(), k -> new ArrayList<>()).add(s.getVillaNumber());
+        }
+        // Sort villa numbers within each phase
+        phaseVillas.values().forEach(Collections::sort);
+
+        // Filter to only phases with updates
+        Map<String, List<Integer>> updatedPhases = new LinkedHashMap<>();
+        for (Map.Entry<String, List<Integer>> entry : phaseVillas.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                updatedPhases.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        int totalNewCompletions = recentlyCompleted.size();
+
+        // --- Calculate image height ---
+        Font titleFont = new Font("SansSerif", Font.BOLD, 24);
+        Font subtitleFont = new Font("SansSerif", Font.PLAIN, 14);
+        Font phaseFont = new Font("SansSerif", Font.BOLD, 16);
+        Font countFont = new Font("SansSerif", Font.BOLD, 28);
+        Font villaFont = new Font("SansSerif", Font.PLAIN, 13);
+        Font noUpdatesFont = new Font("SansSerif", Font.ITALIC, 16);
+
+        // Estimate height: header (100) + summary card (80) + each phase card (variable)
+        int headerHeight = 100;
+        int summaryCardHeight = 90;
+        int phaseCardBaseHeight = 65; // header + count line
+        int villaLineHeight = 22;
+
+        // Calculate per-phase heights (villa numbers may wrap to multiple lines)
+        int totalPhaseHeight = 0;
+        BufferedImage tempImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        Graphics2D tempG = tempImg.createGraphics();
+        int cardContentWidth = IMG_WIDTH - 2 * PADDING - 2 * CARD_PADDING - 20;
+
+        for (Map.Entry<String, List<Integer>> entry : updatedPhases.entrySet()) {
+            String villaText = entry.getValue().stream()
+                    .map(String::valueOf).collect(Collectors.joining(", "));
+            FontMetrics fm = tempG.getFontMetrics(villaFont);
+            int textWidth = fm.stringWidth("Villas: " + villaText);
+            int lines = Math.max(1, (int) Math.ceil((double) textWidth / cardContentWidth));
+            totalPhaseHeight += phaseCardBaseHeight + lines * villaLineHeight + 15; // +15 bottom padding
+        }
+        tempG.dispose();
+
+        if (updatedPhases.isEmpty()) {
+            totalPhaseHeight = 80; // "No updates" message
+        }
+
+        int totalHeight = PADDING + headerHeight + SECTION_GAP + summaryCardHeight + SECTION_GAP
+                + totalPhaseHeight + PADDING + 20;
+
+        // --- Create image ---
+        BufferedImage image = new BufferedImage(IMG_WIDTH, totalHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // White background
+        g.setColor(COLOR_WHITE);
+        g.fillRect(0, 0, IMG_WIDTH, totalHeight);
+
+        int y = PADDING;
+
+        // ============================================================
+        // HEADER: Title and date range
+        // ============================================================
+        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a");
+        String todayStr = LocalDate.now().format(dateFmt);
+        String sinceStr = since.format(timeFmt);
+
+        g.setFont(titleFont);
+        g.setColor(COLOR_BLUE);
+        g.drawString("Latest Updates - " + projectName, PADDING, y + 30);
+
+        g.setFont(subtitleFont);
+        g.setColor(COLOR_TEXT_SECONDARY);
+        g.drawString("Changes from " + sinceStr + "  to  " + todayStr, PADDING, y + 55);
+        g.drawString("Report generated: " + LocalDateTime.now().format(timeFmt), PADDING, y + 75);
+
+        y += headerHeight;
+
+        // ============================================================
+        // SUMMARY CARD: Total new completions
+        // ============================================================
+        int cardW = IMG_WIDTH - 2 * PADDING;
+        Color summaryBg = totalNewCompletions > 0 ? COLOR_GREEN_LIGHT : COLOR_ORANGE_LIGHT;
+        Color summaryBorder = totalNewCompletions > 0 ? COLOR_GREEN : COLOR_ORANGE;
+        drawRoundedCard(g, PADDING, y, cardW, summaryCardHeight, summaryBg, summaryBorder);
+
+        g.setFont(countFont);
+        g.setColor(totalNewCompletions > 0 ? COLOR_GREEN : COLOR_ORANGE);
+        String countText = totalNewCompletions + " New Completion" + (totalNewCompletions != 1 ? "s" : "");
+        g.drawString(countText, PADDING + CARD_PADDING, y + 40);
+
+        g.setFont(subtitleFont);
+        g.setColor(COLOR_TEXT_SECONDARY);
+        String phaseSummary = updatedPhases.size() + " phase" + (updatedPhases.size() != 1 ? "s" : "") + " updated";
+        g.drawString(phaseSummary + " in the last 24 hours", PADDING + CARD_PADDING, y + 65);
+
+        y += summaryCardHeight + SECTION_GAP;
+
+        // ============================================================
+        // PHASE-WISE DETAILS
+        // ============================================================
+        if (updatedPhases.isEmpty()) {
+            g.setFont(noUpdatesFont);
+            g.setColor(COLOR_TEXT_MUTED);
+            g.drawString("No construction updates in the last 24 hours.", PADDING + 20, y + 40);
+        } else {
+            Color[] phaseColors = {COLOR_BLUE, COLOR_GREEN, COLOR_ORANGE, COLOR_PURPLE, COLOR_RED,
+                    COLOR_BLUE, COLOR_GREEN, COLOR_ORANGE, COLOR_PURPLE, COLOR_RED};
+            Color[] phaseBgColors = {COLOR_BLUE_LIGHT, COLOR_GREEN_LIGHT, COLOR_ORANGE_LIGHT, COLOR_PURPLE_LIGHT,
+                    new Color(254, 226, 226), COLOR_BLUE_LIGHT, COLOR_GREEN_LIGHT, COLOR_ORANGE_LIGHT,
+                    COLOR_PURPLE_LIGHT, new Color(254, 226, 226)};
+
+            int colorIdx = 0;
+            for (Map.Entry<String, List<Integer>> entry : updatedPhases.entrySet()) {
+                String phase = entry.getKey();
+                List<Integer> villas = entry.getValue();
+                String phaseLabel = PHASE_LABELS.getOrDefault(phase, phase);
+
+                // Build villa numbers text
+                String villaText = villas.stream().map(String::valueOf).collect(Collectors.joining(", "));
+                FontMetrics fm = g.getFontMetrics(villaFont);
+                int textWidth = fm.stringWidth("Villas: " + villaText);
+                int lines = Math.max(1, (int) Math.ceil((double) textWidth / cardContentWidth));
+                int thisCardHeight = phaseCardBaseHeight + lines * villaLineHeight + 15;
+
+                Color cardColor = phaseBgColors[colorIdx % phaseBgColors.length];
+                Color borderColor = phaseColors[colorIdx % phaseColors.length];
+
+                // Draw card
+                drawRoundedCard(g, PADDING, y, cardW, thisCardHeight, cardColor, borderColor);
+
+                // Left color bar
+                g.setColor(borderColor);
+                g.fillRoundRect(PADDING, y, 6, thisCardHeight, 4, 4);
+
+                // Phase label and count
+                g.setFont(phaseFont);
+                g.setColor(COLOR_TEXT_PRIMARY);
+                g.drawString(phaseLabel, PADDING + CARD_PADDING + 10, y + 28);
+
+                // Count badge
+                String badge = "+" + villas.size();
+                g.setFont(new Font("SansSerif", Font.BOLD, 14));
+                FontMetrics badgeFm = g.getFontMetrics();
+                int badgeW = badgeFm.stringWidth(badge) + 16;
+                int badgeX = PADDING + cardW - CARD_PADDING - badgeW;
+                g.setColor(borderColor);
+                g.fillRoundRect(badgeX, y + 12, badgeW, 26, 12, 12);
+                g.setColor(COLOR_WHITE);
+                g.drawString(badge, badgeX + 8, y + 30);
+
+                // Villa numbers (with word-wrap)
+                g.setFont(villaFont);
+                g.setColor(COLOR_TEXT_SECONDARY);
+                String fullVillaText = "Villas: " + villaText;
+                int textX = PADDING + CARD_PADDING + 10;
+                int textY = y + 50;
+                int maxWidth = cardContentWidth;
+
+                // Simple word-wrap by character width
+                String remaining = fullVillaText;
+                while (!remaining.isEmpty()) {
+                    int charsFit = remaining.length();
+                    while (fm.stringWidth(remaining.substring(0, charsFit)) > maxWidth && charsFit > 1) {
+                        // Find last comma before the cutoff
+                        int lastComma = remaining.substring(0, charsFit).lastIndexOf(',');
+                        if (lastComma > 0) {
+                            charsFit = lastComma + 1;
+                        } else {
+                            charsFit--;
+                        }
+                    }
+                    g.drawString(remaining.substring(0, charsFit).trim(), textX, textY);
+                    remaining = remaining.substring(charsFit).trim();
+                    textY += villaLineHeight;
+                }
+
+                y += thisCardHeight + 10;
+                colorIdx++;
+            }
+        }
+
+        g.dispose();
+
+        // Write PNG
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", bos);
+            log.info("Latest updates image generated: {} bytes, {} new completions", bos.size(), totalNewCompletions);
+            return bos.toByteArray();
+        } catch (Exception e) {
+            log.error("Failed to generate latest updates image: {}", e.getMessage(), e);
+            return new byte[0];
+        }
     }
 }
