@@ -426,15 +426,45 @@ export default function UserAccessConfigPage() {
     }
   }
 
-  /** Set permission for a folder */
-  function setFolderPerm(folderId: number, level: string) {
+  /** Toggle a single permission level for a folder */
+  function toggleFolderPerm(folderId: number, level: string) {
     setFolderPerms((prev) => {
       const next = new Map(prev);
-      if (level === "NONE") {
+      const current = next.get(folderId) || "";
+      const levels = new Set(current.split(",").map((l) => l.trim()).filter(Boolean));
+
+      if (levels.has(level)) {
+        levels.delete(level);
+      } else {
+        levels.add(level);
+      }
+
+      if (levels.size === 0) {
         next.delete(folderId);
       } else {
-        next.set(folderId, level);
+        // Sort consistently: VIEW, UPLOAD, DELETE, MANAGE
+        const order = ["VIEW", "UPLOAD", "DELETE", "MANAGE"];
+        const sorted = Array.from(levels).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+        next.set(folderId, sorted.join(","));
       }
+      return next;
+    });
+  }
+
+  /** Clear all permissions for a folder */
+  function clearFolderPerm(folderId: number) {
+    setFolderPerms((prev) => {
+      const next = new Map(prev);
+      next.delete(folderId);
+      return next;
+    });
+  }
+
+  /** Set all permissions for a folder */
+  function setAllFolderPerms(folderId: number) {
+    setFolderPerms((prev) => {
+      const next = new Map(prev);
+      next.set(folderId, "VIEW,UPLOAD,DELETE,MANAGE");
       return next;
     });
   }
@@ -855,17 +885,18 @@ export default function UserAccessConfigPage() {
                           <>
                             {/* Legend */}
                             <div className="flex items-center gap-4 mb-3 text-[10px] text-gray-500">
+                              <span className="font-semibold text-gray-600">Permission checkboxes:</span>
                               <span className="flex items-center gap-1">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-100 border border-gray-300" /> No Access
+                                <span className="font-semibold text-blue-600">V</span> = View
                               </span>
                               <span className="flex items-center gap-1">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-400" /> View Only
+                                <span className="font-semibold text-amber-600">U</span> = Upload
                               </span>
                               <span className="flex items-center gap-1">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-400" /> Upload
+                                <span className="font-semibold text-orange-600">D</span> = Delete
                               </span>
                               <span className="flex items-center gap-1">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-100 border border-green-400" /> Full Control
+                                <span className="font-semibold text-green-600">M</span> = Manage
                               </span>
                             </div>
 
@@ -881,7 +912,14 @@ export default function UserAccessConfigPage() {
                               </div>
                               <div className="divide-y divide-gray-100">
                                 {flattenTree(folderTree).map(({ folder, depth }) => {
-                                  const currentLevel = folderPerms.get(folder.id) || "NONE";
+                                  const currentPerms = folderPerms.get(folder.id) || "";
+                                  const permSet = new Set(currentPerms.split(",").map((l) => l.trim()).filter(Boolean));
+                                  const levelConfig = [
+                                    { key: "VIEW", label: "V", color: "text-blue-600" },
+                                    { key: "UPLOAD", label: "U", color: "text-amber-600" },
+                                    { key: "DELETE", label: "D", color: "text-orange-600" },
+                                    { key: "MANAGE", label: "M", color: "text-green-600" },
+                                  ];
                                   return (
                                     <div
                                       key={folder.id}
@@ -890,62 +928,47 @@ export default function UserAccessConfigPage() {
                                     >
                                       {/* Folder icon + name */}
                                       <span className="text-sm text-amber-500 flex-shrink-0">
-                                        {folder.children && folder.children.length > 0 ? "📂" : "📁"}
+                                        {folder.children && folder.children.length > 0 ? "\u{1F4C2}" : "\u{1F4C1}"}
                                       </span>
                                       <span className="text-xs sm:text-sm text-gray-700 flex-1 min-w-0 truncate">
                                         {folder.name}
                                       </span>
 
-                                      {/* Permission level selector */}
-                                      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+                                      {/* Quick actions */}
+                                      <div className="flex items-center gap-1 mr-1 flex-shrink-0">
                                         <button
                                           type="button"
-                                          onClick={() => setFolderPerm(folder.id, "NONE")}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                            currentLevel === "NONE"
-                                              ? "bg-gray-200 text-gray-700 shadow-sm"
-                                              : "text-gray-400 hover:text-gray-600"
-                                          }`}
-                                          title="No Access"
+                                          onClick={() => clearFolderPerm(folder.id)}
+                                          className="text-[9px] text-gray-400 hover:text-gray-600 px-1"
+                                          title="Clear all"
                                         >
                                           None
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => setFolderPerm(folder.id, "VIEW")}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                            currentLevel === "VIEW"
-                                              ? "bg-blue-100 text-blue-700 shadow-sm"
-                                              : "text-gray-400 hover:text-gray-600"
-                                          }`}
-                                          title="View Only — can see files but not upload or delete"
+                                          onClick={() => setAllFolderPerms(folder.id)}
+                                          className="text-[9px] text-gray-400 hover:text-green-600 px-1"
+                                          title="Grant all"
                                         >
-                                          View
+                                          All
                                         </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setFolderPerm(folder.id, "UPLOAD")}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                            currentLevel === "UPLOAD"
-                                              ? "bg-amber-100 text-amber-700 shadow-sm"
-                                              : "text-gray-400 hover:text-gray-600"
-                                          }`}
-                                          title="Upload — can view and upload files"
-                                        >
-                                          Upload
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setFolderPerm(folder.id, "MANAGE")}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition ${
-                                            currentLevel === "MANAGE"
-                                              ? "bg-green-100 text-green-700 shadow-sm"
-                                              : "text-gray-400 hover:text-gray-600"
-                                          }`}
-                                          title="Full Control — can view, upload, delete, and manage permissions"
-                                        >
-                                          Full
-                                        </button>
+                                      </div>
+
+                                      {/* Permission checkboxes */}
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        {levelConfig.map(({ key, label, color }) => (
+                                          <label key={key} className="flex items-center gap-0.5 cursor-pointer" title={key}>
+                                            <input
+                                              type="checkbox"
+                                              checked={permSet.has(key)}
+                                              onChange={() => toggleFolderPerm(folder.id, key)}
+                                              className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 h-3.5 w-3.5"
+                                            />
+                                            <span className={`text-[10px] font-semibold ${permSet.has(key) ? color : "text-gray-300"}`}>
+                                              {label}
+                                            </span>
+                                          </label>
+                                        ))}
                                       </div>
                                     </div>
                                   );

@@ -29,7 +29,7 @@ public class FolderPermissionDto {
         } else {
             dto.setUserName(entity.getUserEmail());
         }
-        dto.setPermissionLevel(entity.getPermissionLevel().name());
+        dto.setPermissionLevel(entity.getPermissionLevel());
         dto.setGrantedBy(entity.getGrantedBy());
         dto.setGrantedAt(entity.getGrantedAt() != null ? entity.getGrantedAt().toString() : null);
         return dto;

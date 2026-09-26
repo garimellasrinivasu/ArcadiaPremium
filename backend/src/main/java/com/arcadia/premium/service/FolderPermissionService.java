@@ -35,10 +35,11 @@ public class FolderPermissionService {
 
     /**
      * Create or update a permission entry for a user on a folder.
+     * permissionLevels is a comma-separated string like "VIEW,UPLOAD".
      */
     @Transactional
     public FolderPermissionDto setPermission(Long folderId, String userEmail,
-                                              FolderPermissionLevel level, String grantedByEmail) {
+                                              String permissionLevels, String grantedByEmail) {
         DocumentFolder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new RuntimeException("Folder not found with id: " + folderId));
 
@@ -46,18 +47,24 @@ public class FolderPermissionService {
             throw new RuntimeException("User not found with email: " + userEmail);
         }
 
+        // Validate all levels
+        String normalized = normalizePermissionLevels(permissionLevels);
+        if (normalized.isEmpty()) {
+            throw new RuntimeException("At least one permission level is required.");
+        }
+
         Optional<FolderPermission> existing = permissionRepository.findByFolderIdAndUserEmail(folderId, userEmail);
 
         FolderPermission permission;
         if (existing.isPresent()) {
             permission = existing.get();
-            permission.setPermissionLevel(level);
+            permission.setPermissionLevel(normalized);
             permission.setGrantedBy(grantedByEmail);
         } else {
             permission = new FolderPermission();
             permission.setFolder(folder);
             permission.setUserEmail(userEmail);
-            permission.setPermissionLevel(level);
+            permission.setPermissionLevel(normalized);
             permission.setGrantedBy(grantedByEmail);
         }
 
@@ -69,6 +76,22 @@ public class FolderPermissionService {
         String lastName = user != null ? user.getLastName() : null;
 
         return FolderPermissionDto.fromEntity(permission, firstName, lastName);
+    }
+
+    /** Normalize and validate comma-separated permission levels */
+    private String normalizePermissionLevels(String levels) {
+        if (levels == null || levels.isBlank()) return "";
+        java.util.List<String> valid = new java.util.ArrayList<>();
+        for (String l : levels.split(",")) {
+            String trimmed = l.trim().toUpperCase();
+            if (!trimmed.isEmpty() && FolderPermissionLevel.isValid(trimmed)) {
+                if (!valid.contains(trimmed)) valid.add(trimmed);
+            }
+        }
+        // Sort in a consistent order: VIEW, UPLOAD, DELETE, MANAGE
+        java.util.List<String> ordered = java.util.List.of("VIEW", "UPLOAD", "DELETE", "MANAGE");
+        valid.sort((a, b) -> ordered.indexOf(a) - ordered.indexOf(b));
+        return String.join(",", valid);
     }
 
     /**
@@ -97,12 +120,13 @@ public class FolderPermissionService {
     }
 
     /**
-     * Check if a user has at least the required permission level on a folder.
-     * Uses the hierarchy: MANAGE > DELETE > UPLOAD > VIEW.
+     * Check if a user has the required permission level on a folder.
+     * Now checks if the required level is contained in the comma-separated permission string.
      */
     public boolean hasPermission(Long folderId, String userEmail, FolderPermissionLevel requiredLevel) {
         Optional<FolderPermission> permission = permissionRepository.findByFolderIdAndUserEmail(folderId, userEmail);
-        return permission.isPresent() && permission.get().getPermissionLevel().isAtLeast(requiredLevel);
+        return permission.isPresent()
+                && FolderPermissionLevel.containsLevel(permission.get().getPermissionLevel(), requiredLevel.name());
     }
 
     /**
@@ -119,7 +143,9 @@ public class FolderPermissionService {
     public boolean canUserAccessFolder(Long folderId, String userEmail, String createdBy, boolean isAdmin) {
         if (isAdmin) return true;
         if (userEmail.equals(createdBy)) return true;
-        return hasPermission(folderId, userEmail, FolderPermissionLevel.VIEW);
+        // Check if user has any permission at all on this folder
+        Optional<FolderPermission> permission = permissionRepository.findByFolderIdAndUserEmail(folderId, userEmail);
+        return permission.isPresent() && FolderPermissionLevel.hasAnyAccess(permission.get().getPermissionLevel());
     }
 
     /**
@@ -140,10 +166,11 @@ public class FolderPermissionService {
      * Batch update permissions for a user on a specific project.
      * Replaces all existing permissions on folders belonging to this project.
      * Folders not in the newPermissions map will have their permissions removed.
+     * Values are now comma-separated strings like "VIEW,UPLOAD".
      */
     @Transactional
     public void batchUpdateForUser(String userEmail, String projectName,
-                                    Map<Long, FolderPermissionLevel> newPermissions,
+                                    Map<Long, String> newPermissions,
                                     String grantedBy) {
         // Get all folder IDs for this project
         List<DocumentFolder> projectFolders = folderRepository.findByProjectName(projectName);
@@ -165,18 +192,18 @@ public class FolderPermissionService {
         }
 
         // Add or update permissions in the new set
-        for (Map.Entry<Long, FolderPermissionLevel> entry : newPermissions.entrySet()) {
+        for (Map.Entry<Long, String> entry : newPermissions.entrySet()) {
             Long folderId = entry.getKey();
-            FolderPermissionLevel level = entry.getValue();
+            String levels = normalizePermissionLevels(entry.getValue());
 
-            if (!projectFolderIds.contains(folderId)) {
-                continue; // Skip folders not in this project
+            if (!projectFolderIds.contains(folderId) || levels.isEmpty()) {
+                continue; // Skip folders not in this project or empty permissions
             }
 
             if (existingMap.containsKey(folderId)) {
                 FolderPermission existing = existingMap.get(folderId);
-                if (existing.getPermissionLevel() != level) {
-                    existing.setPermissionLevel(level);
+                if (!existing.getPermissionLevel().equals(levels)) {
+                    existing.setPermissionLevel(levels);
                     existing.setGrantedBy(grantedBy);
                     permissionRepository.save(existing);
                 }
@@ -186,7 +213,7 @@ public class FolderPermissionService {
                 FolderPermission perm = new FolderPermission();
                 perm.setFolder(folder);
                 perm.setUserEmail(userEmail);
-                perm.setPermissionLevel(level);
+                perm.setPermissionLevel(levels);
                 perm.setGrantedBy(grantedBy);
                 permissionRepository.save(perm);
             }

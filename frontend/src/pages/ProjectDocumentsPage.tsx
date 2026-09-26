@@ -985,7 +985,7 @@ function ShareFolderModal({
 
   // Add form
   const [selectedEmail, setSelectedEmail] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState<string>("VIEW");
+  const [selectedLevels, setSelectedLevels] = useState<Set<string>>(new Set(["VIEW"]));
 
   useEffect(() => {
     async function load() {
@@ -1013,20 +1013,34 @@ function ShareFolderModal({
       !permissions.some((p) => p.userEmail === u.email)
   );
 
+  function toggleAddLevel(level: string) {
+    setSelectedLevels((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) {
+        // Don't allow removing all levels
+        if (next.size > 1) next.delete(level);
+      } else {
+        next.add(level);
+      }
+      return next;
+    });
+  }
+
   async function handleAdd() {
-    if (!selectedEmail) return;
+    if (!selectedEmail || selectedLevels.size === 0) return;
     setSaving(true);
     setError("");
     setSuccess("");
     try {
+      const levelStr = Array.from(selectedLevels).join(",");
       const added = await folderPermissionService.setPermission(
         folderId,
         selectedEmail,
-        selectedLevel
+        levelStr
       );
       setPermissions((prev) => [...prev, added]);
       setSelectedEmail("");
-      setSelectedLevel("VIEW");
+      setSelectedLevels(new Set(["VIEW"]));
       setSuccess("Permission added.");
       setTimeout(() => setSuccess(""), 2000);
     } catch (err: any) {
@@ -1036,8 +1050,16 @@ function ShareFolderModal({
     }
   }
 
-  async function handleUpdate(userEmail: string, newLevel: string) {
+  async function handleToggleLevel(userEmail: string, level: string, currentLevels: string) {
     setError("");
+    const current = new Set(currentLevels.split(",").map((l) => l.trim()).filter(Boolean));
+    if (current.has(level)) {
+      if (current.size <= 1) return; // Must keep at least one
+      current.delete(level);
+    } else {
+      current.add(level);
+    }
+    const newLevel = Array.from(current).join(",");
     try {
       const updated = await folderPermissionService.setPermission(
         folderId,
@@ -1115,35 +1137,46 @@ function ShareFolderModal({
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Add User
                 </label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedEmail}
-                    onChange={(e) => setSelectedEmail(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none"
-                  >
-                    <option value="">-- Select user --</option>
-                    {availableUsers.map((u) => (
-                      <option key={u.email} value={u.email}>
-                        {u.firstName} {u.lastName} ({u.email})
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedLevel}
-                    onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="w-28 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none"
-                  >
-                    {LEVELS.map((l) => (
-                      <option key={l} value={l}>{l}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={handleAdd}
-                    disabled={!selectedEmail || saving}
-                    className="px-4 py-2 bg-arcadia-600 text-white rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
-                  >
-                    {saving ? "..." : "Add"}
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedEmail}
+                      onChange={(e) => setSelectedEmail(e.target.value)}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-arcadia-500 focus:border-arcadia-500 outline-none"
+                    >
+                      <option value="">-- Select user --</option>
+                      {availableUsers.map((u) => (
+                        <option key={u.email} value={u.email}>
+                          {u.firstName} {u.lastName} ({u.email})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleAdd}
+                      disabled={!selectedEmail || saving || selectedLevels.size === 0}
+                      className="px-4 py-2 bg-arcadia-600 text-white rounded-lg text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
+                    >
+                      {saving ? "..." : "Add"}
+                    </button>
+                  </div>
+                  {selectedEmail && (
+                    <div className="flex items-center gap-3 pl-1">
+                      <span className="text-[11px] text-gray-500 font-medium">Permissions:</span>
+                      {LEVELS.map((l) => (
+                        <label key={l} className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedLevels.has(l)}
+                            onChange={() => toggleAddLevel(l)}
+                            className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 h-3.5 w-3.5"
+                          />
+                          <span className={`text-[11px] font-semibold ${levelColors[l]?.split(" ")[1] || "text-gray-600"}`}>
+                            {l}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {availableUsers.length === 0 && (
                   <p className="text-xs text-gray-400 italic">All users already have access.</p>
@@ -1177,16 +1210,25 @@ function ShareFolderModal({
                           </p>
                           <p className="text-[11px] text-gray-400 truncate">{p.userEmail}</p>
                         </div>
-                        {/* Permission dropdown */}
-                        <select
-                          value={p.permissionLevel}
-                          onChange={(e) => handleUpdate(p.userEmail, e.target.value)}
-                          className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer outline-none ${levelColors[p.permissionLevel] || "bg-gray-100 text-gray-600"}`}
-                        >
-                          {LEVELS.map((l) => (
-                            <option key={l} value={l}>{l}</option>
-                          ))}
-                        </select>
+                        {/* Permission checkboxes */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {LEVELS.map((l) => {
+                            const hasLevel = p.permissionLevel.split(",").map((s: string) => s.trim()).includes(l);
+                            return (
+                              <label key={l} className="flex items-center gap-0.5 cursor-pointer" title={l}>
+                                <input
+                                  type="checkbox"
+                                  checked={hasLevel}
+                                  onChange={() => handleToggleLevel(p.userEmail, l, p.permissionLevel)}
+                                  className="rounded border-gray-300 text-arcadia-600 focus:ring-arcadia-500 h-3 w-3"
+                                />
+                                <span className={`text-[10px] font-semibold ${hasLevel ? (levelColors[l]?.split(" ")[1] || "text-gray-600") : "text-gray-300"}`}>
+                                  {l.charAt(0)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
                         {/* Remove button */}
                         <button
                           onClick={() => handleRemove(p.userEmail)}
@@ -1205,12 +1247,12 @@ function ShareFolderModal({
               <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Permission Levels</p>
                 <div className="grid grid-cols-2 gap-1 text-[11px] text-gray-600">
-                  <div><span className="font-semibold text-blue-600">VIEW</span> &mdash; Can see files</div>
-                  <div><span className="font-semibold text-green-600">UPLOAD</span> &mdash; Can add files</div>
-                  <div><span className="font-semibold text-orange-600">DELETE</span> &mdash; Can remove files</div>
-                  <div><span className="font-semibold text-purple-600">MANAGE</span> &mdash; Can share folder</div>
+                  <div><span className="font-semibold text-blue-600">VIEW (V)</span> &mdash; Can see files</div>
+                  <div><span className="font-semibold text-green-600">UPLOAD (U)</span> &mdash; Can add files</div>
+                  <div><span className="font-semibold text-orange-600">DELETE (D)</span> &mdash; Can remove files</div>
+                  <div><span className="font-semibold text-purple-600">MANAGE (M)</span> &mdash; Can share folder</div>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">Higher levels include all lower ones.</p>
+                <p className="text-[10px] text-gray-400 mt-1">Select multiple permissions per user. Each permission is independent.</p>
               </div>
             </>
           )}
@@ -1941,13 +1983,13 @@ export default function ProjectDocumentsPage() {
                     {/* Folder actions — visible on hover (or always on mobile for touch) — hidden in view-only */}
                     {!isViewOnly && renamingFolderId !== folder.id && (
                       <div className="mt-2 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
-                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission === "MANAGE") && (
+                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission?.includes("MANAGE")) && (
                           <button onClick={() => setSharingFolder({ id: folder.id, name: folder.name })}
                             className="text-[10px] text-gray-500 hover:text-arcadia-600" title="Share folder">
                             Share
                           </button>
                         )}
-                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission === "MANAGE") && (
+                        {(isAdminOrPartner || folder.createdBy === currentEmail || folder.userPermission?.includes("MANAGE")) && (
                           <>
                             <button onClick={() => { setRenamingFolderId(folder.id); setRenameValue(folder.name); }}
                               className="text-[10px] text-gray-500 hover:text-arcadia-600">Rename</button>

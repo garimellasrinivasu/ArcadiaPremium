@@ -6,7 +6,8 @@ export interface FolderPermissionDto {
   folderName: string;
   userEmail: string;
   userName: string;
-  permissionLevel: "VIEW" | "UPLOAD" | "DELETE" | "MANAGE";
+  /** Comma-separated permission levels, e.g. "VIEW,UPLOAD" */
+  permissionLevel: string;
   grantedBy: string;
   grantedAt: string;
 }

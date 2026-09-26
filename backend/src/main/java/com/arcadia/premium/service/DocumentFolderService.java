@@ -106,7 +106,7 @@ public class DocumentFolderService {
             try {
                 List<FolderPermission> userPerms = folderPermissionRepository.findByUserEmail(userEmail);
                 for (FolderPermission fp : userPerms) {
-                    userPermMap.put(fp.getFolder().getId(), fp.getPermissionLevel().name());
+                    userPermMap.put(fp.getFolder().getId(), fp.getPermissionLevel());
                 }
             } catch (Exception e) {
                 log.warn("getTree: failed to load folder permissions for user={}: {}", userEmail, e.getMessage());

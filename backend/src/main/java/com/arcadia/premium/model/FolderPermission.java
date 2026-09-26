@@ -21,9 +21,9 @@ public class FolderPermission {
     @Column(name = "user_email", nullable = false)
     private String userEmail;
 
-    @Enumerated(EnumType.STRING)
+    /** Comma-separated permission levels, e.g. "VIEW,UPLOAD" or "VIEW,UPLOAD,DELETE,MANAGE" */
     @Column(name = "permission_level", nullable = false)
-    private FolderPermissionLevel permissionLevel;
+    private String permissionLevel;
 
     @Column(name = "granted_by", nullable = false)
     private String grantedBy;
@@ -45,8 +45,17 @@ public class FolderPermission {
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
-    public FolderPermissionLevel getPermissionLevel() { return permissionLevel; }
-    public void setPermissionLevel(FolderPermissionLevel permissionLevel) { this.permissionLevel = permissionLevel; }
+    public String getPermissionLevel() { return permissionLevel; }
+    public void setPermissionLevel(String permissionLevel) { this.permissionLevel = permissionLevel; }
+
+    /** Check if this permission entry includes the given level */
+    public boolean hasLevel(String level) {
+        if (permissionLevel == null) return false;
+        for (String l : permissionLevel.split(",")) {
+            if (l.trim().equalsIgnoreCase(level)) return true;
+        }
+        return false;
+    }
 
     public String getGrantedBy() { return grantedBy; }
     public void setGrantedBy(String grantedBy) { this.grantedBy = grantedBy; }

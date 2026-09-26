@@ -52,8 +52,7 @@ public class FolderPermissionController {
         try {
             Long folderId = Long.valueOf(request.get("folderId").toString());
             String userEmail = (String) request.get("userEmail");
-            String levelStr = (String) request.get("permissionLevel");
-            FolderPermissionLevel level = FolderPermissionLevel.valueOf(levelStr);
+            String permissionLevel = (String) request.get("permissionLevel");
 
             DocumentFolder folder = folderService.getById(folderId);
             String currentUser = principal.getName();
@@ -64,7 +63,7 @@ public class FolderPermissionController {
                 return ResponseEntity.status(403).body(Map.of("error", "You do not have permission to manage permissions for this folder."));
             }
 
-            FolderPermissionDto dto = permissionService.setPermission(folderId, userEmail, level, currentUser);
+            FolderPermissionDto dto = permissionService.setPermission(folderId, userEmail, permissionLevel, currentUser);
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -97,11 +96,11 @@ public class FolderPermissionController {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> permissionsList = (List<Map<String, Object>>) request.get("permissions");
 
-            Map<Long, FolderPermissionLevel> permMap = new java.util.HashMap<>();
+            Map<Long, String> permMap = new java.util.HashMap<>();
             if (permissionsList != null) {
                 for (Map<String, Object> p : permissionsList) {
                     Long folderId = Long.valueOf(p.get("folderId").toString());
-                    FolderPermissionLevel level = FolderPermissionLevel.valueOf((String) p.get("permissionLevel"));
+                    String level = (String) p.get("permissionLevel");
                     permMap.put(folderId, level);
                 }
             }
