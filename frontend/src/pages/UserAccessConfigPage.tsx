@@ -35,6 +35,7 @@ const PAGE_SECTIONS: PageSection[] = [
     pages: [
       { key: "SALE_ENTRY", label: "Sale Entry", path: "/activities/sale-entry" },
       { key: "SALE_QUOTE", label: "Sale Quote", path: "/activities/sale-quote" },
+      { key: "INITIAL_SALES", label: "Initial Sales", path: "/activities/initial-sales" },
       { key: "FINANCE_SPENT", label: "Finance Spent", path: "/activities/finance-spent" },
       { key: "MASTER_PLAN", label: "Master Plan", path: "/activities/master-plan" },
       { key: "WORK_EXECUTION", label: "Work Execution Updates", path: "/activities/work-execution" },
@@ -146,6 +147,8 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "PROJECT_ESTIMATION", label: "Project Estimation", path: "/admin/project-estimation" },
       { key: "USER_ACCESS_CONFIG", label: "User Access Config", path: "/admin/user-access" },
       { key: "MASTRI_LEADERS", label: "Mastri Leaders", path: "/admin/mastri-leaders" },
+      { key: "CLUSTER_INCHARGES", label: "Cluster Incharges", path: "/admin/cluster-incharges" },
+      { key: "NOTIFICATION_CONFIG", label: "Notifications", path: "/admin/notifications" },
     ],
   },
 ];
