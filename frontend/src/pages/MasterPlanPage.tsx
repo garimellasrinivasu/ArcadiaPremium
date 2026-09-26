@@ -368,7 +368,7 @@ export default function MasterPlanPage() {
 
   // Load projects on mount and auto-select the first Arcadia project
   useEffect(() => {
-    projectService.getActiveProjects().then((list) => {
+    projectService.getMyProjects().then((list) => {
       setProjects(list);
       if (list.length > 0 && !selectedProject) {
         // Prefer an Arcadia project as default, else first project

@@ -98,7 +98,7 @@ export default function WalkInsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    projectService.getActiveProjects().then((ps) => setProjectNames(ps.map((p) => p.name))).catch(() => {});
+    projectService.getMyProjects().then((ps) => setProjectNames(ps.map((p) => p.name))).catch(() => {});
     authService.getCurrentUser().then(setCurrentUser).catch(() => {});
   }, []);
 

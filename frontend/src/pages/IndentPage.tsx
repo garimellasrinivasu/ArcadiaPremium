@@ -77,7 +77,7 @@ export default function IndentPage() {
   const loadDropdowns = async () => {
     try {
       const [p, m, r] = await Promise.all([
-        projectService.getActiveProjects(),
+        projectService.getMyProjects(),
         materialMasterService.getActive(),
         requisitionService.getAll(),
       ]);

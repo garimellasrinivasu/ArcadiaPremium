@@ -32,7 +32,7 @@ export default function WarehousePage() {
 
   const loadProjects = async () => {
     try {
-      const data = await projectService.getActiveProjects();
+      const data = await projectService.getMyProjects();
       setProjects(data);
     } catch (err) {
       console.error("Failed to load projects:", err);

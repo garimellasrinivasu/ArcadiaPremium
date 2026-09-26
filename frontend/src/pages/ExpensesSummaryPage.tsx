@@ -29,7 +29,7 @@ export default function ExpensesSummaryPage() {
     try {
       setLoading(true);
       const [projData, expData] = await Promise.all([
-        projectService.getActiveProjects(),
+        projectService.getMyProjects(),
         pujaExpensesService.getAll(),
       ]);
       setProjects(projData);

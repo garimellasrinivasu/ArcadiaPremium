@@ -79,7 +79,7 @@ export default function PurchaseOrderPage() {
   const loadDropdowns = async () => {
     try {
       const [p, v, m, i] = await Promise.all([
-        projectService.getActiveProjects(), vendorService.getActive(),
+        projectService.getMyProjects(), vendorService.getActive(),
         materialMasterService.getActive(), indentService.getAll(),
       ]);
       setProjects(p); setVendors(v); setMaterials(m);

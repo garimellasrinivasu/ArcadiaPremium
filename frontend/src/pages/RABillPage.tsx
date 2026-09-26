@@ -113,7 +113,7 @@ export default function RABillPage() {
         workOrderService.getAll(),
         contractorService.getActive(),
         activityMasterService.getActive(),
-        projectService.getActiveProjects(),
+        projectService.getMyProjects(),
         measurementBookService.getAll(),
       ]);
       setWorkOrders(w); setContractors(c); setActivities(a); setProjects(p); setMbList(m);

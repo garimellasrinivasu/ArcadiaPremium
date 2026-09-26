@@ -120,7 +120,7 @@ export default function SaleEntryPage() {
 
   // Load projects from API
   useEffect(() => {
-    projectService.getActiveProjects()
+    projectService.getMyProjects()
       .then((projects) => setProjectNames(projects.map((p) => p.name)))
       .catch(() => {});
   }, []);

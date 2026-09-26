@@ -41,7 +41,7 @@ export default function WorkExecutionUpdatesPage() {
 
   // Load projects
   useEffect(() => {
-    projectService.getActiveProjects().then((list: ProjectDto[]) => {
+    projectService.getMyProjects().then((list: ProjectDto[]) => {
       setProjects(list);
       if (list.length > 0 && !selectedProject) {
         const arcadia = list.find((p) => p.name.toLowerCase().includes("arcadia"));

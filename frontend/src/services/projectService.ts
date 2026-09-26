@@ -19,6 +19,10 @@ export const projectService = {
   getActiveProjects: () =>
     api.get<ProjectDto[]>("/projects/active").then((r) => r.data),
 
+  /** Get projects the current user has access to. Admins get all, others get assigned only. */
+  getMyProjects: () =>
+    api.get<ProjectDto[]>("/projects/my-projects").then((r) => r.data),
+
   /** Get all projects including inactive — admin only. */
   getAllProjects: () =>
     api.get<ProjectDto[]>("/projects").then((r) => r.data),

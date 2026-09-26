@@ -168,6 +168,7 @@ export default function UserAccessConfigPage() {
   const [editPages, setEditPages] = useState<Set<string>>(new Set());
   const [editViewOnlyPages, setEditViewOnlyPages] = useState<Set<string>>(new Set());
   const [editDownloadEnabled, setEditDownloadEnabled] = useState<boolean>(true);
+  const [editAllowedProjects, setEditAllowedProjects] = useState<Set<string>>(new Set());
 
   // Create user modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -185,7 +186,7 @@ export default function UserAccessConfigPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Tab state for right panel
-  const [activeTab, setActiveTab] = useState<"pages" | "documents">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "documents" | "projects">("pages");
 
   // Document Access state
   const [projects, setProjects] = useState<ProjectDto[]>([]);
@@ -230,6 +231,7 @@ export default function UserAccessConfigPage() {
     setEditPages(new Set(user.allowedPages || []));
     setEditViewOnlyPages(new Set(user.viewOnlyPages || []));
     setEditDownloadEnabled(user.downloadEnabled !== false);
+    setEditAllowedProjects(new Set(user.allowedProjects || []));
     setSuccessMsg("");
     setError("");
     // Reset document access when switching users
@@ -292,6 +294,7 @@ export default function UserAccessConfigPage() {
         Array.from(editPages),
         Array.from(editViewOnlyPages),
         editDownloadEnabled,
+        Array.from(editAllowedProjects),
       );
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       setSuccessMsg("Page access saved successfully!");
@@ -684,6 +687,16 @@ export default function UserAccessConfigPage() {
                     >
                       Document Access
                     </button>
+                    <button
+                      onClick={() => setActiveTab("projects")}
+                      className={`flex-1 px-4 py-3 text-xs sm:text-sm font-medium transition border-b-2 ${
+                        activeTab === "projects"
+                          ? "border-arcadia-600 text-arcadia-700 bg-arcadia-50/40"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Project Access
+                    </button>
                   </div>
 
                   {/* ═══ Page Access Tab ═══ */}
@@ -998,6 +1011,77 @@ export default function UserAccessConfigPage() {
                         </div>
                       )}
                     </>
+                  )}
+
+                  {/* ═══ Project Access Tab ═══ */}
+                  {activeTab === "projects" && (
+                    <div className="px-4 sm:px-6 py-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-700">Project Access</h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setEditAllowedProjects(new Set(projects.map((p) => p.name)))}
+                            className="text-[10px] sm:text-xs text-arcadia-600 hover:text-arcadia-800 font-medium"
+                          >
+                            Select All
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => setEditAllowedProjects(new Set())}
+                            className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700 font-medium"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-4">
+                        Select which projects this user can see in project dropdowns (Master Plan, Villa Blocking, etc.). If no projects are selected, the user will not see any projects.
+                      </p>
+                      <div className="space-y-2">
+                        {projects.map((proj) => (
+                          <label
+                            key={proj.id}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition ${
+                              editAllowedProjects.has(proj.name)
+                                ? "border-arcadia-300 bg-arcadia-50/50"
+                                : "border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editAllowedProjects.has(proj.name)}
+                              onChange={() => {
+                                setEditAllowedProjects((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(proj.name)) next.delete(proj.name);
+                                  else next.add(proj.name);
+                                  return next;
+                                });
+                              }}
+                              className="w-4 h-4 text-arcadia-600 border-gray-300 rounded focus:ring-arcadia-500"
+                            />
+                            <span className="text-sm text-gray-800 font-medium">{proj.name}</span>
+                          </label>
+                        ))}
+                        {projects.length === 0 && (
+                          <p className="text-sm text-gray-400 text-center py-4">No active projects found.</p>
+                        )}
+                      </div>
+
+                      {/* Save button */}
+                      <div className="mt-6 flex items-center justify-end gap-3">
+                        <span className="text-xs text-gray-400">
+                          {editAllowedProjects.size} of {projects.length} projects selected
+                        </span>
+                        <button
+                          onClick={savePageAccess}
+                          disabled={saving != null}
+                          className="bg-arcadia-600 text-white px-5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-arcadia-700 transition disabled:opacity-50"
+                        >
+                          {saving != null ? "Saving..." : "Save Project Access"}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </>
               )}

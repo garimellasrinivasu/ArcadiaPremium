@@ -113,7 +113,7 @@ export default function MeasurementBookPage() {
       const [w, a, p] = await Promise.all([
         workOrderService.getAll(),
         activityMasterService.getActive(),
-        projectService.getActiveProjects(),
+        projectService.getMyProjects(),
       ]);
       setWorkOrders(w);
       setActivities(a);

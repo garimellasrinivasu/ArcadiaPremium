@@ -1312,7 +1312,7 @@ export default function ProjectDocumentsPage() {
   const [sharingFolder, setSharingFolder] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
-    projectService.getActiveProjects().then(setProjects).catch(() => setError("Failed to load projects."));
+    projectService.getMyProjects().then(setProjects).catch(() => setError("Failed to load projects."));
     authService.getCurrentUser().then(setCurrentUser).catch(() => {});
   }, []);
 

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ProjectService {
@@ -26,6 +27,15 @@ public class ProjectService {
     public List<ProjectDto> getActiveProjects() {
         return projectRepo.findByActiveTrueOrderByNameAsc()
                 .stream().map(this::toDto).toList();
+    }
+
+    /** Get active projects filtered by allowed names (for non-admin users). */
+    public List<ProjectDto> getActiveProjectsByNames(Set<String> projectNames) {
+        return projectRepo.findByActiveTrueOrderByNameAsc()
+                .stream()
+                .filter(p -> projectNames.contains(p.getName()))
+                .map(this::toDto)
+                .toList();
     }
 
     /** Get all projects including inactive (for admin). */

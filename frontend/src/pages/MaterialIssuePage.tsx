@@ -56,7 +56,7 @@ export default function MaterialIssuePage() {
 
   const loadDropdowns = async () => {
     try {
-      const [p, m] = await Promise.all([projectService.getActiveProjects(), materialMasterService.getActive()]);
+      const [p, m] = await Promise.all([projectService.getMyProjects(), materialMasterService.getActive()]);
       setProjects(p);
       setMaterials(m);
     } catch (err) { console.error(err); }

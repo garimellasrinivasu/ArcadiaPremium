@@ -111,13 +111,17 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updatePageAccess(Long id, Set<String> allowedPages, Set<String> viewOnlyPages, Boolean downloadEnabled) {
+    public UserDto updatePageAccess(Long id, Set<String> allowedPages, Set<String> viewOnlyPages,
+                                     Boolean downloadEnabled, Set<String> allowedProjects) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         user.setAllowedPages(allowedPages != null ? allowedPages : new HashSet<>());
         user.setViewOnlyPages(viewOnlyPages != null ? viewOnlyPages : new HashSet<>());
         if (downloadEnabled != null) {
             user.setDownloadEnabled(downloadEnabled);
+        }
+        if (allowedProjects != null) {
+            user.setAllowedProjects(allowedProjects);
         }
         return UserDto.fromEntity(userRepository.save(user));
     }

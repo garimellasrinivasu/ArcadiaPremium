@@ -75,7 +75,7 @@ export default function RequisitionPage() {
   const loadDropdowns = async () => {
     try {
       const [p, m] = await Promise.all([
-        projectService.getActiveProjects(),
+        projectService.getMyProjects(),
         materialMasterService.getActive(),
       ]);
       setProjects(p);

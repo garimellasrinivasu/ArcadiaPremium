@@ -198,7 +198,7 @@ function CaptureTab({
 
   // Load active projects for dropdown
   useEffect(() => {
-    projectService.getActiveProjects().then((projects) => {
+    projectService.getMyProjects().then((projects) => {
       setProjectList(projects);
       if (projects.length > 0 && !siteName) {
         const arcadia = projects.find((p) => p.name.toLowerCase().includes("arcadia"));
