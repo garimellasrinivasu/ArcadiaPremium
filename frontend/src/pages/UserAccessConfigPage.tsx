@@ -50,6 +50,7 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "LAND_CONVERTER", label: "Land Converter", path: "/activities/land-converter" },
       { key: "GROUND_LEVEL_WORK", label: "Ground Level Work", path: "/activities/ground-level-work" },
       { key: "PAY_SLIPS", label: "Pay Slips", path: "/activities/pay-slips" },
+      { key: "TODO_TASKS", label: "Todo Tasks", path: "/activities/todo-tasks" },
       { key: "PERSONAL_DOCUMENTS", label: "Personal Documents", path: "/personal-documents" },
     ],
   },

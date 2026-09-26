@@ -1120,7 +1120,7 @@ export default function MasterPlanPage() {
               {!blockedVillas.has(selected.villa) && (
                 <>
                   <button
-                    onClick={() => setShowBlockForm(true)}
+                    onClick={() => { setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setShowBlockForm(true); }}
                     className="flex-1 min-w-[100px] bg-amber-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-amber-600 active:bg-amber-700 transition"
                   >
                     Block {plotLabel(selectedProject)}

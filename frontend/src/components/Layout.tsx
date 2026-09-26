@@ -49,6 +49,7 @@ const menuSections: MenuSection[] = [
       { label: "Land Converter", path: "/activities/land-converter", pageKey: "LAND_CONVERTER" },
       { label: "Ground Level Work", path: "/activities/ground-level-work", pageKey: "GROUND_LEVEL_WORK" },
       { label: "Pay Slips", path: "/activities/pay-slips", pageKey: "PAY_SLIPS" },
+      { label: "Todo Tasks", path: "/activities/todo-tasks", pageKey: "TODO_TASKS" },
     ],
   },
   {
