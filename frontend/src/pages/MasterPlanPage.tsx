@@ -28,12 +28,12 @@ export const ARCADIA_PLOTS: PlotDef[] = [
   { villa: 2, left: 21.81, top: 29.5, width: 4.44, height: 2.25, sqYards: 200, facing: "West" },
   { villa: 3, left: 21.81, top: 31.83, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
   { villa: 4, left: 21.81, top: 34.17, width: 4.44, height: 3.99, sqYards: 350, facing: "West" },
-  { villa: 5, left: 26.37, top: 68.05, width: 4.44, height: 1.85, sqYards: 167, facing: "West" },
-  { villa: 6, left: 26.37, top: 66.12, width: 4.44, height: 1.85, sqYards: 167, facing: "West" },
-  { villa: 7, left: 26.37, top: 64.18, width: 4.44, height: 1.85, sqYards: 167, facing: "South" },
-  { villa: 8, left: 26.37, top: 61.53, width: 4.44, height: 2.56, sqYards: 227, facing: "South" },
-  { villa: 9, left: 26.37, top: 56.63, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 10, left: 26.37, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 5, left: 26.37, top: 68.05, width: 4.44, height: 1.85, sqYards: 167, facing: "East" },
+  { villa: 6, left: 26.37, top: 66.12, width: 4.44, height: 1.85, sqYards: 167, facing: "East" },
+  { villa: 7, left: 26.37, top: 64.18, width: 4.44, height: 1.85, sqYards: 167, facing: "East" },
+  { villa: 8, left: 26.37, top: 61.53, width: 4.44, height: 2.56, sqYards: 227, facing: "East" },
+  { villa: 9, left: 26.37, top: 56.63, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 10, left: 26.37, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
   { villa: 11, left: 26.37, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
   { villa: 12, left: 26.37, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
   { villa: 13, left: 26.37, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
@@ -44,223 +44,223 @@ export const ARCADIA_PLOTS: PlotDef[] = [
   { villa: 18, left: 26.37, top: 30.69, width: 4.44, height: 3.19, sqYards: 302, facing: "East" },
   { villa: 19, left: 26.37, top: 28.3, width: 4.44, height: 2.25, sqYards: 200, facing: "East" },
   { villa: 20, left: 26.37, top: 25.94, width: 4.44, height: 2.25, sqYards: 200, facing: "East" },
-  { villa: 21, left: 34.6, top: 24.08, width: 4.44, height: 1.85, sqYards: 167, facing: "East" },
-  { villa: 22, left: 34.6, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 23, left: 34.6, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 24, left: 34.6, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 25, left: 34.6, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 26, left: 34.6, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
-  { villa: 27, left: 34.6, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 28, left: 34.6, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 29, left: 34.6, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 30, left: 34.6, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 31, left: 34.6, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 32, left: 34.6, top: 56.63, width: 4.44, height: 1.99, sqYards: 198, facing: "East" },
-  { villa: 33, left: 34.6, top: 61.5, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
-  { villa: 34, left: 34.6, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 35, left: 34.6, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 36, left: 34.6, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 37, left: 34.6, top: 70.48, width: 4.44, height: 1.85, sqYards: 167, facing: "South" },
-  { villa: 38, left: 34.6, top: 72.44, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 39, left: 34.6, top: 74.38, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 40, left: 34.6, top: 76.31, width: 4.44, height: 1.99, sqYards: 199, facing: "East" },
-  { villa: 41, left: 39.19, top: 76.31, width: 4.44, height: 1.99, sqYards: 302, facing: "South" },
-  { villa: 42, left: 39.19, top: 74.38, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 43, left: 39.19, top: 72.44, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 44, left: 39.19, top: 70.48, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 45, left: 39.19, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 46, left: 39.19, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 47, left: 39.19, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 48, left: 39.19, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
-  { villa: 49, left: 39.19, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "West" },
-  { villa: 50, left: 39.19, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 51, left: 39.19, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 52, left: 39.19, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 53, left: 39.19, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 54, left: 39.19, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 55, left: 39.19, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 56, left: 39.19, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 57, left: 39.19, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 58, left: 39.19, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 59, left: 39.19, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 60, left: 39.19, top: 23.11, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 61, left: 46.49, top: 21.38, width: 4.44, height: 2.22, sqYards: 180, facing: "East" },
-  { villa: 62, left: 46.49, top: 23.71, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 63, left: 46.49, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 64, left: 46.49, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 65, left: 46.49, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 66, left: 46.49, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 67, left: 46.49, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
-  { villa: 68, left: 46.49, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 69, left: 46.49, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 70, left: 46.49, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 71, left: 46.49, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 72, left: 46.49, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 73, left: 46.49, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "East" },
-  { villa: 74, left: 46.49, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
-  { villa: 75, left: 46.49, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 76, left: 46.49, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 77, left: 46.49, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 78, left: 46.49, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 79, left: 46.49, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 80, left: 46.49, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 81, left: 46.49, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 82, left: 46.49, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 83, left: 46.49, top: 80.68, width: 4.48, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 84, left: 51.09, top: 80.68, width: 4.4, height: 1.99, sqYards: 302, facing: "South" },
-  { villa: 85, left: 51.09, top: 78.74, width: 4.4, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 86, left: 51.09, top: 76.8, width: 4.4, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 87, left: 51.09, top: 74.69, width: 4.4, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 88, left: 51.09, top: 72.58, width: 4.4, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 89, left: 51.09, top: 70.48, width: 4.4, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 90, left: 51.09, top: 68.4, width: 4.4, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 91, left: 51.09, top: 66.29, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 92, left: 51.09, top: 64.18, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 93, left: 51.09, top: 61.53, width: 4.4, height: 2.56, sqYards: 225, facing: "West" },
-  { villa: 94, left: 51.09, top: 56.63, width: 4.4, height: 2.22, sqYards: 198, facing: "West" },
-  { villa: 95, left: 51.09, top: 54.52, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 96, left: 51.09, top: 52.41, width: 4.4, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 97, left: 51.09, top: 50.33, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 98, left: 51.09, top: 48.22, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 99, left: 51.09, top: 46.11, width: 4.4, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 100, left: 51.09, top: 35.34, width: 4.4, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 101, left: 51.09, top: 33.0, width: 4.4, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 102, left: 51.09, top: 30.69, width: 4.4, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 103, left: 51.09, top: 28.36, width: 4.4, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 104, left: 51.09, top: 26.02, width: 4.4, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 105, left: 51.09, top: 23.71, width: 4.4, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 106, left: 51.09, top: 20.78, width: 4.4, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 21, left: 34.6, top: 24.08, width: 4.44, height: 1.85, sqYards: 167, facing: "West" },
+  { villa: 22, left: 34.6, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 23, left: 34.6, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 24, left: 34.6, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 25, left: 34.6, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 26, left: 34.6, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 27, left: 34.6, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 28, left: 34.6, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 29, left: 34.6, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 30, left: 34.6, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 31, left: 34.6, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 32, left: 34.6, top: 56.63, width: 4.44, height: 1.99, sqYards: 198, facing: "West" },
+  { villa: 33, left: 34.6, top: 61.5, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
+  { villa: 34, left: 34.6, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 35, left: 34.6, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 36, left: 34.6, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 37, left: 34.6, top: 70.48, width: 4.44, height: 1.85, sqYards: 167, facing: "West" },
+  { villa: 38, left: 34.6, top: 72.44, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 39, left: 34.6, top: 74.38, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 40, left: 34.6, top: 76.31, width: 4.44, height: 1.99, sqYards: 199, facing: "West" },
+  { villa: 41, left: 39.19, top: 76.31, width: 4.44, height: 1.99, sqYards: 302, facing: "East" },
+  { villa: 42, left: 39.19, top: 74.38, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 43, left: 39.19, top: 72.44, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 44, left: 39.19, top: 70.48, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 45, left: 39.19, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 46, left: 39.19, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 47, left: 39.19, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 48, left: 39.19, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
+  { villa: 49, left: 39.19, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "East" },
+  { villa: 50, left: 39.19, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 51, left: 39.19, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 52, left: 39.19, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 53, left: 39.19, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 54, left: 39.19, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 55, left: 39.19, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 56, left: 39.19, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 57, left: 39.19, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 58, left: 39.19, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 59, left: 39.19, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 60, left: 39.19, top: 23.11, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 61, left: 46.49, top: 21.38, width: 4.44, height: 2.22, sqYards: 180, facing: "West" },
+  { villa: 62, left: 46.49, top: 23.71, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 63, left: 46.49, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 64, left: 46.49, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 65, left: 46.49, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 66, left: 46.49, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 67, left: 46.49, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 68, left: 46.49, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 69, left: 46.49, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 70, left: 46.49, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 71, left: 46.49, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 72, left: 46.49, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 73, left: 46.49, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "West" },
+  { villa: 74, left: 46.49, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
+  { villa: 75, left: 46.49, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 76, left: 46.49, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 77, left: 46.49, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 78, left: 46.49, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 79, left: 46.49, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 80, left: 46.49, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 81, left: 46.49, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 82, left: 46.49, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 83, left: 46.49, top: 80.68, width: 4.48, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 84, left: 51.09, top: 80.68, width: 4.4, height: 1.99, sqYards: 302, facing: "East" },
+  { villa: 85, left: 51.09, top: 78.74, width: 4.4, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 86, left: 51.09, top: 76.8, width: 4.4, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 87, left: 51.09, top: 74.69, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 88, left: 51.09, top: 72.58, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 89, left: 51.09, top: 70.48, width: 4.4, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 90, left: 51.09, top: 68.4, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 91, left: 51.09, top: 66.29, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 92, left: 51.09, top: 64.18, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 93, left: 51.09, top: 61.53, width: 4.4, height: 2.56, sqYards: 225, facing: "East" },
+  { villa: 94, left: 51.09, top: 56.63, width: 4.4, height: 2.22, sqYards: 198, facing: "East" },
+  { villa: 95, left: 51.09, top: 54.52, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 96, left: 51.09, top: 52.41, width: 4.4, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 97, left: 51.09, top: 50.33, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 98, left: 51.09, top: 48.22, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 99, left: 51.09, top: 46.11, width: 4.4, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 100, left: 51.09, top: 35.34, width: 4.4, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 101, left: 51.09, top: 33.0, width: 4.4, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 102, left: 51.09, top: 30.69, width: 4.4, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 103, left: 51.09, top: 28.36, width: 4.4, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 104, left: 51.09, top: 26.02, width: 4.4, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 105, left: 51.09, top: 23.71, width: 4.4, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 106, left: 51.09, top: 20.78, width: 4.4, height: 2.82, sqYards: 250, facing: "East" },
   { villa: 107, left: 58.39, top: 19.04, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 108, left: 58.39, top: 21.37, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 109, left: 58.39, top: 23.71, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 110, left: 58.39, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 111, left: 58.39, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 112, left: 58.39, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 113, left: 58.39, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 114, left: 58.39, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
-  { villa: 115, left: 58.39, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 116, left: 58.39, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 117, left: 58.39, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 118, left: 58.39, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 119, left: 58.39, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 120, left: 58.39, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "East" },
-  { villa: 121, left: 58.39, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
-  { villa: 122, left: 58.39, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 123, left: 58.39, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 124, left: 58.39, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 125, left: 58.39, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 126, left: 58.39, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 127, left: 58.39, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 128, left: 58.39, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 129, left: 58.39, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 130, left: 58.39, top: 80.68, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 131, left: 58.39, top: 82.79, width: 4.44, height: 2.79, sqYards: 250, facing: "South" },
-  { villa: 132, left: 62.94, top: 82.62, width: 4.44, height: 2.99, sqYards: 250, facing: "South" },
-  { villa: 133, left: 62.94, top: 80.68, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 134, left: 62.94, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 135, left: 62.94, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 136, left: 62.94, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 137, left: 62.94, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 138, left: 62.94, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 139, left: 62.94, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 140, left: 62.94, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 141, left: 62.94, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 142, left: 62.94, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
-  { villa: 143, left: 62.94, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "West" },
-  { villa: 144, left: 62.94, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 145, left: 62.94, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 146, left: 62.94, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 147, left: 62.94, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 148, left: 62.94, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 149, left: 62.94, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 150, left: 62.94, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 151, left: 62.94, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 152, left: 62.94, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 153, left: 62.94, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 154, left: 62.94, top: 23.4, width: 4.44, height: 2.54, sqYards: 225, facing: "West" },
-  { villa: 155, left: 62.94, top: 20.78, width: 4.44, height: 2.54, sqYards: 225, facing: "West" },
-  { villa: 156, left: 62.94, top: 18.13, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 157, left: 70.28, top: 16.41, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 158, left: 70.28, top: 18.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 159, left: 70.28, top: 20.63, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 160, left: 70.28, top: 22.71, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 161, left: 70.28, top: 24.82, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 162, left: 70.28, top: 26.93, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 163, left: 70.28, top: 29.04, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 164, left: 70.28, top: 31.12, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 165, left: 70.28, top: 33.23, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 166, left: 70.28, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
-  { villa: 167, left: 70.28, top: 40.87, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
-  { villa: 168, left: 70.28, top: 43.8, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
-  { villa: 169, left: 70.28, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 170, left: 70.28, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 171, left: 70.28, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 172, left: 70.28, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 108, left: 58.39, top: 21.37, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 109, left: 58.39, top: 23.71, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 110, left: 58.39, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 111, left: 58.39, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 112, left: 58.39, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 113, left: 58.39, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 114, left: 58.39, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 115, left: 58.39, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 116, left: 58.39, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 117, left: 58.39, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 118, left: 58.39, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 119, left: 58.39, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 120, left: 58.39, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "West" },
+  { villa: 121, left: 58.39, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
+  { villa: 122, left: 58.39, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 123, left: 58.39, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 124, left: 58.39, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 125, left: 58.39, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 126, left: 58.39, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 127, left: 58.39, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 128, left: 58.39, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 129, left: 58.39, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 130, left: 58.39, top: 80.68, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 131, left: 58.39, top: 82.79, width: 4.44, height: 2.79, sqYards: 250, facing: "West" },
+  { villa: 132, left: 62.94, top: 82.62, width: 4.44, height: 2.99, sqYards: 250, facing: "East" },
+  { villa: 133, left: 62.94, top: 80.68, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 134, left: 62.94, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 135, left: 62.94, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 136, left: 62.94, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 137, left: 62.94, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 138, left: 62.94, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 139, left: 62.94, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 140, left: 62.94, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 141, left: 62.94, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 142, left: 62.94, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
+  { villa: 143, left: 62.94, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "East" },
+  { villa: 144, left: 62.94, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 145, left: 62.94, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 146, left: 62.94, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 147, left: 62.94, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 148, left: 62.94, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 149, left: 62.94, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 150, left: 62.94, top: 33.0, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 151, left: 62.94, top: 30.69, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 152, left: 62.94, top: 28.36, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 153, left: 62.94, top: 26.02, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 154, left: 62.94, top: 23.4, width: 4.44, height: 2.54, sqYards: 225, facing: "East" },
+  { villa: 155, left: 62.94, top: 20.78, width: 4.44, height: 2.54, sqYards: 225, facing: "East" },
+  { villa: 156, left: 62.94, top: 18.13, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 157, left: 70.28, top: 16.41, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 158, left: 70.28, top: 18.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 159, left: 70.28, top: 20.63, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 160, left: 70.28, top: 22.71, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 161, left: 70.28, top: 24.82, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 162, left: 70.28, top: 26.93, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 163, left: 70.28, top: 29.04, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 164, left: 70.28, top: 31.12, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 165, left: 70.28, top: 33.23, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 166, left: 70.28, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 167, left: 70.28, top: 40.87, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
+  { villa: 168, left: 70.28, top: 43.8, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 169, left: 70.28, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 170, left: 70.28, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 171, left: 70.28, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 172, left: 70.28, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
   { villa: 173, left: 70.28, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
   { villa: 174, left: 70.28, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "West" },
-  { villa: 175, left: 70.28, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "South" },
-  { villa: 176, left: 70.28, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 177, left: 70.28, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 178, left: 70.28, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 179, left: 70.28, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 180, left: 70.28, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 181, left: 70.28, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 182, left: 70.28, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 183, left: 70.28, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 184, left: 70.28, top: 80.68, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 185, left: 74.84, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 186, left: 74.84, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "South" },
-  { villa: 187, left: 74.84, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 188, left: 74.84, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 189, left: 74.84, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 190, left: 74.84, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 191, left: 74.84, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 192, left: 74.84, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 193, left: 74.84, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "South" },
-  { villa: 194, left: 74.84, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "South" },
-  { villa: 195, left: 74.84, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 196, left: 74.84, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 197, left: 74.84, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 198, left: 74.84, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 199, left: 74.84, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 200, left: 74.84, top: 43.8, width: 4.44, height: 2.22, sqYards: 200, facing: "West" },
-  { villa: 201, left: 74.84, top: 40.87, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 202, left: 74.84, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "West" },
-  { villa: 203, left: 74.84, top: 33.23, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 204, left: 74.84, top: 31.12, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 205, left: 74.84, top: 29.04, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 206, left: 74.84, top: 26.93, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 207, left: 74.84, top: 25.28, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 208, left: 74.84, top: 22.71, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
-  { villa: 209, left: 74.84, top: 20.63, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 210, left: 74.84, top: 18.52, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 211, left: 74.84, top: 15.62, width: 4.44, height: 2.79, sqYards: 250, facing: "West" },
-  { villa: 212, left: 82.18, top: 15.59, width: 4.48, height: 2.82, sqYards: 249, facing: "East" },
-  { villa: 213, left: 82.18, top: 18.52, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 214, left: 82.18, top: 20.63, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 215, left: 82.18, top: 22.71, width: 4.48, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 216, left: 82.18, top: 24.82, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 217, left: 82.18, top: 26.93, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 218, left: 82.18, top: 29.04, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 219, left: 82.18, top: 31.12, width: 4.48, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 220, left: 82.18, top: 33.23, width: 4.48, height: 2.02, sqYards: 180, facing: "East" },
-  { villa: 221, left: 82.18, top: 35.34, width: 4.48, height: 2.82, sqYards: 252, facing: "East" },
-  { villa: 222, left: 82.18, top: 40.87, width: 4.48, height: 1.99, sqYards: 252, facing: "East" },
-  { villa: 223, left: 82.18, top: 43.8, width: 4.48, height: 1.99, sqYards: 200, facing: "East" },
-  { villa: 224, left: 82.18, top: 46.11, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
-  { villa: 225, left: 82.18, top: 48.22, width: 4.48, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 175, left: 70.28, top: 61.73, width: 4.44, height: 2.56, sqYards: 225, facing: "West" },
+  { villa: 176, left: 70.28, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 177, left: 70.28, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 178, left: 70.28, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 179, left: 70.28, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 180, left: 70.28, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 181, left: 70.28, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 182, left: 70.28, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 183, left: 70.28, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "West" },
+  { villa: 184, left: 70.28, top: 80.68, width: 4.44, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 185, left: 74.84, top: 78.74, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 186, left: 74.84, top: 76.8, width: 4.44, height: 1.82, sqYards: 167, facing: "East" },
+  { villa: 187, left: 74.84, top: 74.69, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 188, left: 74.84, top: 72.58, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 189, left: 74.84, top: 70.48, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 190, left: 74.84, top: 68.4, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 191, left: 74.84, top: 66.29, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 192, left: 74.84, top: 64.18, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 193, left: 74.84, top: 61.53, width: 4.44, height: 2.56, sqYards: 225, facing: "East" },
+  { villa: 194, left: 74.84, top: 56.63, width: 4.44, height: 2.22, sqYards: 198, facing: "East" },
+  { villa: 195, left: 74.84, top: 54.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 196, left: 74.84, top: 52.41, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 197, left: 74.84, top: 50.33, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 198, left: 74.84, top: 48.22, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 199, left: 74.84, top: 46.11, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 200, left: 74.84, top: 43.8, width: 4.44, height: 2.22, sqYards: 200, facing: "East" },
+  { villa: 201, left: 74.84, top: 40.87, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 202, left: 74.84, top: 35.34, width: 4.44, height: 2.82, sqYards: 250, facing: "East" },
+  { villa: 203, left: 74.84, top: 33.23, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 204, left: 74.84, top: 31.12, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 205, left: 74.84, top: 29.04, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 206, left: 74.84, top: 26.93, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 207, left: 74.84, top: 25.28, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 208, left: 74.84, top: 22.71, width: 4.44, height: 2.02, sqYards: 180, facing: "East" },
+  { villa: 209, left: 74.84, top: 20.63, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 210, left: 74.84, top: 18.52, width: 4.44, height: 1.99, sqYards: 180, facing: "East" },
+  { villa: 211, left: 74.84, top: 15.62, width: 4.44, height: 2.79, sqYards: 250, facing: "East" },
+  { villa: 212, left: 82.18, top: 15.59, width: 4.48, height: 2.82, sqYards: 249, facing: "West" },
+  { villa: 213, left: 82.18, top: 18.52, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 214, left: 82.18, top: 20.63, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 215, left: 82.18, top: 22.71, width: 4.48, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 216, left: 82.18, top: 24.82, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 217, left: 82.18, top: 26.93, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 218, left: 82.18, top: 29.04, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 219, left: 82.18, top: 31.12, width: 4.48, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 220, left: 82.18, top: 33.23, width: 4.48, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 221, left: 82.18, top: 35.34, width: 4.48, height: 2.82, sqYards: 252, facing: "West" },
+  { villa: 222, left: 82.18, top: 40.87, width: 4.48, height: 1.99, sqYards: 252, facing: "West" },
+  { villa: 223, left: 82.18, top: 43.8, width: 4.48, height: 1.99, sqYards: 200, facing: "West" },
+  { villa: 224, left: 82.18, top: 46.11, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 225, left: 82.18, top: 48.22, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
   { villa: 226, left: 82.18, top: 50.33, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
   { villa: 227, left: 82.18, top: 52.43, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
-  { villa: 228, left: 82.18, top: 54.52, width: 4.48, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 229, left: 82.18, top: 56.63, width: 4.48, height: 1.99, sqYards: 200, facing: "South" },
-  { villa: 230, left: 82.18, top: 61.53, width: 4.48, height: 1.99, sqYards: 227, facing: "South" },
-  { villa: 231, left: 82.18, top: 64.18, width: 4.48, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 232, left: 82.18, top: 66.29, width: 4.48, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 233, left: 82.18, top: 68.4, width: 4.48, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 234, left: 82.18, top: 70.48, width: 4.48, height: 2.02, sqYards: 180, facing: "South" },
-  { villa: 235, left: 82.18, top: 72.58, width: 4.48, height: 1.99, sqYards: 180, facing: "South" },
-  { villa: 236, left: 82.18, top: 74.69, width: 4.48, height: 2.22, sqYards: 200, facing: "South" },
-  { villa: 237, left: 82.18, top: 77.03, width: 4.48, height: 2.22, sqYards: 200, facing: "South" },
+  { villa: 228, left: 82.18, top: 54.52, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 229, left: 82.18, top: 56.63, width: 4.48, height: 1.99, sqYards: 200, facing: "West" },
+  { villa: 230, left: 82.18, top: 61.53, width: 4.48, height: 1.99, sqYards: 227, facing: "West" },
+  { villa: 231, left: 82.18, top: 64.18, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 232, left: 82.18, top: 66.29, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 233, left: 82.18, top: 68.4, width: 4.48, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 234, left: 82.18, top: 70.48, width: 4.48, height: 2.02, sqYards: 180, facing: "West" },
+  { villa: 235, left: 82.18, top: 72.58, width: 4.48, height: 1.99, sqYards: 180, facing: "West" },
+  { villa: 236, left: 82.18, top: 74.69, width: 4.48, height: 2.22, sqYards: 200, facing: "West" },
+  { villa: 237, left: 82.18, top: 77.03, width: 4.48, height: 2.22, sqYards: 200, facing: "West" },
 ];
 
 type VillaCategory = "praneeth" | "landlord";
@@ -322,6 +322,44 @@ const BLOCK_COLORS: Record<BlockType, { fill: string; stroke: string; solid: str
   other:       { fill: "rgba(220, 38, 38, 0.7)",  stroke: "#b91c1c", solid: "#ef4444", label: "Blocked" },
 };
 
+/** Share fills painted over plots whose master plan image isn't pre-coloured (Arcadia's is). */
+const SHARE_FILLS: Record<VillaCategory, string> = {
+  praneeth: "rgba(255, 242, 153, 0.92)", // #FFF299
+  landlord: "rgba(249, 196, 203, 0.92)", // #f9c4cb
+};
+
+/** Sizes shown in the first "available by size" table; all other sizes go in the second. */
+const MAIN_VILLA_SIZES = [167, 180];
+
+function AvailableSizeTable({ rows }: { rows: { size: number; facing: string; villas: number[] }[] }) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="max-h-28 overflow-y-scroll">
+        <table className="w-full text-xs sm:text-[13px] border-collapse">
+          <thead className="sticky top-0 z-10">
+            <tr style={{ background: "#FFF299" }} className="text-gray-900">
+              <th className="px-3 py-1 text-left font-semibold whitespace-nowrap border-b border-gray-300">Villa Size (Sq.Yd)</th>
+              <th className="px-3 py-1 text-left font-semibold whitespace-nowrap border-b border-gray-300">Facing</th>
+              <th className="px-3 py-1 text-center font-semibold whitespace-nowrap border-b border-gray-300">Available</th>
+              <th className="px-3 py-1 text-left font-semibold border-b border-gray-300">Villa Numbers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ size, facing, villas }, i) => (
+              <tr key={`${size}-${facing}`} className={i % 2 ? "bg-gray-50" : "bg-white"}>
+                <td className="px-3 py-1 font-semibold text-gray-900 whitespace-nowrap align-top border-b border-gray-100">{size}</td>
+                <td className="px-3 py-1 text-gray-900 whitespace-nowrap align-top border-b border-gray-100">{facing}</td>
+                <td className="px-3 py-1 text-center text-gray-900 align-top border-b border-gray-100">{villas.length}</td>
+                <td className="px-3 py-1 text-gray-700 leading-snug border-b border-gray-100">{villas.join(", ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function MasterPlanPage() {
   const navigate = useNavigate();
   const downloadEnabled = useDownloadEnabled();
@@ -360,6 +398,9 @@ export default function MasterPlanPage() {
     if (activeShare.has(villaNum)) return "praneeth";
     return "landlord";
   }
+
+  // Kalpavruksha's image is the raw architect plan, so share colours are drawn in code
+  const paintShareColors = isKalpavruksha(selectedProject);
 
   // Block form state
   const [blockName, setBlockName] = useState("");
@@ -614,12 +655,28 @@ export default function MasterPlanPage() {
       // Draw blocked villa overlays
       activePlots.forEach((plot) => {
         const isBlocked = blockedVillas.has(plot.villa);
-        if (!isBlocked) return;
-
         const x = (plot.left / 100) * canvas.width;
         const y = (plot.top / 100) * canvas.height;
         const w = (plot.width / 100) * canvas.width;
         const h = (plot.height / 100) * canvas.height;
+
+        if (!isBlocked) {
+          if (paintShareColors) {
+            ctx.fillStyle = SHARE_FILLS[getVillaCategory(plot.villa)];
+            ctx.fillRect(x, y, w, h);
+            // Redraw number + size in black (the fill hides the image's own labels)
+            const numSize = Math.round(Math.min(h * 0.34, w * 0.22));
+            const sizeSize = Math.round(Math.min(h * 0.24, w * 0.15));
+            ctx.fillStyle = "#000";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = `bold ${numSize}px sans-serif`;
+            ctx.fillText(String(plot.villa), x + w / 2, y + h / 2 - sizeSize * 0.6);
+            ctx.font = `600 ${sizeSize}px sans-serif`;
+            ctx.fillText(`${plot.sqYards} SQYD`, x + w / 2, y + h / 2 + numSize * 0.55);
+          }
+          return;
+        }
 
         // Color based on customer name
         const info = blockedVillas.get(plot.villa);
@@ -765,6 +822,21 @@ export default function MasterPlanPage() {
   const otherBlockedCount = blockedCount - hmdaBlockedCount - installmentBlockedCount;
   const landlordCount = activePlots.filter((p) => getVillaCategory(p.villa) === "landlord").length;
 
+  // Available (yellow) villas grouped by size + facing, smallest size first
+  const availableBySize = (() => {
+    const groups = new Map<string, { size: number; facing: string; villas: number[] }>();
+    activePlots.forEach((p) => {
+      if (getVillaCategory(p.villa) !== "praneeth" || blockedVillas.has(p.villa)) return;
+      const key = `${p.sqYards}|${p.facing}`;
+      const g = groups.get(key) || { size: p.sqYards, facing: p.facing, villas: [] };
+      g.villas.push(p.villa);
+      groups.set(key, g);
+    });
+    return Array.from(groups.values())
+      .sort((a, b) => a.size - b.size || a.facing.localeCompare(b.facing))
+      .map((g) => ({ ...g, villas: g.villas.sort((a, b) => a - b) }));
+  })();
+
   // Whether the selected project has a master plan
   const projectHasMasterPlan = hasMasterPlan(selectedProject);
 
@@ -870,32 +942,51 @@ export default function MasterPlanPage() {
       {/* ===== SALES (colored map + blocking) ===== */}
       {projectHasMasterPlan && (
         <>
-          <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs items-center">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#FFF299" }} />
-              Available ({praneethAvailable})
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.hmda.solid }} />
-              {BLOCK_COLORS.hmda.label} ({hmdaBlockedCount})
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.installment.solid }} />
-              {BLOCK_COLORS.installment.label} ({installmentBlockedCount})
-            </span>
-            {otherBlockedCount > 0 && (
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.other.solid }} />
-              Other Blocked ({otherBlockedCount})
-            </span>
-            )}
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#f9c4cb" }} />
-              Landlord ({landlordCount})
-            </span>
-            <span className="hidden sm:inline text-gray-400 ml-2">Hover for details &bull; Click to block or create sale entry</span>
-            <span className="sm:hidden text-gray-400">Tap villa for details</span>
+          {/* Legend — one box per colour with its purpose */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {[
+              { color: "#FFF299", title: "Available", count: praneethAvailable, purpose: "Praneeth share — open for sale" },
+              { color: BLOCK_COLORS.hmda.solid, title: BLOCK_COLORS.hmda.label, count: hmdaBlockedCount, purpose: "HMDA General Mortgage" },
+              { color: BLOCK_COLORS.installment.solid, title: BLOCK_COLORS.installment.label, count: installmentBlockedCount, purpose: "HMDA Installment Mortgage" },
+              { color: BLOCK_COLORS.other.solid, title: "Blocked", count: otherBlockedCount, purpose: "Reserved for a customer" },
+              { color: "#f9c4cb", title: "Landlord", count: landlordCount, purpose: "Landlord share — not for sale by Praneeth" },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex items-start gap-2 rounded-lg border bg-white px-2 py-1 sm:px-3 sm:py-1.5 shadow-sm"
+                style={{ borderColor: item.color, borderLeftWidth: 6 }}
+              >
+                <span className="mt-0.5 w-4 h-4 shrink-0 rounded border border-black/10" style={{ background: item.color }} />
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm font-semibold text-gray-800">
+                    {item.title} <span className="font-normal text-gray-500">({item.count})</span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 leading-tight">{item.purpose}</div>
+                </div>
+              </div>
+            ))}
           </div>
+          {/* Available villas by size — 167 & 180 in one table, other sizes in another */}
+          {availableBySize.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-1">
+              <div className="md:col-span-2 flex items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-0.5 text-xs sm:text-[13px] font-semibold text-gray-900">
+                <span>Available Villas by Size &amp; Facing</span>
+                <span>Total: {praneethAvailable}</span>
+              </div>
+              {[
+                availableBySize.filter((g) => MAIN_VILLA_SIZES.includes(g.size)),
+                availableBySize.filter((g) => !MAIN_VILLA_SIZES.includes(g.size)),
+              ]
+                .filter((rows) => rows.length > 0)
+                .map((rows, t) => (
+                  <AvailableSizeTable key={t} rows={rows} />
+                ))}
+            </div>
+          )}
+          <p className="text-[10px] sm:text-xs text-gray-400">
+            <span className="hidden sm:inline">Hover for details &bull; Click to block or create sale entry</span>
+            <span className="sm:hidden">Tap villa for details</span>
+          </p>
 
           {/* Map container */}
           <div
@@ -946,8 +1037,8 @@ export default function MasterPlanPage() {
                 const isHovered = hovered === plot.villa;
                 const isSelected = selected?.villa === plot.villa;
 
-                let bg = "rgba(255,255,255,0.01)";
-                let border = "1px solid rgba(0,0,0,0.04)";
+                let bg = paintShareColors ? SHARE_FILLS[getVillaCategory(plot.villa)] : "rgba(255,255,255,0.01)";
+                let border = paintShareColors ? "1px solid rgba(0,0,0,0.15)" : "1px solid rgba(0,0,0,0.04)";
                 const cursor = "pointer";
 
                 if (isBlocked) {
@@ -1018,6 +1109,28 @@ export default function MasterPlanPage() {
                       overflow: "hidden",
                     }}
                   >
+                    {paintShareColors && !isBlocked && (
+                      // The fill hides the image's own labels, so redraw number + size in black
+                      <span
+                        style={{
+                          containerType: "size",
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#000",
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          lineHeight: 1.05,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <span style={{ fontSize: "min(34cqh, 22cqw)", fontWeight: 700 }}>{plot.villa}</span>
+                        <span style={{ fontSize: "min(24cqh, 15cqw)", fontWeight: 600 }}>{plot.sqYards} SQYD</span>
+                      </span>
+                    )}
                     {statusLabel && (
                       <span
                         style={{
