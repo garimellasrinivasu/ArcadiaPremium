@@ -328,19 +328,29 @@ const SHARE_FILLS: Record<VillaCategory, string> = {
   landlord: "rgba(249, 196, 203, 0.92)", // #f9c4cb
 };
 
-/** Sizes shown in the first "available by size" table; all other sizes go in the second. */
+/** Sizes shown in the first villas-by-size table; all other sizes go in the second. */
 const MAIN_VILLA_SIZES = [167, 180];
 
-function AvailableSizeTable({ rows }: { rows: { size: number; facing: string; villas: number[] }[] }) {
+type LegendKey = "available" | "hmda" | "installment" | "other" | "landlord";
+
+function VillaSizeTable({
+  rows,
+  headerBg,
+  headerText,
+}: {
+  rows: { size: number; facing: string; villas: number[] }[];
+  headerBg: string;
+  headerText: string;
+}) {
   return (
     <div className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="max-h-28 overflow-y-scroll">
         <table className="w-full text-xs sm:text-[13px] border-collapse">
           <thead className="sticky top-0 z-10">
-            <tr style={{ background: "#FFF299" }} className="text-gray-900">
+            <tr style={{ background: headerBg, color: headerText }}>
               <th className="px-3 py-1 text-left font-semibold whitespace-nowrap border-b border-gray-300">Villa Size (Sq.Yd)</th>
               <th className="px-3 py-1 text-left font-semibold whitespace-nowrap border-b border-gray-300">Facing</th>
-              <th className="px-3 py-1 text-center font-semibold whitespace-nowrap border-b border-gray-300">Available</th>
+              <th className="px-3 py-1 text-center font-semibold whitespace-nowrap border-b border-gray-300">Count</th>
               <th className="px-3 py-1 text-left font-semibold border-b border-gray-300">Villa Numbers</th>
             </tr>
           </thead>
@@ -367,6 +377,7 @@ export default function MasterPlanPage() {
   const [hovered, setHovered] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [blockedVillas, setBlockedVillas] = useState<Map<number, VillaBlockingDto>>(new Map());
+  const [selectedLegend, setSelectedLegend] = useState<LegendKey>("available");
   const [showBlockForm, setShowBlockForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -822,11 +833,30 @@ export default function MasterPlanPage() {
   const otherBlockedCount = blockedCount - hmdaBlockedCount - installmentBlockedCount;
   const landlordCount = activePlots.filter((p) => getVillaCategory(p.villa) === "landlord").length;
 
-  // Available (yellow) villas grouped by size + facing, smallest size first
-  const availableBySize = (() => {
+  // Legend boxes double as filters for the size/facing tables below them
+  const legendItems: { key: LegendKey; color: string; headerText: string; title: string; count: number; purpose: string }[] = [
+    { key: "available", color: "#FFF299", headerText: "#111827", title: "Available", count: praneethAvailable, purpose: "Praneeth share — open for sale" },
+    { key: "hmda", color: BLOCK_COLORS.hmda.solid, headerText: "#fff", title: BLOCK_COLORS.hmda.label, count: hmdaBlockedCount, purpose: "HMDA General Mortgage" },
+    { key: "installment", color: BLOCK_COLORS.installment.solid, headerText: "#fff", title: BLOCK_COLORS.installment.label, count: installmentBlockedCount, purpose: "HMDA Installment Mortgage" },
+    { key: "other", color: BLOCK_COLORS.other.solid, headerText: "#fff", title: "Blocked", count: otherBlockedCount, purpose: "Reserved for a customer" },
+    { key: "landlord", color: "#f9c4cb", headerText: "#111827", title: "Landlord", count: landlordCount, purpose: "Landlord share — not for sale by Praneeth" },
+  ];
+  const activeLegend = legendItems.find((i) => i.key === selectedLegend) ?? legendItems[0];
+
+  function matchesLegend(villa: number): boolean {
+    const blocking = blockedVillas.get(villa);
+    switch (selectedLegend) {
+      case "available": return getVillaCategory(villa) === "praneeth" && !blocking;
+      case "landlord": return getVillaCategory(villa) === "landlord";
+      default: return !!blocking && getBlockType(blocking.customerName) === selectedLegend;
+    }
+  }
+
+  // Villas in the selected legend box, grouped by size + facing, smallest size first
+  const villasBySize = (() => {
     const groups = new Map<string, { size: number; facing: string; villas: number[] }>();
     activePlots.forEach((p) => {
-      if (getVillaCategory(p.villa) !== "praneeth" || blockedVillas.has(p.villa)) return;
+      if (!matchesLegend(p.villa)) return;
       const key = `${p.sqYards}|${p.facing}`;
       const g = groups.get(key) || { size: p.sqYards, facing: p.facing, villas: [] };
       g.villas.push(p.villa);
@@ -944,17 +974,22 @@ export default function MasterPlanPage() {
         <>
           {/* Legend — one box per colour with its purpose */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {[
-              { color: "#FFF299", title: "Available", count: praneethAvailable, purpose: "Praneeth share — open for sale" },
-              { color: BLOCK_COLORS.hmda.solid, title: BLOCK_COLORS.hmda.label, count: hmdaBlockedCount, purpose: "HMDA General Mortgage" },
-              { color: BLOCK_COLORS.installment.solid, title: BLOCK_COLORS.installment.label, count: installmentBlockedCount, purpose: "HMDA Installment Mortgage" },
-              { color: BLOCK_COLORS.other.solid, title: "Blocked", count: otherBlockedCount, purpose: "Reserved for a customer" },
-              { color: "#f9c4cb", title: "Landlord", count: landlordCount, purpose: "Landlord share — not for sale by Praneeth" },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex items-start gap-2 rounded-lg border bg-white px-2 py-1 sm:px-3 sm:py-1.5 shadow-sm"
-                style={{ borderColor: item.color, borderLeftWidth: 6 }}
+            {legendItems.map((item) => {
+              const isActive = item.key === selectedLegend;
+              return (
+              <button
+                type="button"
+                key={item.key}
+                onClick={() => setSelectedLegend(item.key)}
+                aria-pressed={isActive}
+                title={`Show ${item.title} villas in the table below`}
+                className={`flex items-start gap-2 rounded-lg border px-2 py-1 sm:px-3 sm:py-1.5 text-left shadow-sm transition hover:shadow-md ${isActive ? "ring-2 ring-offset-1" : "bg-white"}`}
+                style={{
+                  borderColor: item.color,
+                  borderLeftWidth: 6,
+                  background: isActive ? `${item.color}26` : undefined,
+                  ["--tw-ring-color" as string]: item.color,
+                }}
               >
                 <span className="mt-0.5 w-4 h-4 shrink-0 rounded border border-black/10" style={{ background: item.color }} />
                 <div className="min-w-0">
@@ -963,26 +998,34 @@ export default function MasterPlanPage() {
                   </div>
                   <div className="text-[10px] sm:text-xs text-gray-500 leading-tight">{item.purpose}</div>
                 </div>
-              </div>
-            ))}
+              </button>
+              );
+            })}
           </div>
-          {/* Available villas by size — 167 & 180 in one table, other sizes in another */}
-          {availableBySize.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-1">
-              <div className="md:col-span-2 flex items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-0.5 text-xs sm:text-[13px] font-semibold text-gray-900">
-                <span>Available Villas by Size &amp; Facing</span>
-                <span>Total: {praneethAvailable}</span>
+          {/* Villas of the selected legend box by size — 167 & 180 in one table, other sizes in another */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-1">
+            <div className="md:col-span-2 flex items-center justify-between rounded-md border border-gray-300 bg-gray-100 px-3 py-0.5 text-xs sm:text-[13px] font-semibold text-gray-900">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded border border-black/10" style={{ background: activeLegend.color }} />
+                {activeLegend.title} Villas by Size &amp; Facing
+              </span>
+              <span>Total: {villasBySize.reduce((n, g) => n + g.villas.length, 0)}</span>
+            </div>
+            {villasBySize.length === 0 ? (
+              <div className="md:col-span-2 rounded-md border border-dashed border-gray-300 bg-white px-3 py-2 text-xs text-gray-500">
+                No {activeLegend.title} villas right now.
               </div>
-              {[
-                availableBySize.filter((g) => MAIN_VILLA_SIZES.includes(g.size)),
-                availableBySize.filter((g) => !MAIN_VILLA_SIZES.includes(g.size)),
+            ) : (
+              [
+                villasBySize.filter((g) => MAIN_VILLA_SIZES.includes(g.size)),
+                villasBySize.filter((g) => !MAIN_VILLA_SIZES.includes(g.size)),
               ]
                 .filter((rows) => rows.length > 0)
                 .map((rows, t) => (
-                  <AvailableSizeTable key={t} rows={rows} />
-                ))}
-            </div>
-          )}
+                  <VillaSizeTable key={t} rows={rows} headerBg={activeLegend.color} headerText={activeLegend.headerText} />
+                ))
+            )}
+          </div>
           <p className="text-[10px] sm:text-xs text-gray-400">
             <span className="hidden sm:inline">Hover for details &bull; Click to block or create sale entry</span>
             <span className="sm:hidden">Tap villa for details</span>
