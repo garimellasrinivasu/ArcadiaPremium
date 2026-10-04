@@ -306,6 +306,22 @@ export const ARCADIA_CLUSTERS: { name: string; villas: number[] }[] = [
   { name: "Cluster 4", villas: [121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,230,231,232,233,234,235,236,237] },
 ];
 
+type BlockType = "hmda" | "installment" | "other";
+
+/** Classify a blocked villa by the name it was blocked under (mortgage vs. customer). */
+function getBlockType(customerName: string | undefined): BlockType {
+  const n = (customerName || "").toUpperCase().replace(/\s+/g, "");
+  if (n.includes("HMDA-GM")) return "hmda";
+  if (n.includes("HMDA-IM")) return "installment";
+  return "other";
+}
+
+const BLOCK_COLORS: Record<BlockType, { fill: string; stroke: string; solid: string; label: string }> = {
+  hmda:        { fill: "rgba(37, 99, 235, 0.7)",  stroke: "#1d4ed8", solid: "#2563eb", label: "HMDA-GM" },
+  installment: { fill: "rgba(147, 51, 234, 0.7)", stroke: "#7c3aed", solid: "#9333ea", label: "HMDA-IM" },
+  other:       { fill: "rgba(220, 38, 38, 0.7)",  stroke: "#b91c1c", solid: "#ef4444", label: "Blocked" },
+};
+
 export default function MasterPlanPage() {
   const navigate = useNavigate();
   const downloadEnabled = useDownloadEnabled();
@@ -605,17 +621,16 @@ export default function MasterPlanPage() {
         const w = (plot.width / 100) * canvas.width;
         const h = (plot.height / 100) * canvas.height;
 
-        // Red blocked fill
-        ctx.fillStyle = "rgba(220, 38, 38, 0.7)";
+        // Color based on customer name
+        const info = blockedVillas.get(plot.villa);
+        const colors = BLOCK_COLORS[getBlockType(info?.customerName)];
+
+        ctx.fillStyle = colors.fill;
         ctx.fillRect(x, y, w, h);
 
-        // Red border
-        ctx.strokeStyle = "#b91c1c";
+        ctx.strokeStyle = colors.stroke;
         ctx.lineWidth = Math.max(2, canvas.width * 0.001);
         ctx.strokeRect(x, y, w, h);
-
-        // Owner name label — fit within the box
-        const info = blockedVillas.get(plot.villa);
         const ownerName = info?.customerName || "";
         if (ownerName) {
           let fontSize = Math.max(6, Math.round(Math.min(h * 0.28, w * 0.11)));
@@ -666,13 +681,14 @@ export default function MasterPlanPage() {
         const isBlocked = blockedVillas.has(p.villa);
         const info = isBlocked ? blockedVillas.get(p.villa) : undefined;
         const allocBg = cat === "praneeth" ? "#FFF299" : "#f9c4cb";
+        const blockColors = isBlocked ? BLOCK_COLORS[getBlockType(info?.customerName)] : undefined;
         const rowBg = isBlocked ? "#fecaca" : allocBg;
         return `<tr style="background:${rowBg}">
           <td style="border:1px solid #999;padding:4px;text-align:center">${p.villa}</td>
           <td style="border:1px solid #999;padding:4px">${p.facing}</td>
           <td style="border:1px solid #999;padding:4px;text-align:right">${p.sqYards}</td>
           <td style="border:1px solid #999;padding:4px;background:${allocBg}">${cat === "praneeth" ? "Praneeth" : "Landlord"}</td>
-          <td style="border:1px solid #999;padding:4px;text-align:center;${isBlocked ? "background:#ef4444;color:#fff;font-weight:bold" : ""}">${isBlocked ? "Blocked" : "Available"}</td>
+          <td style="border:1px solid #999;padding:4px;text-align:center;${blockColors ? `background:${blockColors.solid};color:#fff;font-weight:bold` : ""}">${blockColors ? blockColors.label : "Available"}</td>
           <td style="border:1px solid #999;padding:4px">${info?.customerName || ""}</td>
           <td style="border:1px solid #999;padding:4px">${info?.customerPhone || ""}</td>
           <td style="border:1px solid #999;padding:4px;text-align:right">${info?.bookingAmount ? info.bookingAmount.toLocaleString("en-IN") : ""}</td>
@@ -743,6 +759,10 @@ export default function MasterPlanPage() {
     (p) => getVillaCategory(p.villa) === "praneeth" && !blockedVillas.has(p.villa)
   ).length;
   const blockedCount = blockedVillas.size;
+  const blockTypes = Array.from(blockedVillas.values()).map((v) => getBlockType(v.customerName));
+  const hmdaBlockedCount = blockTypes.filter((t) => t === "hmda").length;
+  const installmentBlockedCount = blockTypes.filter((t) => t === "installment").length;
+  const otherBlockedCount = blockedCount - hmdaBlockedCount - installmentBlockedCount;
   const landlordCount = activePlots.filter((p) => getVillaCategory(p.villa) === "landlord").length;
 
   // Whether the selected project has a master plan
@@ -856,9 +876,19 @@ export default function MasterPlanPage() {
               Available ({praneethAvailable})
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#ef4444" }} />
-              Blocked ({blockedCount})
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.hmda.solid }} />
+              {BLOCK_COLORS.hmda.label} ({hmdaBlockedCount})
             </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.installment.solid }} />
+              {BLOCK_COLORS.installment.label} ({installmentBlockedCount})
+            </span>
+            {otherBlockedCount > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: BLOCK_COLORS.other.solid }} />
+              Other Blocked ({otherBlockedCount})
+            </span>
+            )}
             <span className="flex items-center gap-1">
               <span className="w-3 h-2 sm:w-4 sm:h-3 rounded" style={{ background: "#f9c4cb" }} />
               Landlord ({landlordCount})
@@ -921,8 +951,9 @@ export default function MasterPlanPage() {
                 const cursor = "pointer";
 
                 if (isBlocked) {
-                  bg = "rgba(220, 38, 38, 0.7)";
-                  border = "2px solid #b91c1c";
+                  const colors = BLOCK_COLORS[getBlockType(blockedVillas.get(plot.villa)?.customerName)];
+                  bg = colors.fill;
+                  border = `2px solid ${colors.stroke}`;
                 } else if (isSelected) {
                   bg = "rgba(37, 99, 235, 0.3)";
                   border = "2px solid #2563eb";
