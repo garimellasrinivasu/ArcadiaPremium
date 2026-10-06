@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 @Service
 public class VillaConstructionStatusService {
 
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+
     private static final Logger log = LoggerFactory.getLogger(VillaConstructionStatusService.class);
 
     private final VillaConstructionStatusRepository repository;
@@ -58,7 +60,7 @@ public class VillaConstructionStatusService {
                 });
 
         if (activityIndex == 1) {
-            entity.setActivity1Done(!entity.isActivity1Done());
+            setActivity1Done(entity, !entity.isActivity1Done());
         } else if (activityIndex == 2) {
             entity.setActivity2Done(!entity.isActivity2Done());
         } else {
@@ -96,7 +98,7 @@ public class VillaConstructionStatusService {
                 });
 
         if (activityIndex == 1) {
-            entity.setActivity1Done(done);
+            setActivity1Done(entity, done);
         } else if (activityIndex == 2) {
             entity.setActivity2Done(done);
         }
@@ -153,7 +155,7 @@ public class VillaConstructionStatusService {
                         return newEntity;
                     });
 
-            entity.setActivity1Done(dto.isActivity1Done());
+            setActivity1Done(entity, dto.isActivity1Done());
             entity.setActivity2Done(dto.isActivity2Done());
             entity.setUpdatedAt(LocalDateTime.now());
             entity.setUpdatedBy(username);
@@ -166,5 +168,15 @@ public class VillaConstructionStatusService {
         return results.stream()
                 .map(VillaConstructionStatusDto::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    /** Sets activity 1 and records when it became done, for the daily report. */
+    private static void setActivity1Done(VillaConstructionStatus entity, boolean done) {
+        if (done && !entity.isActivity1Done()) {
+            entity.setCompletedAt(LocalDateTime.now(IST));
+        } else if (!done) {
+            entity.setCompletedAt(null);
+        }
+        entity.setActivity1Done(done);
     }
 }

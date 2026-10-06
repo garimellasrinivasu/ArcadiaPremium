@@ -17,7 +17,7 @@ import type { PlotDef } from "../data/kalpavrukshaPlots";
 import { ARAVINDHAM_PLOTS } from "../data/aravindhamPlots";
 import { clusterInchargeService, type ClusterInchargeDto } from "../services/clusterInchargeService";
 
-type WETab = "construction" | "summary";
+type WETab = "construction" | "summary" | "daily";
 
 export default function WorkExecutionUpdatesPage() {
   const [projects, setProjects] = useState<ProjectDto[]>([]);
@@ -90,6 +90,12 @@ export default function WorkExecutionUpdatesPage() {
           >
             Summary
           </button>
+          <button
+            onClick={() => setActiveTab("daily")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition ${activeTab === "daily" ? "bg-blue-600 text-white shadow" : "text-gray-600 hover:bg-gray-200"}`}
+          >
+            Daily Report
+          </button>
         </div>
       )}
 
@@ -108,6 +114,11 @@ export default function WorkExecutionUpdatesPage() {
           plots={activePlots}
           image={activeImage}
         />
+      )}
+
+      {/* Daily Report */}
+      {projectHasMasterPlan && isArcadia(selectedProject) && activeTab === "daily" && (
+        <DailyReportView projectName={selectedProject} plots={activePlots} />
       )}
 
       {/* Summary */}
@@ -905,6 +916,251 @@ function ConstructionSummaryView({
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  DAILY REPORT VIEW — what was completed on a given day              */
+/* ------------------------------------------------------------------ */
+
+const IST_TZ = "Asia/Kolkata";
+const istDate = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: IST_TZ }); // YYYY-MM-DD
+function shiftDate(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function formatDay(ymd: string): string {
+  return new Date(`${ymd}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+}
+
+/**
+ * Date (IST) on which a done stage was completed. Entries saved before completion times were
+ * recorded fall back to the actual completion date, then to the last-updated time (stored in UTC).
+ */
+function completionDay(s: VillaConstructionStatusDto): { day: string; exact: boolean } | null {
+  if (!s.activity1Done) return null;
+  if (s.completedAt) return { day: s.completedAt.slice(0, 10), exact: true };
+  if (s.actualCompletionDate) return { day: s.actualCompletionDate.slice(0, 10), exact: false };
+  if (s.updatedAt) return { day: istDate(new Date(`${s.updatedAt}Z`)), exact: false };
+  return null;
+}
+
+function DailyReportView({ projectName, plots }: { projectName: string; plots: PlotDef[] }) {
+  const today = istDate(new Date());
+  const [reportDay, setReportDay] = useState(shiftDate(today, -1));
+  const [allStatuses, setAllStatuses] = useState<VillaConstructionStatusDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    villaConstructionService
+      .getAllByProject(projectName)
+      .then(setAllStatuses)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [projectName]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading daily report...</div>
+      </div>
+    );
+  }
+
+  const prevDay = shiftDate(reportDay, -1);
+  const plotVillas = new Set(plots.map((p) => p.villa));
+  const phaseLabel = new Map(CONSTRUCTION_PHASES.map((p) => [p.key, p.label]));
+  const phaseOrder = new Map(CONSTRUCTION_PHASES.map((p, i) => [p.key, i]));
+  const clusterOf = (villa: number) => ARCADIA_CLUSTERS.find((c) => c.villas.includes(villa))?.name ?? "Unassigned";
+
+  // Every done stage with the day it was completed
+  const done = allStatuses
+    .filter((s) => plotVillas.has(s.villaNumber) && phaseOrder.has(s.phase))
+    .map((s) => ({ s, c: completionDay(s) }))
+    .filter((x): x is { s: VillaConstructionStatusDto; c: { day: string; exact: boolean } } => x.c !== null);
+
+  const onDay = done.filter((x) => x.c.day === reportDay);
+  const approxCount = onDay.filter((x) => !x.c.exact).length;
+
+  // Stage totals at end of previous day vs end of report day
+  const stageRows = CONSTRUCTION_PHASES.map((phase) => {
+    const forPhase = done.filter((x) => x.s.phase === phase.key);
+    const before = forPhase.filter((x) => x.c.day <= prevDay).length;
+    const after = forPhase.filter((x) => x.c.day <= reportDay).length;
+    return { key: phase.key, label: phase.label, before, after, change: after - before };
+  });
+
+  // Cluster -> stage -> villas completed on the report day
+  const clusterColors = ["#2563eb", "#16a34a", "#d97706", "#9333ea"];
+  const clusterRows = ARCADIA_CLUSTERS.map((cluster, ci) => {
+    const items = onDay.filter((x) => cluster.villas.includes(x.s.villaNumber));
+    const byStage = CONSTRUCTION_PHASES.map((phase) => ({
+      label: phase.label,
+      villas: items.filter((x) => x.s.phase === phase.key).map((x) => x.s.villaNumber).sort((a, b) => a - b),
+    })).filter((r) => r.villas.length > 0);
+    return { name: cluster.name, color: clusterColors[ci % clusterColors.length], total: items.length, villaCount: new Set(items.map((x) => x.s.villaNumber)).size, byStage };
+  });
+
+  // Villa -> stages completed on the report day
+  const villaRows = Array.from(
+    onDay.reduce((m, x) => m.set(x.s.villaNumber, [...(m.get(x.s.villaNumber) || []), x.s]), new Map<number, VillaConstructionStatusDto[]>())
+  )
+    .sort(([a], [b]) => a - b)
+    .map(([villa, list]) => ({
+      villa,
+      cluster: clusterOf(villa),
+      stages: list.sort((a, b) => (phaseOrder.get(a.phase) ?? 0) - (phaseOrder.get(b.phase) ?? 0)).map((s) => phaseLabel.get(s.phase) ?? s.phase),
+      by: Array.from(new Set(list.map((s) => s.updatedBy).filter(Boolean))).join(", "),
+    }));
+
+  const downloadCsv = () => {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = [["Date", "Villa", "Cluster", "Stages completed", "Updated by"].map(esc).join(",")];
+    villaRows.forEach((r) => lines.push([reportDay, r.villa, r.cluster, r.stages.join("; "), r.by].map(esc).join(",")));
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `daily-report-${reportDay}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const dayBtn = (label: string, day: string) => (
+    <button
+      onClick={() => setReportDay(day)}
+      className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${reportDay === day ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Date controls */}
+      <div className="bg-white rounded-xl border border-gray-200 p-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-gray-700 mr-1">Report date</span>
+        <button onClick={() => setReportDay(shiftDate(reportDay, -1))} className="px-2 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm" aria-label="Previous day">&lsaquo;</button>
+        <input
+          type="date"
+          value={reportDay}
+          max={today}
+          onChange={(e) => e.target.value && setReportDay(e.target.value)}
+          className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+        />
+        <button onClick={() => setReportDay(shiftDate(reportDay, 1))} disabled={reportDay >= today} className="px-2 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm disabled:opacity-40" aria-label="Next day">&rsaquo;</button>
+        {dayBtn("Yesterday", shiftDate(today, -1))}
+        {dayBtn("Today", today)}
+        <div className="flex-1" />
+        <button onClick={downloadCsv} disabled={villaRows.length === 0} className="px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-40">
+          Download (Excel CSV)
+        </button>
+      </div>
+
+      {/* Headline */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <h3 className="text-sm font-semibold text-gray-700">
+          Work completed on {formatDay(reportDay)}{reportDay === today ? " (so far today)" : ""}
+        </h3>
+        <p className="text-2xl font-bold text-gray-900 mt-1">
+          {onDay.length} stage{onDay.length === 1 ? "" : "s"} completed across {villaRows.length} villa{villaRows.length === 1 ? "" : "s"}
+        </p>
+        <p className="text-xs text-gray-500 mt-1">Compared with the position at the end of {formatDay(prevDay)}.</p>
+      </div>
+
+      {/* Stage-wise change */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <h3 className="text-sm font-semibold text-gray-700 px-4 pt-3 pb-2">Stage-wise change (villas completed, of {plots.length})</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-600">
+              <tr>
+                <th className="px-4 py-2 text-left font-semibold">Stage</th>
+                <th className="px-4 py-2 text-center font-semibold">End of {formatDay(prevDay)}</th>
+                <th className="px-4 py-2 text-center font-semibold">End of {formatDay(reportDay)}</th>
+                <th className="px-4 py-2 text-center font-semibold">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stageRows.map((r) => (
+                <tr key={r.key} className="border-t border-gray-100">
+                  <td className="px-4 py-1.5 text-gray-800">{r.label}</td>
+                  <td className="px-4 py-1.5 text-center text-gray-600">{r.before}</td>
+                  <td className="px-4 py-1.5 text-center text-gray-900 font-medium">{r.after}</td>
+                  <td className={`px-4 py-1.5 text-center font-semibold ${r.change > 0 ? "text-green-700" : "text-gray-400"}`}>{r.change > 0 ? `+${r.change}` : "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Cluster-wise with villa numbers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {clusterRows.map((c) => (
+          <div key={c.name} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2" style={{ background: `${c.color}14` }}>
+              <h4 className="text-sm font-bold" style={{ color: c.color }}>{c.name}</h4>
+              <span className="text-xs text-gray-600">{c.total} stage{c.total === 1 ? "" : "s"} · {c.villaCount} villa{c.villaCount === 1 ? "" : "s"}</span>
+            </div>
+            {c.byStage.length === 0 ? (
+              <p className="px-4 py-3 text-xs text-gray-400">No work completed in this cluster.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <tbody>
+                  {c.byStage.map((r) => (
+                    <tr key={r.label} className="border-t border-gray-100 align-top">
+                      <td className="px-4 py-1.5 font-medium text-gray-800 whitespace-nowrap">{r.label}</td>
+                      <td className="px-2 py-1.5 text-center text-gray-500 whitespace-nowrap">{r.villas.length}</td>
+                      <td className="px-4 py-1.5 text-gray-700">{r.villas.join(", ")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Villa-wise */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <h3 className="text-sm font-semibold text-gray-700 px-4 pt-3 pb-2">Villa-wise work completed</h3>
+        {villaRows.length === 0 ? (
+          <p className="px-4 pb-4 text-sm text-gray-400">No work was marked complete on this day.</p>
+        ) : (
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                <tr>
+                  <th className="px-4 py-2 text-left font-semibold">Villa</th>
+                  <th className="px-4 py-2 text-left font-semibold">Cluster</th>
+                  <th className="px-4 py-2 text-left font-semibold">Stages completed</th>
+                  <th className="px-4 py-2 text-left font-semibold">Updated by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {villaRows.map((r) => (
+                  <tr key={r.villa} className="border-t border-gray-100">
+                    <td className="px-4 py-1.5 font-semibold text-gray-900">{r.villa}</td>
+                    <td className="px-4 py-1.5 text-gray-700">{r.cluster}</td>
+                    <td className="px-4 py-1.5 text-gray-700">{r.stages.join(", ")}</td>
+                    <td className="px-4 py-1.5 text-gray-500">{r.by || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {approxCount > 0 && (
+        <p className="text-xs text-amber-700">
+          {approxCount} of these entries were saved before exact completion times were recorded, so their day is taken from the
+          actual completion date or the last time the entry was edited.
+        </p>
+      )}
     </div>
   );
 }

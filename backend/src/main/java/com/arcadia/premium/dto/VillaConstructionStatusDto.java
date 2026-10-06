@@ -22,6 +22,7 @@ public class VillaConstructionStatusDto {
     private String actualCompletionDate;
     private String updatedAt;
     private String updatedBy;
+    private String completedAt;
 
     public static VillaConstructionStatusDto fromEntity(VillaConstructionStatus e) {
         VillaConstructionStatusDto d = new VillaConstructionStatusDto();
@@ -42,6 +43,9 @@ public class VillaConstructionStatusDto {
                 ? e.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                 : null;
         d.updatedBy = e.getUpdatedBy();
+        d.completedAt = e.getCompletedAt() != null
+                ? e.getCompletedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                : null;
         return d;
     }
 
@@ -84,4 +88,7 @@ public class VillaConstructionStatusDto {
 
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+
+    public String getCompletedAt() { return completedAt; }
+    public void setCompletedAt(String completedAt) { this.completedAt = completedAt; }
 }

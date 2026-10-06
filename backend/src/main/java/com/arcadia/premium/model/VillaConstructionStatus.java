@@ -46,6 +46,10 @@ public class VillaConstructionStatus {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    /** When activity 1 was last marked done (IST); cleared when it is unmarked. */
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     // Constructors
     public VillaConstructionStatus() {}
 
@@ -79,6 +83,9 @@ public class VillaConstructionStatus {
 
     public LocalDate getActualCompletionDate() { return actualCompletionDate; }
     public void setActualCompletionDate(LocalDate actualCompletionDate) { this.actualCompletionDate = actualCompletionDate; }
+
+    public LocalDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

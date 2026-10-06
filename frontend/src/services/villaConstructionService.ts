@@ -13,6 +13,7 @@ export interface VillaConstructionStatusDto {
   delayInDays?: number;
   actualCompletionDate?: string;
   updatedAt?: string;
+  completedAt?: string;
   updatedBy?: string;
 }
 
