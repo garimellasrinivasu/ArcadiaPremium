@@ -113,6 +113,29 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-arcadia-900 to-arcadia-700">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        {/* ── PROJECT TABS — Senior Living is a separate app served from /senior-living/ ── */}
+        {view === "login" && (
+          <div className="grid grid-cols-2 gap-1 p-1 mb-6 bg-gray-100 rounded-xl" role="tablist" aria-label="Choose project">
+            <button
+              type="button"
+              role="tab"
+              aria-selected="true"
+              className="py-2 rounded-lg text-sm font-semibold bg-white text-arcadia-900 shadow"
+            >
+              Arcadia Premium
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              onClick={() => window.location.assign("/senior-living/index.html")}
+              className="py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-200 transition"
+            >
+              Senior Living
+            </button>
+          </div>
+        )}
+
         {/* ── HEADER ── */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-arcadia-900">ArcadiaPremium</h1>

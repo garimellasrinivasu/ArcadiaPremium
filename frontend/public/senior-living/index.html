@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Anubandham</title>
+<meta name="theme-color" content="#0E1B2C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anubandham">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Telugu:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one app shell — header, scrolling content, bottom picture-nav on phones, side rail on iPad/desktop; red HELP always floating for residents. Dark "temple night" first, pearl light theme second. */
+:root{
+  --bg:#0C1828; --bg2:#10223A; --surface:#15283F; --surface2:#1C3350; --line:#2A4566;
+  --fg:#F7F2E7; --muted:#B9C4D2; --gold:#E6BE5A; --gold2:#C9962E; --on-gold:#1A1405;
+  --sos:#E5392B; --sos2:#B5221A; --ok:#3CC48C; --warn:#F2A93B; --bad:#FF6B5E; --info:#5FB8E8;
+  --peacock:#1E9A9A; --shadow:0 14px 34px -16px rgba(0,0,0,.7);
+  --f-display:"Marcellus","Noto Sans Telugu","Noto Sans Devanagari",Georgia,serif;
+  --f-body:"Noto Sans","Noto Sans Telugu","Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#EEF1F6; --bg2:#E3E8F0; --surface:#FFFFFF; --surface2:#F4F6FA; --line:#D3DAE6;
+  --fg:#12223A; --muted:#4A5A70; --gold:#8C5D00; --gold2:#B07A10; --on-gold:#FFFFFF;
+  --sos:#D3301F; --sos2:#A81F12; --ok:#137A50; --warn:#9A5C00; --bad:#C0291B; --info:#1C6FA3;
+  --peacock:#0F7474; --shadow:0 12px 28px -18px rgba(18,34,58,.45); color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#EEF1F6; --bg2:#E3E8F0; --surface:#FFFFFF; --surface2:#F4F6FA; --line:#D3DAE6;
+  --fg:#12223A; --muted:#4A5A70; --gold:#8C5D00; --gold2:#B07A10; --on-gold:#FFFFFF;
+  --sos:#D3301F; --sos2:#A81F12; --ok:#137A50; --warn:#9A5C00; --bad:#C0291B; --info:#1C6FA3;
+  --peacock:#0F7474; --shadow:0 12px 28px -18px rgba(18,34,58,.45); color-scheme:light;
+}
+html{font-size:18px;-webkit-text-size-adjust:100%}
+html.sz2{font-size:21px} html.sz3{font-size:24px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+button,a,input,select{touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:12px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shell ---------- */
+.app{min-height:100vh;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:
+  radial-gradient(circle at 10px 10px,color-mix(in srgb,var(--gold) 22%,transparent) 1.4px,transparent 1.6px) 0 0/20px 20px,
+  linear-gradient(180deg,var(--bg2),var(--bg));
+  border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));
+  padding:.55rem 1rem .6rem}
+.top-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.55rem;min-width:0;flex:1 1 auto;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.logo{width:2.6rem;height:2.6rem;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(from 0deg,var(--gold),var(--gold2),var(--gold));box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 25%,transparent)}
+.logo svg{width:68%;height:68%}
+.bname{font-family:var(--f-display);font-size:1.25rem;line-height:1.05;color:var(--gold);letter-spacing:.02em}
+.bsub{font-size:.68rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctrls{display:flex;gap:.4rem;align-items:center}
+.top-in{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand icons" "lang lang";row-gap:.45rem}
+.brand{grid-area:brand}.c-icons{grid-area:icons}.c-lang{grid-area:lang;justify-content:space-between}
+@media (min-width:760px){.top-in{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"brand lang icons"}.c-lang{gap:.6rem}}
+@media (max-width:400px){.bsub{display:none}.seg button{min-width:2.5rem}}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;min-width:2.6rem;height:2.6rem;border-radius:999px;cursor:pointer;font-weight:700;color:var(--muted);padding:0 .5rem}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--on-gold)}
+.seg .a1{font-size:.8rem}.seg .a2{font-size:1rem}.seg .a3{font-size:1.25rem}
+.iconbtn{width:3.1rem;height:3.1rem;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:1.35rem;display:grid;place-items:center}
+
+.body{flex:1;display:flex;max-width:1180px;width:100%;margin:0 auto}
+.rail{display:none}
+main{flex:1;min-width:0;padding:1rem 1rem 9.5rem}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:color-mix(in srgb,var(--bg2) 94%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid color-mix(in srgb,var(--gold) 30%,var(--line));
+  padding:.35rem .35rem calc(.35rem + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+.nav-in{display:flex;gap:.2rem;width:100%;max-width:760px}
+.nb{flex:1;min-width:0;min-height:3.9rem;border:0;background:none;border-radius:1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;color:var(--muted);padding:.2rem .1rem}
+.nb .ic{font-size:1.65rem;line-height:1;filter:saturate(1.1)}
+.nb .lb{font-size:.62rem;font-weight:700;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.nb[aria-current="page"]{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+.nb[aria-current="page"] .ic{transform:scale(1.12)}
+@media (min-width:900px){
+  .nav{display:none}
+  .rail{display:flex;flex-direction:column;gap:.4rem;padding:1rem 0 1rem 1rem;position:sticky;top:5.2rem;align-self:flex-start;width:11.5rem;flex:none}
+  .rail .nb{flex-direction:row;justify-content:flex-start;gap:.7rem;padding:.6rem .9rem;min-height:3.4rem}
+  .rail .nb .lb{font-size:.9rem}
+  main{padding:1.2rem 1.2rem 7rem}
+}
+
+/* ---------- SOS ---------- */
+.sos{position:fixed;z-index:40;right:1rem;bottom:calc(5.2rem + env(safe-area-inset-bottom,0px));width:6.2rem;height:6.2rem;border-radius:50%;border:4px solid color-mix(in srgb,#fff 70%,var(--sos));
+  background:radial-gradient(circle at 35% 30%,#FF6A5A,var(--sos) 55%,var(--sos2));color:#fff;cursor:pointer;
+  box-shadow:0 0 0 0 rgba(229,57,43,.55),0 12px 26px -8px rgba(160,20,10,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;animation:pulse 2.4s infinite}
+.sos .ic{font-size:2rem;line-height:1}
+.sos .lb{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,57,43,.5),0 12px 26px -8px rgba(160,20,10,.8)}70%{box-shadow:0 0 0 18px rgba(229,57,43,0),0 12px 26px -8px rgba(160,20,10,.8)}100%{box-shadow:0 0 0 0 rgba(229,57,43,0),0 12px 26px -8px rgba(160,20,10,.8)}}
+@media (min-width:900px){.sos{bottom:1.5rem;right:1.5rem;width:7rem;height:7rem}}
+
+/* ---------- common ---------- */
+h1,h2,h3{font-family:var(--f-display);font-weight:400;text-wrap:balance;margin:0}
+h1{font-size:1.75rem;line-height:1.15}
+h2{font-size:1.3rem;color:var(--gold);display:flex;align-items:center;gap:.5rem}
+h2 .ic{font-size:1.5rem}
+.stack{display:flex;flex-direction:column;gap:1.1rem}
+.sec{display:flex;flex-direction:column;gap:.7rem}
+.muted{color:var(--muted)}
+.small{font-size:.8rem}
+.num{font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:1.4rem;padding:1rem;box-shadow:var(--shadow)}
+.hero{position:relative;overflow:hidden;border-radius:1.6rem;padding:1.2rem;border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));
+  background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--peacock) 45%,transparent),transparent 60%),
+  radial-gradient(90% 120% at 0% 100%,color-mix(in srgb,var(--gold) 20%,transparent),transparent 60%),var(--surface);box-shadow:var(--shadow)}
+.hero .kolam{position:absolute;right:-30px;top:-30px;width:170px;height:170px;opacity:.25;pointer-events:none}
+.hello{display:flex;align-items:center;gap:.9rem}
+.avatar{width:4.2rem;height:4.2rem;border-radius:50%;display:grid;place-items:center;font-size:2.4rem;flex:none;background:color-mix(in srgb,var(--gold) 22%,var(--surface2));border:2px solid var(--gold)}
+.avatar.sm{width:3.2rem;height:3.2rem;font-size:1.8rem}
+.grid{display:grid;gap:.8rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1000px){.grid.g4w{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{--h:var(--gold);position:relative;min-height:8.2rem;border-radius:1.4rem;border:1px solid color-mix(in srgb,var(--h) 40%,var(--line));cursor:pointer;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--h) 26%,var(--surface)),var(--surface) 75%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;padding:.9rem .6rem;text-align:center;box-shadow:var(--shadow);transition:transform .15s}
+.tile:active{transform:scale(.97)}
+.tile .big{font-size:3rem;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25))}
+.tile .t{font-weight:800;font-size:.95rem;line-height:1.2}
+.tile .s{font-size:.75rem;color:var(--muted);font-weight:600}
+.tile .badge{position:absolute;top:.55rem;right:.55rem}
+.h-red{--h:#E5392B}.h-gold{--h:#E6BE5A}.h-teal{--h:#1E9A9A}.h-blue{--h:#4C8DF0}.h-green{--h:#3CC48C}.h-purple{--h:#A877E8}.h-pink{--h:#E86FA6}.h-orange{--h:#F2A03B}
+.pill{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:999px;font-size:.75rem;font-weight:800;white-space:nowrap;border:1px solid currentColor}
+.p-ok{color:var(--ok)}.p-warn{color:var(--warn)}.p-bad{color:var(--bad)}.p-info{color:var(--info)}.p-gold{color:var(--gold)}
+.btn{min-height:3.4rem;border-radius:1rem;border:0;cursor:pointer;font-weight:800;padding:.6rem 1.2rem;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:1rem}
+.btn .ic{font-size:1.4rem}
+.btn-gold{background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--on-gold)}
+.btn-ghost{background:var(--surface2);border:1px solid var(--line)}
+.btn-red{background:var(--sos);color:#fff}
+.btn-green{background:var(--ok);color:#06180F}
+.btn.wide{width:100%}
+.row{display:flex;align-items:center;gap:.8rem}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.list{display:flex;flex-direction:column;gap:.6rem}
+.item{display:flex;align-items:center;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:1.1rem;padding:.75rem .9rem;min-height:4rem}
+.item .eic{font-size:2rem;width:2.6rem;text-align:center;flex:none;line-height:1}
+.item.done{opacity:.55}
+.item.now{border-color:var(--gold);box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 30%,transparent)}
+.item .tm{font-weight:800;font-variant-numeric:tabular-nums;min-width:4.2rem;color:var(--gold);font-size:.9rem}
+.ttl{font-weight:700}
+.chips{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{min-height:3.1rem;padding:.4rem 1rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:.4rem}
+.chip[aria-pressed="true"]{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+.note{font-size:.78rem;color:var(--muted);display:flex;gap:.5rem;align-items:flex-start}
+.note .ic{font-size:1rem}
+hr.orn{border:0;height:14px;margin:.2rem 0;background:radial-gradient(circle,var(--gold) 2px,transparent 2.5px) center/18px 14px repeat-x;opacity:.5}
+
+/* vitals */
+.vit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+@media (min-width:760px){.vit{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:1.3rem;padding:.9rem;display:flex;flex-direction:column;gap:.35rem;text-align:center;align-items:center}
+.vcard .big{font-size:2.4rem;line-height:1}
+.vpair{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:.3rem}
+.vpair div{background:var(--surface2);border-radius:.8rem;padding:.35rem .2rem}
+.vpair b{display:block;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.vpair span{font-size:.62rem;color:var(--muted);font-weight:700;display:flex;gap:.2rem;justify-content:center;align-items:center}
+
+/* switches */
+.sw{display:flex;align-items:center;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:1.2rem;padding:.8rem .9rem;cursor:pointer;width:100%;text-align:left}
+.sw .eic{font-size:2.1rem;flex:none;width:2.7rem;text-align:center}
+.tog{flex:none;width:4.4rem;height:2.5rem;border-radius:999px;background:var(--line);position:relative;transition:background .2s}
+.tog::after{content:"";position:absolute;top:.25rem;left:.25rem;width:2rem;height:2rem;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .2s}
+.sw[aria-checked="true"] .tog{background:var(--ok)}
+.sw[aria-checked="true"] .tog::after{transform:translateX(1.9rem)}
+.sw.locked{cursor:default}
+.sw.locked .tog{background:var(--muted);opacity:.6}
+
+/* overlays */
+.ov{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(5,10,18,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.sheet{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--surface);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));border-radius:1.6rem;padding:1.2rem;display:flex;flex-direction:column;gap:1rem;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
+.sheet.alert{border:3px solid var(--sos);background:linear-gradient(180deg,color-mix(in srgb,var(--sos) 22%,var(--surface)),var(--surface) 45%)}
+.bigclock{font-size:3.4rem;font-weight:800;font-variant-numeric:tabular-nums;text-align:center;letter-spacing:.04em;line-height:1}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.st{text-align:center;padding:.6rem .3rem;border-radius:1rem;background:var(--surface2);border:1px solid var(--line);opacity:.5}
+.st.on{opacity:1;border-color:var(--ok)}
+.st .ic{font-size:1.8rem}
+.st b{display:block;font-size:.75rem}
+.st span{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.resp{display:flex;align-items:center;gap:.7rem;background:var(--surface2);border-radius:1rem;padding:.6rem .8rem}
+.resp .eic{font-size:2.2rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(6rem + env(safe-area-inset-bottom,0px));z-index:70;background:var(--fg);color:var(--bg);font-weight:800;padding:.85rem 1.3rem;border-radius:999px;box-shadow:var(--shadow);max-width:calc(100% - 2rem);text-align:center;display:flex;gap:.5rem;align-items:center}
+
+/* splash */
+.splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;padding:2rem 1rem;text-align:center;
+  background:radial-gradient(80% 60% at 50% 0%,color-mix(in srgb,var(--peacock) 35%,transparent),transparent 70%),
+  radial-gradient(circle at 12px 12px,color-mix(in srgb,var(--gold) 16%,transparent) 1.5px,transparent 1.8px) 0 0/24px 24px,var(--bg)}
+.splash .logo{width:6rem;height:6rem}
+.splash h1{font-size:2.6rem;color:var(--gold);letter-spacing:.03em}
+.splash .te-name{font-family:"Noto Sans Telugu",sans-serif;font-size:1.4rem;color:var(--fg);margin-top:-.6rem}
+.roles{display:grid;gap:1rem;width:100%;max-width:900px;grid-template-columns:1fr}
+@media (min-width:700px){.roles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.role{min-height:11rem}
+.role .big{font-size:4rem}
+.role .t{font-size:1.15rem}
+
+/* tables / bars */
+.tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+.tbl th{text-align:left;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;padding:.5rem .4rem;border-bottom:1px solid var(--line)}
+.tbl td{padding:.6rem .4rem;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tbl td.r,.tbl th.r{text-align:right}
+.scroll{overflow-x:auto}
+.counters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
+.counter{background:var(--surface);border:1px solid var(--line);border-radius:1.3rem;padding:.9rem .5rem;text-align:center}
+.counter .big{font-size:2.2rem}
+.counter b{display:block;font-size:2rem;font-variant-numeric:tabular-nums;color:var(--gold);line-height:1.1}
+.counter span{font-size:.75rem;font-weight:800;color:var(--muted)}
+.bars{display:flex;align-items:flex-end;gap:.5rem;height:9rem;padding:.4rem .2rem 0;border-bottom:1px solid var(--line);position:relative}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:.25rem}
+.bars .b i{display:block;width:100%;max-width:2.6rem;border-radius:.5rem .5rem 0 0;background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.bars .b em{font-style:normal;font-size:.68rem;font-weight:800;font-variant-numeric:tabular-nums}
+.bars .lim{position:absolute;left:0;right:0;border-top:2px dashed var(--bad)}
+.bars .lim span{position:absolute;right:0;top:-1.2rem;font-size:.65rem;font-weight:800;color:var(--bad)}
+.blab{display:flex;gap:.5rem}.blab span{flex:1;text-align:center;font-size:.68rem;color:var(--muted);font-weight:700}
+.stripe{border-left:6px solid var(--line)}
+.stripe.ok{border-left-color:var(--ok)}.stripe.warn{border-left-color:var(--warn)}.stripe.bad{border-left-color:var(--bad)}
+.meter{height:.6rem;border-radius:999px;background:var(--surface2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:999px}
+.demo-tag{font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:.15rem .6rem}
+.two{display:grid;gap:1.1rem;grid-template-columns:1fr}
+@media (min-width:900px){.two{grid-template-columns:1fr 1fr}}
+.offline{display:flex;align-items:center;gap:.6rem;background:var(--surface2);border:1px dashed var(--line);border-radius:1rem;padding:.6rem .8rem;font-size:.8rem;font-weight:700}
+.offline .ic{font-size:1.5rem}
+</style>
+</head><body>
+
+
+<div id="app" class="app"></div>
+
+<script>
+(function(){
+"use strict";
+/* ================= i18n ================= */
+const T={
+en:{
+ appSub:"Praneeth Pranav Ullasa · Senior Living",
+ who:"Who is using the app?", resident:"Resident", family:"Family", ops:"Care Team",
+ residentS:"Lakshmi garu · B-704", familyS:"Ravi · son, New Jersey", opsS:"Duty desk · Ullasa",
+ demo:"Demo · illustrative data", install:"Install on my phone",
+ home:"Home", meals:"Meals", health:"Health", services:"Services", community:"Community", privacy:"Privacy",
+ help:"Help", greet:"Namaskaram", rname:"Lakshmi garu", today:"Today",
+ qOrder:"Lunch to my room", qCall:"Call Ravi", qBuggy:"Buggy",
+ schedule:"My day", medicines:"Medicines", taken:"Taken", due:"Tap when taken",
+ videoCall:"Video call family", calling:"Calling", endCall:"End call",
+ helpComing:"Help is coming", stayPut:"Stay where you are",
+ raised:"Raised", dispatched:"Sent", arrived:"Arrived", nurse:"Nurse", neighbour:"Neighbour", ambulance:"Ambulance ready",
+ closeAlert:"Close alert (staff)", worksOffline:"Works without internet · pull cords also work",
+ dietTrack:"My diet", diabetic:"Diabetic", breakfast:"Breakfast", lunch:"Lunch", snack:"Evening snack", dinner:"Dinner",
+ hall:"Dining hall", room:"To my room", free:"Free", unwellFree:"Nurse marked you unwell · room delivery is free today",
+ confirm:"Confirm", ordered:"Booked", change:"Change", kcal:"kcal", carbs:"carbs",
+ watch:"Watch", nurseChk:"Nurse", bp:"Blood pressure", sugar:"Sugar", oxygen:"Oxygen", pulse:"Pulse",
+ wellnessDone:"Morning check done", by:"by", nextAppt:"Next appointment", talkDoctor:"Talk to a doctor now",
+ nursing:"Nurse on campus 7 am – 7 pm", afterHours:"After 7 pm: duty paramedic + ambulance on campus",
+ housekeeping:"Cleaning", laundry:"Laundry", repairs:"Repairs", transport:"Car", guest:"Guest room", buggy:"Buggy", pharmacy:"Medicines shop", tech:"Phone help",
+ within:"within", min:"min", hr:"hr", request:"Request", myRequests:"My open requests", noReq:"Nothing pending",
+ temple:"Temple", goshala:"Goshala", chai:"Chai at 5", activities:"Activities", purpose:"Teach & mentor", council:"Council votes",
+ yes:"Yes", no:"No", voted:"You voted",
+ shareWith:"What my family can see", wellbeing:"I am well signal", readings:"My health readings", mealsSh:"My meals", activitiesSh:"My activities", location:"Where I am on campus", camera:"Camera only during an alert", neighbours:"Neighbours alerted in emergency",
+ cannotOff:"Always on while living here", hospital:"Hospital emergency record",
+ partners:"Who gets what", consentLog:"My consent record", export:"Copy my record",
+ on:"On", off:"Off", copied:"Copied",
+ fToday:"Today", fAlert:"Alert", fRecord:"Our record", fPerson:"Your person", fPay:"Pay", fVisit:"Visit",
+ isWell:"Amma is well today", paused:"Amma has paused sharing", withheld:"Kept private by Amma",
+ noAlert:"No alert open", alertOpen:"Alert open", responding:"responding", resolved:"Resolved",
+ promise:"Promise", median:"Median", breaches:"Breaches", sold:"Sold", occupied:"Living here", active:"Active",
+ rm:"Relationship manager", lastCall:"Last call", nextCall:"Next call", copyNo:"Copy number",
+ bill:"October bill", payNow:"Pay securely", paid:"Paid",
+ guestSuite:"Guest suite", airport:"Airport pickup", book:"Book", booked:"Booked",
+ oBoard:"Live", oRoster:"Checks", oOcc:"Occupancy", oPartners:"Partners", oLedger:"Ledger",
+ allClear:"All clear", markDone:"Done", escalated:"Escalated", pending:"Pending", complete:"Complete",
+ onSla:"On SLA", watchS:"Watch", breach:"Breach"
+},
+te:{
+ appSub:"ప్రణీత్ ప్రణవ్ ఉల్లాస · సీనియర్ లివింగ్",
+ who:"యాప్ ఎవరు వాడుతున్నారు?", resident:"నివాసి", family:"కుటుంబం", ops:"సంరక్షణ బృందం",
+ residentS:"లక్ష్మి గారు · B-704", familyS:"రవి · కొడుకు, న్యూ జెర్సీ", opsS:"డ్యూటీ డెస్క్ · ఉల్లాస",
+ demo:"డెమో · నమూనా సమాచారం", install:"నా ఫోన్‌లో పెట్టుకోండి",
+ home:"హోమ్", meals:"భోజనం", health:"ఆరోగ్యం", services:"సేవలు", community:"సమాజం", privacy:"గోప్యత",
+ help:"సహాయం", greet:"నమస్కారం", rname:"లక్ష్మి గారు", today:"ఈరోజు",
+ qOrder:"భోజనం ఇంటికి", qCall:"రవికి కాల్", qBuggy:"బగ్గీ",
+ schedule:"నా రోజు", medicines:"మందులు", taken:"వేసుకున్నారు", due:"వేసుకున్నాక నొక్కండి",
+ videoCall:"కుటుంబానికి వీడియో కాల్", calling:"కాల్ చేస్తోంది", endCall:"కాల్ ముగించు",
+ helpComing:"సహాయం వస్తోంది", stayPut:"మీరు ఉన్నచోటే ఉండండి",
+ raised:"పంపారు", dispatched:"చేరింది", arrived:"వచ్చారు", nurse:"నర్సు", neighbour:"పొరుగువారు", ambulance:"అంబులెన్స్ సిద్ధం",
+ closeAlert:"అలర్ట్ ముగించు (సిబ్బంది)", worksOffline:"ఇంటర్నెట్ లేకున్నా పనిచేస్తుంది · తాడు లాగినా చాలు",
+ dietTrack:"నా ఆహారం", diabetic:"షుగర్ డైట్", breakfast:"అల్పాహారం", lunch:"మధ్యాహ్న భోజనం", snack:"సాయంత్రం టిఫిన్", dinner:"రాత్రి భోజనం",
+ hall:"భోజనశాల", room:"నా ఇంటికి", free:"ఉచితం", unwellFree:"నర్సు మీకు బాగోలేదని గుర్తించారు · ఈరోజు ఇంటికి ఉచితం",
+ confirm:"నిర్ధారించు", ordered:"బుక్ అయింది", change:"మార్చు", kcal:"కేలరీలు", carbs:"పిండిపదార్థం",
+ watch:"వాచ్", nurseChk:"నర్సు", bp:"రక్తపోటు", sugar:"షుగర్", oxygen:"ఆక్సిజన్", pulse:"నాడి",
+ wellnessDone:"ఉదయం పరిశీలన పూర్తి", by:"చేసినవారు", nextAppt:"తదుపరి అపాయింట్‌మెంట్", talkDoctor:"ఇప్పుడే డాక్టర్‌తో మాట్లాడండి",
+ nursing:"క్యాంపస్‌లో నర్సు ఉ. 7 – సా. 7", afterHours:"సా. 7 తర్వాత: పారామెడిక్ + అంబులెన్స్ క్యాంపస్‌లోనే",
+ housekeeping:"శుభ్రత", laundry:"బట్టలు ఉతుకు", repairs:"మరమ్మతు", transport:"కారు", guest:"అతిథి గది", buggy:"బగ్గీ", pharmacy:"మందుల షాప్", tech:"ఫోన్ సహాయం",
+ within:"లోపు", min:"ని.", hr:"గం.", request:"కావాలి", myRequests:"నా అభ్యర్థనలు", noReq:"ఏమీ పెండింగ్ లేవు",
+ temple:"ఆలయం", goshala:"గోశాల", chai:"సాయంత్రం 5 చాయ్", activities:"కార్యక్రమాలు", purpose:"బోధన & మార్గదర్శనం", council:"కౌన్సిల్ ఓటు",
+ yes:"అవును", no:"కాదు", voted:"మీ ఓటు",
+ shareWith:"నా కుటుంబం ఏమి చూడగలదు", wellbeing:"నేను బాగున్నాను సంకేతం", readings:"నా ఆరోగ్య వివరాలు", mealsSh:"నా భోజనం", activitiesSh:"నా కార్యక్రమాలు", location:"క్యాంపస్‌లో నేను ఎక్కడ", camera:"అలర్ట్ సమయంలో మాత్రమే కెమెరా", neighbours:"అత్యవసరంలో పొరుగువారికి",
+ cannotOff:"ఇక్కడ నివసించినంత కాలం ఆన్", hospital:"ఆసుపత్రి అత్యవసర రికార్డు",
+ partners:"ఎవరికి ఏమి", consentLog:"నా అనుమతుల రికార్డు", export:"రికార్డు కాపీ చేయి",
+ on:"ఆన్", off:"ఆఫ్", copied:"కాపీ అయింది",
+ fToday:"ఈరోజు", fAlert:"అలర్ట్", fRecord:"మా రికార్డు", fPerson:"మీ మనిషి", fPay:"చెల్లింపు", fVisit:"సందర్శన",
+ isWell:"అమ్మ ఈరోజు బాగున్నారు", paused:"అమ్మ షేరింగ్ ఆపారు", withheld:"అమ్మ గోప్యంగా ఉంచారు",
+ noAlert:"అలర్ట్ లేదు", alertOpen:"అలర్ట్ ఉంది", responding:"వస్తున్నారు", resolved:"పరిష్కారమైంది",
+ promise:"హామీ", median:"సగటు", breaches:"ఉల్లంఘనలు", sold:"అమ్మినవి", occupied:"నివసిస్తున్నవి", active:"చురుకుగా",
+ rm:"రిలేషన్‌షిప్ మేనేజర్", lastCall:"చివరి కాల్", nextCall:"తదుపరి కాల్", copyNo:"నంబర్ కాపీ",
+ bill:"అక్టోబర్ బిల్లు", payNow:"సురక్షితంగా చెల్లించండి", paid:"చెల్లించారు",
+ guestSuite:"అతిథి సూట్", airport:"ఎయిర్‌పోర్ట్ పికప్", book:"బుక్ చేయి", booked:"బుక్ అయింది",
+ oBoard:"లైవ్", oRoster:"పరిశీలన", oOcc:"నివాసం", oPartners:"భాగస్వాములు", oLedger:"లెడ్జర్",
+ allClear:"అంతా బాగుంది", markDone:"పూర్తి", escalated:"ఎస్కలేట్", pending:"పెండింగ్", complete:"పూర్తి",
+ onSla:"సమయానికి", watchS:"గమనించండి", breach:"ఉల్లంఘన"
+},
+hi:{
+ appSub:"प्रणीत प्रणव उल्लास · सीनियर लिविंग",
+ who:"ऐप कौन इस्तेमाल कर रहा है?", resident:"निवासी", family:"परिवार", ops:"देखभाल टीम",
+ residentS:"लक्ष्मी जी · B-704", familyS:"रवि · बेटा, न्यू जर्सी", opsS:"ड्यूटी डेस्क · उल्लास",
+ demo:"डेमो · नमूना जानकारी", install:"मेरे फ़ोन पर लगाएँ",
+ home:"होम", meals:"भोजन", health:"स्वास्थ्य", services:"सेवाएँ", community:"समुदाय", privacy:"गोपनीयता",
+ help:"मदद", greet:"नमस्ते", rname:"लक्ष्मी जी", today:"आज",
+ qOrder:"खाना घर पर", qCall:"रवि को कॉल", qBuggy:"बग्गी",
+ schedule:"मेरा दिन", medicines:"दवाइयाँ", taken:"ले ली", due:"लेने के बाद दबाएँ",
+ videoCall:"परिवार को वीडियो कॉल", calling:"कॉल हो रही है", endCall:"कॉल बंद करें",
+ helpComing:"मदद आ रही है", stayPut:"जहाँ हैं वहीं रहें",
+ raised:"भेजा", dispatched:"पहुँचा", arrived:"आ गए", nurse:"नर्स", neighbour:"पड़ोसी", ambulance:"एम्बुलेंस तैयार",
+ closeAlert:"अलर्ट बंद करें (स्टाफ़)", worksOffline:"बिना इंटरनेट भी काम करता है · डोरी खींचना भी काफ़ी",
+ dietTrack:"मेरा आहार", diabetic:"डायबिटिक", breakfast:"नाश्ता", lunch:"दोपहर का खाना", snack:"शाम का नाश्ता", dinner:"रात का खाना",
+ hall:"भोजन कक्ष", room:"मेरे घर पर", free:"मुफ़्त", unwellFree:"नर्स ने आपको अस्वस्थ बताया · आज घर पर मुफ़्त",
+ confirm:"पक्का करें", ordered:"बुक हो गया", change:"बदलें", kcal:"कैलोरी", carbs:"कार्ब्स",
+ watch:"घड़ी", nurseChk:"नर्स", bp:"ब्लड प्रेशर", sugar:"शुगर", oxygen:"ऑक्सीजन", pulse:"नब्ज़",
+ wellnessDone:"सुबह की जाँच हो गई", by:"द्वारा", nextAppt:"अगली अपॉइंटमेंट", talkDoctor:"अभी डॉक्टर से बात करें",
+ nursing:"कैंपस पर नर्स सुबह 7 – शाम 7", afterHours:"शाम 7 के बाद: पैरामेडिक + एम्बुलेंस कैंपस पर",
+ housekeeping:"सफ़ाई", laundry:"धुलाई", repairs:"मरम्मत", transport:"गाड़ी", guest:"अतिथि कक्ष", buggy:"बग्गी", pharmacy:"दवा दुकान", tech:"फ़ोन मदद",
+ within:"में", min:"मि.", hr:"घं.", request:"मँगाएँ", myRequests:"मेरे अनुरोध", noReq:"कुछ बाकी नहीं",
+ temple:"मंदिर", goshala:"गौशाला", chai:"शाम 5 बजे चाय", activities:"गतिविधियाँ", purpose:"पढ़ाएँ और सिखाएँ", council:"परिषद वोट",
+ yes:"हाँ", no:"नहीं", voted:"आपका वोट",
+ shareWith:"मेरा परिवार क्या देख सकता है", wellbeing:"मैं ठीक हूँ संकेत", readings:"मेरी सेहत की रीडिंग", mealsSh:"मेरा खाना", activitiesSh:"मेरी गतिविधियाँ", location:"कैंपस में मैं कहाँ हूँ", camera:"केवल अलर्ट में कैमरा", neighbours:"आपात में पड़ोसियों को सूचना",
+ cannotOff:"यहाँ रहते हुए हमेशा चालू", hospital:"अस्पताल आपात रिकॉर्ड",
+ partners:"किसे क्या मिलता है", consentLog:"मेरा सहमति रिकॉर्ड", export:"रिकॉर्ड कॉपी करें",
+ on:"चालू", off:"बंद", copied:"कॉपी हो गया",
+ fToday:"आज", fAlert:"अलर्ट", fRecord:"हमारा रिकॉर्ड", fPerson:"आपका व्यक्ति", fPay:"भुगतान", fVisit:"मिलने आएँ",
+ isWell:"अम्मा आज ठीक हैं", paused:"अम्मा ने शेयरिंग रोकी है", withheld:"अम्मा ने निजी रखा है",
+ noAlert:"कोई अलर्ट नहीं", alertOpen:"अलर्ट चालू", responding:"आ रहे हैं", resolved:"सुलझ गया",
+ promise:"वादा", median:"औसत", breaches:"उल्लंघन", sold:"बिके", occupied:"रह रहे", active:"सक्रिय",
+ rm:"रिलेशनशिप मैनेजर", lastCall:"पिछली कॉल", nextCall:"अगली कॉल", copyNo:"नंबर कॉपी",
+ bill:"अक्टूबर बिल", payNow:"सुरक्षित भुगतान", paid:"भुगतान हुआ",
+ guestSuite:"गेस्ट सुइट", airport:"एयरपोर्ट पिकअप", book:"बुक करें", booked:"बुक हो गया",
+ oBoard:"लाइव", oRoster:"जाँच", oOcc:"आवास", oPartners:"पार्टनर", oLedger:"खाता",
+ allClear:"सब ठीक", markDone:"हो गया", escalated:"एस्केलेट", pending:"बाकी", complete:"पूरा",
+ onSla:"समय पर", watchS:"ध्यान दें", breach:"उल्लंघन"
+}};
+
+/* ================= state ================= */
+const KEY="anubandham.v1";
+const now=()=>Date.now();
+const defaults={
+ role:null, lang:"en", size:1, theme:null,
+ tab:{resident:"home",family:"today",ops:"board"},
+ alert:null, // {raised, closed}
+ unwell:false,
+ meals:{breakfast:"hall",lunch:null,snack:null,dinner:null},
+ meds:{m1:true,m2:true,m3:false,m4:false},
+ requests:[], votes:{},
+ consent:{wellbeing:true,readings:true,meals:true,activities:true,location:false,camera:false,neighbours:true},
+ log:null, roster:null, paid:false, cur:"INR", visit:{booked:false,airport:true,dates:"dec"}
+};
+let S;
+try{S=Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||"{}"));}catch(e){S=Object.assign({},defaults);}
+S.tab=Object.assign({},defaults.tab,S.tab||{});
+S.consent=Object.assign({},defaults.consent,S.consent||{});
+if(!S.log){const d=new Date();d.setDate(d.getDate()-40);S.log=[
+ {t:d.getTime(),p:"wellbeing",v:true,lang:"te"},{t:d.getTime()+1000,p:"readings",v:true,lang:"te"},
+ {t:d.getTime()+2000,p:"meals",v:true,lang:"te"},{t:d.getTime()+3000,p:"activities",v:true,lang:"te"},
+ {t:d.getTime()+4000,p:"neighbours",v:true,lang:"te"}];}
+if(!S.roster){S.roster=[
+ {f:"B-704",n:"Lakshmi Rao",s:"done",t:"8:12",by:"Sunitha (knock)"},
+ {f:"A-102",n:"Venkat Reddy",s:"done",t:"8:05",by:"Call"},
+ {f:"A-305",n:"Saraswathi Iyer",s:"done",t:"8:20",by:"Sunitha (knock)"},
+ {f:"B-210",n:"Narayana Murthy",s:"pending"},
+ {f:"C-411",n:"Kamala Devi",s:"esc",t:"9:30",by:"No answer → Step 2: nurse visit · Owner: Duty nurse Sunitha"},
+ {f:"C-108",n:"Ramesh Kumar",s:"done",t:"8:31",by:"Call"},
+ {f:"A-509",n:"Padma Sharma",s:"pending"},
+ {f:"B-502",n:"Gopal Rao",s:"done",t:"8:44",by:"Wearable + call"}];}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const t=k=>(T[S.lang]&&T[S.lang][k])||T.en[k]||k;
+const W=(n,u)=>S.lang==="en"?`${t("within")} ${n} ${t(u)}`:`${n} ${t(u)} ${t("within")}`;
+
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const mmss=ms=>{const s=Math.max(0,Math.floor(ms/1000));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");};
+const fmtT=ts=>new Date(ts).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"});
+const fmtDT=ts=>new Date(ts).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+const inr=n=>"₹"+n.toLocaleString("en-IN");
+function toast(msg,ic){const old=$(".toast");if(old)old.remove();const d=document.createElement("div");d.className="toast";d.setAttribute("role","status");d.innerHTML=(ic?`<span>${ic}</span>`:"")+esc(msg);document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
+const LOGO=`<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="#1A1405" stroke-width="3.2" stroke-linecap="round"><path d="M32 52c-9-7-18-13-18-23a9 9 0 0 1 18-3a9 9 0 0 1 18 3c0 10-9 16-18 23z"/><path d="M24 30c3 4 13 4 16 0" /></g><circle cx="32" cy="15" r="3" fill="#1A1405"/></svg>`;
+const KOLAM=`<svg class="kolam" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--gold)"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="32"/><path d="M50 4 Q72 28 96 50 Q72 72 50 96 Q28 72 4 50 Q28 28 50 4z"/><path d="M50 18 Q64 36 82 50 Q64 64 50 82 Q36 64 18 50 Q36 36 50 18z"/></g><g fill="currentColor" style="color:var(--gold)"><circle cx="50" cy="50" r="3"/><circle cx="50" cy="27" r="2"/><circle cx="50" cy="73" r="2"/><circle cx="27" cy="50" r="2"/><circle cx="73" cy="50" r="2"/></g></svg>`;
+
+/* ================= data ================= */
+const MENU={
+ breakfast:{ic:"🫓",time:"8:00",kcal:280,carb:38,dish:{en:"Ragi idli, coconut chutney",te:"రాగి ఇడ్లీ, కొబ్బరి చట్నీ",hi:"रागी इडली, नारियल चटनी"}},
+ lunch:{ic:"🍛",time:"1:00",kcal:520,carb:62,dish:{en:"Jowar roti, palak dal, beans curry, curd",te:"జొన్న రొట్టె, పాలకూర పప్పు, బీన్స్ కూర, పెరుగు",hi:"ज्वार रोटी, पालक दाल, बीन्स सब्ज़ी, दही"}},
+ snack:{ic:"☕",time:"5:00",kcal:150,carb:18,dish:{en:"Sundal, sugar-free chai",te:"గుగ్గిళ్ళు, షుగర్ లేని చాయ్",hi:"सुंडल, बिना चीनी चाय"}},
+ dinner:{ic:"🥣",time:"7:30",kcal:410,carb:50,dish:{en:"Vegetable upma, buttermilk",te:"కూరగాయల ఉప్మా, మజ్జిగ",hi:"सब्ज़ी उपमा, छाछ"}}
+};
+const ROOM_FEE=60;
+const DAY=[
+ {h:6,m:30,ic:"🛕",k:{en:"Temple aarti",te:"ఆలయ హారతి",hi:"मंदिर आरती"}},
+ {h:8,m:12,ic:"✅",k:{en:"Morning check · Sunitha",te:"ఉదయం పరిశీలన · సునీత",hi:"सुबह की जाँच · सुनीता"}},
+ {h:8,m:30,ic:"🫓",k:{en:"Breakfast · dining hall",te:"అల్పాహారం · భోజనశాల",hi:"नाश्ता · भोजन कक्ष"}},
+ {h:11,m:0,ic:"🧘",k:{en:"Physiotherapy",te:"ఫిజియోథెరపీ",hi:"फ़िज़ियोथेरेपी"}},
+ {h:13,m:0,ic:"🍛",k:{en:"Lunch",te:"మధ్యాహ్న భోజనం",hi:"दोपहर का खाना"}},
+ {h:16,m:0,ic:"📞",k:{en:"Video call · Ravi",te:"వీడియో కాల్ · రవి",hi:"वीडियो कॉल · रवि"}},
+ {h:17,m:0,ic:"☕",k:{en:"Chai at 5 · Banyan court",te:"5 గంటల చాయ్ · మర్రి ప్రాంగణం",hi:"शाम 5 की चाय · बरगद आँगन"}},
+ {h:19,m:30,ic:"🥣",k:{en:"Dinner",te:"రాత్రి భోజనం",hi:"रात का खाना"}}
+];
+const MEDS=[
+ {id:"m1",ic:"💊",n:"Metformin 500",at:"8:00 am"},{id:"m2",ic:"💊",n:"Amlodipine 5",at:"8:00 am"},
+ {id:"m3",ic:"💊",n:"Metformin 500",at:"8:00 pm"},{id:"m4",ic:"🌞",n:"Vitamin D3",at:"Sun"}];
+const SERVICES=[
+ {id:"housekeeping",ic:"🧹",h:"h-teal",sla:45,unit:"min"},{id:"laundry",ic:"👕",h:"h-blue",sla:24,unit:"hr"},
+ {id:"repairs",ic:"🔧",h:"h-orange",sla:2,unit:"hr"},{id:"transport",ic:"🚗",h:"h-purple",sla:30,unit:"min"},
+ {id:"buggy",ic:"🛺",h:"h-green",sla:10,unit:"min"},{id:"pharmacy",ic:"💊",h:"h-pink",sla:60,unit:"min"},
+ {id:"guest",ic:"🛏️",h:"h-gold",sla:24,unit:"hr"},{id:"tech",ic:"📱",h:"h-red",sla:60,unit:"min"}];
+const CONSENTS=[
+ {id:"wellbeing",ic:"💚",d:{en:"Family sees one line: 'well today' or not",te:"కుటుంబానికి ఒక్క మాట: 'బాగున్నారు' లేదా కాదు",hi:"परिवार को एक पंक्ति: 'आज ठीक हैं' या नहीं"}},
+ {id:"readings",ic:"❤️",d:{en:"BP, sugar and pulse numbers",te:"బీపీ, షుగర్, నాడి సంఖ్యలు",hi:"बीपी, शुगर और नब्ज़ के अंक"}},
+ {id:"meals",ic:"🍛",d:{en:"Which meals I ate and where",te:"ఏ భోజనం, ఎక్కడ తిన్నాను",hi:"कौन सा खाना, कहाँ खाया"}},
+ {id:"activities",ic:"🎶",d:{en:"Events and classes I joined",te:"నేను వెళ్ళిన కార్యక్రమాలు",hi:"जिन कार्यक्रमों में गई"}},
+ {id:"location",ic:"📍",d:{en:"Building I am in right now (never a track)",te:"ఇప్పుడు ఏ భవనంలో ఉన్నాను (చరిత్ర కాదు)",hi:"अभी किस भवन में हूँ (इतिहास नहीं)"}},
+ {id:"camera",ic:"📷",d:{en:"Living-room camera opens only during an alert",te:"అలర్ట్ సమయంలో మాత్రమే కెమెరా తెరుచుకుంటుంది",hi:"केवल अलर्ट के समय कैमरा खुलेगा"}},
+ {id:"neighbours",ic:"🏘️",d:{en:"B-702 & B-706 get my door number only",te:"B-702, B-706 కి నా డోర్ నంబర్ మాత్రమే",hi:"B-702 और B-706 को केवल मेरा दरवाज़ा नंबर"}}];
+
+/* ================= render ================= */
+function nav(){
+ const R={
+  resident:[["home","🏠"],["meals","🍛"],["health","❤️"],["services","🛎️"],["community","🛕"],["privacy","🔐"]],
+  family:[["fToday","💚","today"],["fAlert","🚨","alert"],["fRecord","📊","record"],["fPerson","🤝","person"],["fPay","💳","pay"],["fVisit","✈️","visit"]],
+  ops:[["oBoard","🚨","board"],["oRoster","📋","roster"],["oOcc","🏢","occ"],["oPartners","⭐","partners"],["oLedger","📒","ledger"]]
+ }[S.role];
+ const cur=S.tab[S.role];
+ return R.map(([k,ic,id])=>{id=id||k;const a=id===cur;return `<button class="nb" data-act="tab" data-id="${id}" ${a?'aria-current="page"':""}><span class="ic" aria-hidden="true">${ic}</span><span class="lb">${t(k)}</span></button>`;}).join("");
+}
+function header(){
+ const L=[["en","EN"],["te","తె"],["hi","हि"]];
+ const roleIc={resident:"👵",family:"👨‍👩‍👧",ops:"🩺"}[S.role];
+ return `<header class="top"><div class="top-in">
+  <button class="brand" data-act="home" aria-label="Anubandham home"><span class="logo">${LOGO}</span><span style="min-width:0"><div class="bname">Anubandham</div><div class="bsub">${t("appSub")}</div></span></button>
+  <div class="ctrls c-lang">
+   <div class="seg" role="group" aria-label="Language">${L.map(([c,l])=>`<button data-act="lang" data-id="${c}" aria-pressed="${S.lang===c}">${l}</button>`).join("")}</div>
+   <div class="seg" role="group" aria-label="Text size">${[1,2,3].map(n=>`<button class="a${n}" data-act="size" data-id="${n}" aria-pressed="${S.size===n}">A</button>`).join("")}</div>
+  </div>
+  <div class="ctrls c-icons">
+   <button class="iconbtn" data-act="theme" aria-label="Light or dark">${isDark()?"☀️":"🌙"}</button>
+   <button class="iconbtn" data-act="switch" aria-label="Change user">${roleIc}</button>
+  </div>
+  </div></div></header>`;
+}
+function isDark(){const a=document.documentElement.getAttribute("data-theme");if(a)return a==="dark";return !matchMedia("(prefers-color-scheme: light)").matches;}
+
+function render(){
+ document.documentElement.lang=S.lang;
+ document.documentElement.className="sz"+S.size;
+ if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
+ const app=$("#app");
+ const y=window.scrollY;
+ if(!S.role){app.innerHTML=splash();save();return;}
+ const view={resident:RES,family:FAM,ops:OPS}[S.role][S.tab[S.role]]||(()=>"");
+ app.innerHTML=header()+`<div class="body"><nav class="rail" aria-label="Sections">${nav()}</nav><main id="main">${view()}</main></div>
+  <nav class="nav" aria-label="Sections"><div class="nav-in">${nav()}</div></nav>
+  ${S.role==="resident"?`<button class="sos" data-act="sos" aria-label="${t("help")} – emergency"><span class="ic" aria-hidden="true">🆘</span><span class="lb">${t("help")}</span></button>`:""}
+  ${S.role==="resident"&&S.alert&&!S.alert.closed?alertSheet():""}
+  ${overlay||""}`;
+ if(keepScroll)window.scrollTo(0,y);keepScroll=false;
+ save();tick();
+}
+let overlay="",keepScroll=false;
+
+function splash(){
+ const roles=[["resident","👵","h-gold"],["family","👨‍👩‍👧","h-teal"],["ops","🩺","h-purple"]];
+ return `<div class="splash">
+  <span class="logo">${LOGO}</span>
+  <div><h1>Anubandham</h1><div class="te-name">అనుబంధం · the bond</div></div>
+  <div class="muted">${t("appSub")}</div>
+  <div class="seg" role="group" aria-label="Language">${[["en","English"],["te","తెలుగు"],["hi","हिंदी"]].map(([c,l])=>`<button data-act="lang" data-id="${c}" aria-pressed="${S.lang===c}" style="padding:0 1rem">${l}</button>`).join("")}</div>
+  <h2 style="color:var(--fg)">${t("who")}</h2>
+  <div class="roles">${roles.map(([r,ic,h])=>`<button class="tile role ${h}" data-act="role" data-id="${r}"><span class="big" aria-hidden="true">${ic}</span><span class="t">${t(r)}</span><span class="s">${t(r+"S")}</span></button>`).join("")}</div>
+  <button class="btn btn-ghost" data-act="install"><span class="ic">📲</span>${t("install")}</button>
+  <span class="demo-tag">${t("demo")}</span>
+ </div>${overlay||""}`;
+}
+
+/* ---------- Resident ---------- */
+const RES={
+home(){
+ const d=new Date(),mins=d.getHours()*60+d.getMinutes();
+ let nextIdx=DAY.findIndex(x=>x.h*60+x.m>mins);
+ const dateStr=d.toLocaleDateString(S.lang==="te"?"te-IN":S.lang==="hi"?"hi-IN":"en-IN",{weekday:"long",day:"numeric",month:"long"});
+ return `<div class="stack">
+ <section class="hero">${KOLAM}
+  <div class="hello"><div class="avatar" aria-hidden="true">👵</div><div class="grow"><div class="muted small">${esc(dateStr)} · B-704</div><h1>${t("greet")}, ${t("rname")} 🙏</h1></div></div>
+ </section>
+ <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+  <button class="tile h-gold" data-act="quick-lunch"><span class="big">🍱</span><span class="t">${t("qOrder")}</span></button>
+  <button class="tile h-teal" data-act="call"><span class="big">📹</span><span class="t">${t("qCall")}</span></button>
+  <button class="tile h-green" data-act="req" data-id="buggy"><span class="big">🛺</span><span class="t">${t("qBuggy")}</span><span class="s">${W(10,"min")}</span></button>
+ </div>
+ <div class="two">
+ <section class="sec"><h2><span class="ic">🗓️</span>${t("schedule")}</h2><div class="list">
+  ${DAY.map((x,i)=>{const done=x.h*60+x.m<=mins;const nw=i===nextIdx;return `<div class="item ${done?"done":""} ${nw?"now":""}"><span class="tm">${fmt12(x.h,x.m)}</span><span class="eic" aria-hidden="true">${done&&x.ic!=="✅"?"✔️":x.ic}</span><span class="ttl grow">${esc(x.k[S.lang])}</span></div>`;}).join("")}
+ </div></section>
+ <section class="sec"><h2><span class="ic">💊</span>${t("medicines")}</h2><div class="list">
+  ${MEDS.map(m=>{const ok=S.meds[m.id];return `<button class="item" style="cursor:pointer;text-align:left;width:100%" data-act="med" data-id="${m.id}"><span class="eic">${ok?"✅":m.ic}</span><span class="grow"><span class="ttl">${m.n}</span><br><span class="muted small">${m.at}</span></span><span class="pill ${ok?"p-ok":"p-warn"}">${ok?t("taken"):"⏰"}</span></button>`;}).join("")}
+  <div class="note"><span class="ic">👆</span>${t("due")}</div>
+ </div>
+ <button class="btn btn-gold wide" data-act="call" style="min-height:4.4rem;font-size:1.1rem;margin-top:.4rem"><span class="ic">📹</span>${t("videoCall")}</button>
+ </section></div>
+ </div>`;
+},
+meals(){
+ const keys=["breakfast","lunch","snack","dinner"];
+ return `<div class="stack">
+ <div class="row wrap"><h2 class="grow"><span class="ic">🍛</span>${t("meals")}</h2><span class="pill p-gold">🩸 ${t("dietTrack")}: ${t("diabetic")}</span></div>
+ ${S.unwell?`<div class="offline" style="border-color:var(--ok)"><span class="ic">🤒</span>${t("unwellFree")}</div>`:""}
+ <div class="grid g4w" style="grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))">
+ ${keys.map(k=>{const m=MENU[k],ch=S.meals[k];const fee=S.unwell?t("free"):inr(ROOM_FEE);
+  return `<article class="card" style="display:flex;flex-direction:column;gap:.6rem">
+   <div class="row"><span style="font-size:3.2rem;line-height:1">${m.ic}</span><div class="grow"><div class="ttl">${t(k)}</div><div class="muted small num">${m.time} · ${m.kcal} ${t("kcal")} · ${m.carb}g ${t("carbs")}</div></div>${ch?`<span class="pill p-ok">✔ ${t("ordered")}</span>`:""}</div>
+   <div>${esc(m.dish[S.lang])}</div>
+   <div class="grid" style="gap:.5rem">
+    <button class="chip" style="justify-content:center;border-radius:1rem;min-height:3.6rem" data-act="meal" data-id="${k}" data-v="hall" aria-pressed="${ch==="hall"}">🏛️ ${t("hall")}</button>
+    <button class="chip" style="justify-content:center;border-radius:1rem;min-height:3.6rem;flex-direction:column;gap:0" data-act="meal" data-id="${k}" data-v="room" aria-pressed="${ch==="room"}"><span>🚪 ${t("room")}</span><span class="small num">${fee}</span></button>
+   </div></article>`;}).join("")}
+ </div>
+ <button class="btn btn-ghost" data-act="unwell"><span class="ic">🩺</span>${S.unwell?"Demo: nurse marks well":"Demo: nurse marks unwell"}</button>
+ </div>`;
+},
+health(){
+ const V=[["bp","🩺","128/82","130/84","mmHg",""],["sugar","🩸","142","138","mg/dL",""],["oxygen","🫁","97","98","%",""],["pulse","💓","76","74","bpm",""]];
+ return `<div class="stack">
+ <h2><span class="ic">❤️</span>${t("health")}</h2>
+ <div class="card stripe ok row"><span style="font-size:2.6rem">✅</span><div class="grow"><div class="ttl">${t("wellnessDone")}</div><div class="muted small">8:12 am · ${t("by")} Sunitha (${t("nurse")})</div></div></div>
+ <div class="vit">${V.map(([k,ic,w,n,u])=>`<div class="vcard"><span class="big">${ic}</span><div class="ttl">${t(k)}</div><div class="vpair"><div><span>⌚ ${t("watch")}</span><b>${w}</b></div><div><span>👩‍⚕️ ${t("nurseChk")}</span><b>${n}</b></div></div><span class="muted small">${u}</span></div>`).join("")}</div>
+ <div class="card row"><span style="font-size:2.2rem">📝</span><div class="grow"><div class="ttl">Sunitha · 8:15 am</div><div class="muted">"Sugar slightly high after Diwali sweets. Re-check at 6 pm."</div></div></div>
+ <div class="grid">
+  <div class="tile h-blue" style="cursor:default"><span class="big">👨‍⚕️</span><span class="t">${t("nextAppt")}</span><span class="s">Dr. Rao · Ortho · Fri 10:30</span></div>
+  <button class="tile h-teal" data-act="doctor"><span class="big">🖥️</span><span class="t">${t("talkDoctor")}</span><span class="s">~ 4 ${t("min")}</span></button>
+ </div>
+ <div class="list">
+  <div class="item"><span class="eic">🕖</span><span class="ttl grow">${t("nursing")}</span></div>
+  <div class="item"><span class="eic">🚑</span><span class="ttl grow">${t("afterHours")}</span></div>
+  <div class="item"><span class="eic">🏥</span><span class="ttl grow">Malla Reddy Narayana · 15 ${t("min")}</span></div>
+ </div></div>`;
+},
+services(){
+ const open=S.requests.filter(r=>!r.done);
+ return `<div class="stack">
+ <h2><span class="ic">🛎️</span>${t("services")}</h2>
+ <div class="grid g4">${SERVICES.map(s=>`<button class="tile ${s.h}" data-act="req" data-id="${s.id}"><span class="big">${s.ic}</span><span class="t">${t(s.id)}</span><span class="s">⏱ ${W(s.sla,s.unit)}</span></button>`).join("")}</div>
+ <section class="sec"><h2><span class="ic">⏳</span>${t("myRequests")}</h2>
+ ${open.length?`<div class="list">${open.map(r=>{const s=SERVICES.find(x=>x.id===r.id);return `<div class="item"><span class="eic">${s.ic}</span><span class="grow"><span class="ttl">${t(s.id)}</span><br><span class="muted small">${W(s.sla,s.unit)}</span></span><span class="pill p-info num" data-since="${r.t}">00:00</span></div>`;}).join("")}</div>`:`<div class="card row"><span style="font-size:2rem">🌼</span><span class="muted">${t("noReq")}</span></div>`}
+ </section>
+ <div class="offline"><span class="ic">💬</span>WhatsApp · Desk · ☎ 1800 — same queue, same clock</div>
+ </div>`;
+},
+community(){
+ const vote=S.votes.v1;
+ return `<div class="stack">
+ <h2><span class="ic">🛕</span>${t("community")}</h2>
+ <div class="grid g4">
+  <div class="tile h-orange" style="cursor:default"><span class="big">🛕</span><span class="t">${t("temple")}</span><span class="s">6:30 am · 6:30 pm</span></div>
+  <div class="tile h-green" style="cursor:default"><span class="big">🐄</span><span class="t">${t("goshala")}</span><span class="s">Go puja 7:00 am</span></div>
+  <div class="tile h-gold" style="cursor:default"><span class="big">☕</span><span class="t">${t("chai")}</span><span class="s">Banyan court</span></div>
+  <div class="tile h-purple" style="cursor:default"><span class="big">📚</span><span class="t">${t("purpose")}</span><span class="s">Wed 10:00 · 🚌</span></div>
+ </div>
+ <section class="sec"><h2><span class="ic">🎉</span>${t("activities")}</h2><div class="list">
+  <div class="item"><span class="eic">🪔</span><span class="grow"><span class="ttl">Karthika Masam deepam</span><br><span class="muted small">Sat · 6:00 pm · Temple</span></span></div>
+  <div class="item"><span class="eic">🎶</span><span class="grow"><span class="ttl">Annamacharya keerthanas</span><br><span class="muted small">Tue · 4:00 pm · Hall</span></span></div>
+  <div class="item"><span class="eic">🧘</span><span class="grow"><span class="ttl">Chair yoga</span><br><span class="muted small">Daily · 7:30 am · Lawn</span></span></div>
+  <div class="item"><span class="eic">🎬</span><span class="grow"><span class="ttl">Senior cinema · Mayabazar</span><br><span class="muted small">Sun · 3:00 pm</span></span></div>
+ </div></section>
+ <section class="card sec"><h2><span class="ic">🗳️</span>${t("council")}</h2>
+  <div class="row"><span style="font-size:2.4rem">🍲</span><div class="grow ttl">Add millet pongal to Sunday breakfast?</div></div>
+  ${vote?`<span class="pill p-ok">✔ ${t("voted")}: ${vote==="y"?"👍 "+t("yes"):"👎 "+t("no")}</span>`:
+  `<div class="grid"><button class="btn btn-green" data-act="vote" data-id="y"><span class="ic">👍</span>${t("yes")}</button><button class="btn btn-ghost" data-act="vote" data-id="n"><span class="ic">👎</span>${t("no")}</button></div>`}
+ </section></div>`;
+},
+privacy(){
+ return `<div class="stack">
+ <h2><span class="ic">🔐</span>${t("shareWith")}</h2>
+ <div class="list">${CONSENTS.map(c=>{const on=S.consent[c.id];return `<button class="sw" role="switch" aria-checked="${on}" data-act="consent" data-id="${c.id}"><span class="eic">${c.ic}</span><span class="grow"><span class="ttl">${t(c.id==="meals"?"mealsSh":c.id==="activities"?"activitiesSh":c.id)}</span><br><span class="muted small">${esc(c.d[S.lang])}</span></span><span class="tog" aria-hidden="true"></span></button>`;}).join("")}
+  <div class="sw locked" aria-checked="true"><span class="eic">🏥</span><span class="grow"><span class="ttl">${t("hospital")}</span><br><span class="muted small">🔒 ${t("cannotOff")} · Malla Reddy Narayana</span></span><span class="tog" aria-hidden="true"></span></div>
+ </div>
+ <section class="sec"><h2><span class="ic">🤝</span>${t("partners")}</h2>
+ <div class="grid g3">
+  <div class="tile h-orange" style="cursor:default;min-height:7rem"><span class="big">👩‍🍳</span><span class="t">Kitchen</span><span class="s">🩸 diet + 🚪 B-704</span></div>
+  <div class="tile h-teal" style="cursor:default;min-height:7rem"><span class="big">🧹</span><span class="t">Housekeeping</span><span class="s">🚪 B-704 only</span></div>
+  <div class="tile h-blue" style="cursor:default;min-height:7rem"><span class="big">🏥</span><span class="t">Clinic</span><span class="s">❤️ readings</span></div>
+ </div></section>
+ <section class="sec"><div class="row wrap"><h2 class="grow"><span class="ic">📜</span>${t("consentLog")}</h2><button class="btn btn-ghost" data-act="export"><span class="ic">📋</span>${t("export")}</button></div>
+ <div class="list">${S.log.slice().reverse().slice(0,8).map(l=>{const c=CONSENTS.find(x=>x.id===l.p);return `<div class="item"><span class="eic">${c?c.ic:"•"}</span><span class="grow"><span class="ttl">${t(l.p==="meals"?"mealsSh":l.p==="activities"?"activitiesSh":l.p)}</span><br><span class="muted small num">${fmtDT(l.t)} · ${l.lang.toUpperCase()}</span></span><span class="pill ${l.v?"p-ok":"p-bad"}">${l.v?t("on"):t("off")}</span></div>`;}).join("")}</div>
+ </section></div>`;
+}};
+function fmt12(h,m){const ap=h>=12?"pm":"am";const hh=((h+11)%12)+1;return hh+":"+String(m).padStart(2,"0")+" "+ap;}
+
+function alertSheet(){
+ const a=S.alert,el=now()-a.raised;
+ const disp=el>3000,arr=el>45000;
+ return `<div class="ov" role="dialog" aria-modal="true" aria-label="${t("helpComing")}"><div class="sheet alert">
+  <div style="text-align:center;font-size:3.6rem;line-height:1">🚨</div>
+  <h1 style="text-align:center;color:var(--fg)">${arr?"👩‍⚕️ "+t("arrived"):t("helpComing")}</h1>
+  <div style="text-align:center" class="muted">${t("stayPut")}</div>
+  <div class="bigclock" data-since="${a.raised}">00:00</div>
+  <div class="steps">
+   <div class="st on"><div class="ic">📣</div><b>${t("raised")}</b><span>${fmtT(a.raised)}</span></div>
+   <div class="st ${disp?"on":""}" data-step="d"><div class="ic">📡</div><b>${t("dispatched")}</b><span>${disp?fmtT(a.raised+3000):"…"}</span></div>
+   <div class="st ${arr?"on":""}" data-step="a"><div class="ic">🏃‍♀️</div><b>${t("arrived")}</b><span>${arr?fmtT(a.raised+45000):"…"}</span></div>
+  </div>
+  <div class="list">
+   <div class="resp"><span class="eic">👩‍⚕️</span><div class="grow"><b>Sunitha · ${t("nurse")}</b><div class="small muted">☎ 98480 22110</div></div><span class="pill p-ok">${t("responding")}</span></div>
+   ${S.consent.neighbours?`<div class="resp"><span class="eic">🏘️</span><div class="grow"><b>B-702 · B-706 · ${t("neighbour")}</b></div><span class="pill p-ok">${t("responding")}</span></div>`:""}
+   <div class="resp"><span class="eic">🚑</span><div class="grow"><b>${t("ambulance")}</b></div></div>
+  </div>
+  <div class="offline"><span class="ic">📶</span>${t("worksOffline")}</div>
+  <button class="btn btn-ghost wide" data-act="closeAlert">${t("closeAlert")}</button>
+ </div></div>`;
+}
+
+/* ---------- Family ---------- */
+const FAM={
+today(){
+ const c=S.consent,al=S.alert&&!S.alert.closed;
+ const ny=new Date().toLocaleTimeString("en-US",{timeZone:"America/New_York",hour:"numeric",minute:"2-digit"});
+ const cat=(on,ic,title,body)=>on?`<div class="card row"><span style="font-size:2.4rem">${ic}</span><div class="grow"><div class="ttl">${title}</div><div class="muted">${body}</div></div></div>`
+   :`<div class="card row" style="opacity:.75;border-style:dashed"><span style="font-size:2.4rem">🔒</span><div class="grow"><div class="ttl">${title}</div><div class="muted">${t("withheld")}</div></div></div>`;
+ return `<div class="stack">
+ <div class="row"><div class="avatar sm">👨</div><div class="grow"><div class="ttl">Ravi · New Jersey</div><div class="muted small">🕒 ${ny} EDT</div></div><span class="demo-tag">${t("demo")}</span></div>
+ ${al?`<button class="hero row" data-act="tab" data-id="alert" style="border:3px solid var(--sos);text-align:left;width:100%;cursor:pointer"><span style="font-size:3.4rem">🚨</span><div class="grow"><h1>${t("alertOpen")}</h1><div>👩‍⚕️ Sunitha ${t("responding")} · <b class="num" data-since="${S.alert.raised}">00:00</b></div></div></button>`
+ :c.wellbeing?`<section class="hero">${KOLAM}<div class="row"><span style="font-size:4.2rem;line-height:1">💚</span><div class="grow"><h1>${t("isWell")}</h1><div class="muted">✅ 8:12 am IST · Sunitha</div></div></div></section>`
+ :`<section class="hero"><div class="row"><span style="font-size:4rem">⏸️</span><div class="grow"><h1>${t("paused")}</h1><div class="muted">🔒 ${t("withheld")}</div></div></div></section>`}
+ <div class="two">
+  ${cat(c.readings,"❤️",t("readings"),"🩺 128/82 · 🩸 142 · 💓 76")}
+  ${cat(c.meals,"🍛",t("mealsSh"),"🫓 "+t("hall")+" · 🍛 "+(S.meals.lunch?t(S.meals.lunch==="room"?"room":"hall"):"—"))}
+  ${cat(c.activities,"🎶",t("activitiesSh"),"🛕 Aarti · 🧘 Physio · ☕ Chai at 5")}
+  ${cat(c.location,"📍",t("location"),"🏛️ Clubhouse")}
+ </div>
+ <button class="btn btn-gold wide" data-act="call" style="min-height:4.2rem"><span class="ic">📹</span>Video call Amma</button>
+ </div>`;
+},
+alert(){
+ const al=S.alert;
+ if(!al)return `<div class="stack"><h2><span class="ic">🚨</span>${t("fAlert")}</h2><div class="hero row"><span style="font-size:4rem">🕊️</span><h1>${t("noAlert")}</h1></div><div class="note"><span class="ic">ℹ️</span>Only alert status and who is responding are ever shown here. Never medical records.</div></div>`;
+ const open=!al.closed;
+ return `<div class="stack"><h2><span class="ic">🚨</span>${t("fAlert")}</h2>
+ <div class="sheet ${open?"alert":""}" style="max-width:none;box-shadow:var(--shadow)">
+  <div class="row"><span style="font-size:3rem">${open?"🚨":"✅"}</span><div class="grow"><h1>${open?t("alertOpen"):t("resolved")}</h1><div class="muted">B-704 · ${fmtT(al.raised)} IST</div></div></div>
+  ${open?`<div class="bigclock" data-since="${al.raised}">00:00</div>`:`<div class="bigclock">${mmss(al.closed-al.raised)}</div>`}
+  <div class="resp"><span class="eic">👩‍⚕️</span><div class="grow"><b>Sunitha · ${t("nurse")}</b></div><span class="pill p-ok">${open?t("responding"):t("resolved")}</span></div>
+  <div class="resp"><span class="eic">🤝</span><div class="grow"><b>Priya will call you within 15 ${t("min")}</b></div></div>
+ </div>
+ <div class="note"><span class="ic">🔒</span>Only alert status and who is responding. Never medical records.</div></div>`;
+},
+record(){
+ const M=[["May",3.4],["Jun",3.1],["Jul",2.9],["Aug",3.2],["Sep",2.7],["Oct",2.8]];
+ const max=6;
+ return `<div class="stack"><h2><span class="ic">📊</span>${t("fRecord")}</h2>
+ <div class="counters">
+  <div class="counter"><div class="big">⏱️</div><b>5:00</b><span>${t("promise")}</span></div>
+  <div class="counter"><div class="big">⚡</div><b>2:48</b><span>${t("median")}</span></div>
+  <div class="counter"><div class="big">⚠️</div><b style="color:var(--bad)">1</b><span>${t("breaches")} / 41</span></div>
+ </div>
+ <div class="card sec"><div class="ttl">Median response, minutes</div>
+  <div class="bars">${M.map(([m,v])=>`<div class="b"><em>${v}</em><i style="height:${v/max*100}%"></i></div>`).join("")}<div class="lim" style="bottom:${5/max*100}%"><span>${t("promise")} 5:00</span></div></div>
+  <div class="blab">${M.map(([m])=>`<span>${m}</span>`).join("")}</div>
+ </div>
+ <div class="card stripe bad row"><span style="font-size:2rem">⚠️</span><div class="grow"><div class="ttl">14 Oct · C-block · 6:41</div><div class="muted small">Lift under maintenance; nurse took stairs. Published, not hidden.</div></div></div>
+ <h2><span class="ic">🏢</span>Homes · 124</h2>
+ <div class="counters">
+  <div class="counter"><div class="big">🔑</div><b>118</b><span>${t("sold")}</span></div>
+  <div class="counter"><div class="big">🏠</div><b>96</b><span>${t("occupied")}</span></div>
+  <div class="counter"><div class="big">🌿</div><b>89</b><span>${t("active")}</span></div>
+ </div></div>`;
+},
+person(){
+ return `<div class="stack"><h2><span class="ic">🤝</span>${t("fPerson")}</h2>
+ <div class="hero">${KOLAM}<div class="row"><div class="avatar">👩‍💼</div><div class="grow"><h1>Priya Menon</h1><div class="muted">${t("rm")} · EST shift</div></div></div></div>
+ <div class="card row wrap"><span style="font-size:2.2rem">📞</span><div class="grow"><div class="ttl num" id="rmno">+91 98480 12345</div><div class="muted small">Direct · WhatsApp</div></div><button class="btn btn-gold" data-act="copy" data-id="+91 98480 12345"><span class="ic">📋</span>${t("copyNo")}</button></div>
+ <div class="grid">
+  <div class="tile h-teal" style="cursor:default"><span class="big">✅</span><span class="t">${t("lastCall")}</span><span class="s">2 Oct · 9:00 am EDT</span></div>
+  <div class="tile h-gold" style="cursor:default"><span class="big">📅</span><span class="t">${t("nextCall")}</span><span class="s">2 Nov · 9:00 am EDT</span></div>
+ </div></div>`;
+},
+pay(){
+ const R={INR:[1,"₹"],USD:[1/84,"$"],GBP:[1/110,"£"],AED:[1/22.9,"AED "]};
+ const [r,sym]=R[S.cur];
+ const fx=n=>S.cur==="INR"?inr(n):sym+(n*r).toLocaleString("en-US",{maximumFractionDigits:2,minimumFractionDigits:2});
+ const L=[["🏠","Base service package",24000,"Base"],["🍛","Meals · 38",6450,"Use"],["👕","Laundry",900,"Use"],["🧘","Physiotherapy · 6 sessions",2400,"Care"],["🚗","Transport",650,"Use"]];
+ const tot=L.reduce((a,x)=>a+x[2],0);
+ return `<div class="stack"><h2><span class="ic">💳</span>${t("bill")}</h2>
+ <div class="chips">${Object.keys(R).map(c=>`<button class="chip" data-act="cur" data-id="${c}" aria-pressed="${S.cur===c}">${c}</button>`).join("")}</div>
+ <div class="list">${L.map(([ic,n,a,tier])=>`<div class="item"><span class="eic">${ic}</span><span class="grow"><span class="ttl">${n}</span><br><span class="muted small">${tier}</span></span><b class="num">${fx(a)}</b></div>`).join("")}</div>
+ <div class="hero row"><div class="grow"><div class="muted">Total</div><h1 class="num">${fx(tot)}</h1></div>${S.paid?`<span class="pill p-ok" style="font-size:1rem">✔ ${t("paid")}</span>`:`<span class="pill p-warn">Due 10 Nov</span>`}</div>
+ ${S.paid?"":`<button class="btn btn-gold wide" data-act="pay"><span class="ic">🔒</span>${t("payNow")}</button>`}
+ <div class="note"><span class="ic">ℹ️</span>Card details stay with the payment gateway. Care is always billed separately from base.</div></div>`;
+},
+visit(){
+ const v=S.visit;
+ return `<div class="stack"><h2><span class="ic">✈️</span>${t("fVisit")}</h2>
+ <div class="hero row">${KOLAM}<span style="font-size:3.6rem">🛏️</span><div class="grow"><h1>${t("guestSuite")}</h1><div class="muted">6 suites · grandchild-friendly</div></div></div>
+ <div class="chips">${[["dec","18 Dec – 6 Jan"],["jan","10 – 24 Jan"],["mar","Ugadi · 15 – 22 Mar"]].map(([k,l])=>`<button class="chip" data-act="vdate" data-id="${k}" aria-pressed="${v.dates===k}">📅 ${l}</button>`).join("")}</div>
+ <button class="sw" role="switch" aria-checked="${v.airport}" data-act="airport"><span class="eic">🚘</span><span class="grow ttl">${t("airport")} · RGIA</span><span class="tog"></span></button>
+ ${v.booked?`<div class="card stripe ok row"><span style="font-size:2.4rem">✅</span><div class="grow"><div class="ttl">${t("booked")}</div><div class="muted small">Suite G-3 ${v.airport?"· 🚘 pickup":""}</div></div><button class="btn btn-ghost" data-act="unbook">${t("change")}</button></div>`
+ :`<button class="btn btn-gold wide" data-act="book"><span class="ic">🛎️</span>${t("book")}</button>`}
+ </div>`;
+}};
+
+/* ---------- Operations ---------- */
+const OPS={
+board(){
+ const al=S.alert,open=al&&!al.closed;
+ const tickets=S.requests.filter(r=>!r.done);
+ return `<div class="stack"><div class="row wrap"><h2 class="grow"><span class="ic">🚨</span>${t("oBoard")}</h2><span class="demo-tag">Ullasa · ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</span></div>
+ ${open?`<div class="card stripe bad sec" style="border-color:var(--sos)"><div class="row"><span style="font-size:2.6rem">🆘</span><div class="grow"><div class="ttl">B-704 · Lakshmi Rao · button press</div><div class="muted small num">Raised ${fmtT(al.raised)} · SLA 5:00</div></div><b class="bigclock" style="font-size:2rem" data-since="${al.raised}">00:00</b></div>
+   <div class="steps"><div class="st on"><div class="ic">📣</div><b>Raised</b></div><div class="st on"><div class="ic">📡</div><b>Dispatched</b></div><div class="st ${now()-al.raised>45000?"on":""}"><div class="ic">🏃‍♀️</div><b>Arrived</b></div></div>
+   <button class="btn btn-green" data-act="closeAlert">✔ Close alert</button></div>`
+ :`<div class="hero row"><span style="font-size:3.4rem">🕊️</span><div class="grow"><h1>${t("allClear")}</h1><div class="muted">No open alert${al&&al.closed?` · last closed in ${mmss(al.closed-al.raised)}`:""}</div></div></div>`}
+ <div class="counters">
+  <div class="counter"><div class="big">🎫</div><b>${tickets.length+3}</b><span>Open tickets</span></div>
+  <div class="counter"><div class="big">📋</div><b>${S.roster.filter(r=>r.s==="done").length}/${S.roster.length}</b><span>Checks</span></div>
+  <div class="counter"><div class="big">⚡</div><b>2:48</b><span>Median</span></div>
+ </div>
+ <section class="sec"><h2><span class="ic">🎫</span>Service tickets</h2><div class="list">
+ ${tickets.map(r=>{const s=SERVICES.find(x=>x.id===r.id);return `<div class="item stripe ok"><span class="eic">${s.ic}</span><span class="grow"><span class="ttl">B-704 · ${T.en[s.id]}</span><br><span class="muted small">App · SLA ${s.sla} ${s.unit}</span></span><span class="pill p-info num" data-since="${r.t}">00:00</span><button class="btn btn-ghost" data-act="reqdone" data-id="${r.t}">✔</button></div>`;}).join("")}
+  <div class="item stripe warn"><span class="eic">🔧</span><span class="grow"><span class="ttl">A-305 · Tap leaking</span><br><span class="muted small">WhatsApp · SLA 2 hr · 1:38 elapsed</span></span><span class="pill p-warn">At risk</span></div>
+  <div class="item stripe ok"><span class="eic">🧹</span><span class="grow"><span class="ttl">C-108 · Housekeeping</span><br><span class="muted small">Desk · SLA 45 min · 12:10 elapsed</span></span><span class="pill p-ok">${t("onSla")}</span></div>
+  <div class="item stripe bad"><span class="eic">👕</span><span class="grow"><span class="ttl">B-210 · Laundry</span><br><span class="muted small">Phone · SLA 24 hr · 26:05 elapsed</span></span><span class="pill p-bad">${t("breach")}</span></div>
+ </div></section></div>`;
+},
+roster(){
+ const st={done:["✅","p-ok","complete","ok"],pending:["⏳","p-warn","pending","warn"],esc:["🚩","p-bad","escalated","bad"]};
+ return `<div class="stack"><h2><span class="ic">📋</span>Single occupants · morning check</h2>
+ <div class="list">${S.roster.map((r,i)=>{const [ic,pc,lk,sc]=st[r.s];return `<div class="item stripe ${sc}"><span class="eic">${ic}</span><span class="grow"><span class="ttl">${r.f} · ${r.n}</span><br><span class="muted small">${r.t?r.t+" · ":""}${r.by||"Not yet checked"}</span></span>${r.s==="done"?`<span class="pill ${pc}">${t(lk)}</span>`:`<button class="btn btn-green" data-act="rdone" data-id="${i}">✔ ${t("markDone")}</button>`}</div>`;}).join("")}</div>
+ <div class="note"><span class="ic">⏰</span>No contact by 9:30 am → nurse visits the door → 9:45 duty manager + family RM.</div></div>`;
+},
+occ(){
+ const H=[["May",71,58,52],["Jun",84,66,60],["Jul",96,75,69],["Aug",104,83,77],["Sep",112,90,84],["Oct",118,96,89]];
+ return `<div class="stack"><h2><span class="ic">🏢</span>${t("oOcc")} · 124 homes</h2>
+ <div class="counters">
+  <div class="counter"><div class="big">🔑</div><b>118</b><span>${t("sold")}</span></div>
+  <div class="counter"><div class="big">🏠</div><b>96</b><span>${t("occupied")}</span></div>
+  <div class="counter"><div class="big">🌿</div><b>89</b><span>${t("active")}</span></div>
+ </div>
+ <div class="card"><div class="scroll"><table class="tbl"><thead><tr><th>Month</th><th class="r">🔑 Sold</th><th class="r">🏠 Living</th><th class="r">🌿 Active</th><th class="r">Published</th></tr></thead>
+ <tbody>${H.map(([m,a,b,c])=>`<tr><td>${m}</td><td class="r">${a}</td><td class="r">${b}</td><td class="r">${c}</td><td class="r">${Math.round(b/124*100)}%</td></tr>`).join("")}</tbody></table></div></div>
+ <div class="note"><span class="ic">ℹ️</span>Active = used dining, services or activities this month.</div></div>`;
+},
+partners(){
+ const P=[["👩‍🍳","Annapurna Kitchens","Kitchen",96,2,0,"ok"],["🧹","CleanCare","Housekeeping",88,6,1,"warn"],["👕","FreshFold","Laundry",79,9,3,"bad"],["🚗","SafeRide","Transport",94,1,0,"ok"]];
+ const lab={ok:["p-ok","onSla","var(--ok)"],warn:["p-warn","watchS","var(--warn)"],bad:["p-bad","breach","var(--bad)"]};
+ return `<div class="stack"><h2><span class="ic">⭐</span>${t("oPartners")}</h2>
+ <div class="two">${P.map(([ic,n,c,sla,cmp,ref,s])=>`<div class="card stripe ${s} sec"><div class="row"><span style="font-size:2.6rem">${ic}</span><div class="grow"><div class="ttl">${n}</div><div class="muted small">${c}</div></div><span class="pill ${lab[s][0]}">${t(lab[s][1])}</span></div>
+  <div class="row"><span class="small grow">On-time</span><b class="num">${sla}%</b></div><div class="meter"><i style="width:${sla}%;background:${lab[s][2]}"></i></div>
+  <div class="row small"><span>😟 ${cmp} complaints</span><span>↩️ ${ref} refunds</span></div></div>`).join("")}</div></div>`;
+},
+ledger(){
+ const L=[["🍛","Meals","Annapurna",184200],["🧹","Housekeeping","CleanCare",62300],["👕","Laundry","FreshFold",28900],["🚗","Transport","SafeRide",41750],["🧘","Care · physio","In-house",76800],["🛏️","Guest suites","In-house",54000]];
+ const tot=L.reduce((a,x)=>a+x[3],0);
+ return `<div class="stack"><h2><span class="ic">📒</span>${t("oLedger")} · October</h2>
+ <div class="card"><div class="scroll"><table class="tbl"><thead><tr><th></th><th>Category</th><th>Partner</th><th class="r">Amount</th></tr></thead>
+ <tbody>${L.map(([ic,c,p,a])=>`<tr><td style="font-size:1.4rem">${ic}</td><td>${c}</td><td>${p}</td><td class="r">${inr(a)}</td></tr>`).join("")}<tr><td></td><td><b>Total</b></td><td></td><td class="r"><b>${inr(tot)}</b></td></tr></tbody></table></div></div>
+ <div class="note"><span class="ic">🏦</span>Exports to Arcadia Living SPV accounts for reconciliation.</div></div>`;
+}};
+
+/* ================= overlays ================= */
+function sheet(inner){return `<div class="ov" role="dialog" aria-modal="true" data-act="closeOv"><div class="sheet" data-stop="1">${inner}</div></div>`;}
+function openCall(){
+ const who=S.role==="family"?["👵","Amma · Lakshmi"]:["👨","Ravi · New Jersey"];
+ overlay=sheet(`<div style="text-align:center;font-size:5rem;line-height:1">${who[0]}</div><h1 style="text-align:center">${t("calling")} ${who[1]}…</h1><div class="bigclock" data-since="${now()}">00:00</div><div class="note" style="justify-content:center"><span class="ic">📺</span>Also works on the TV in your living room</div><button class="btn btn-red wide" data-act="closeOv"><span class="ic">📵</span>${t("endCall")}</button>`);
+ render();
+}
+function openReq(id){
+ const s=SERVICES.find(x=>x.id===id);
+ overlay=sheet(`<div style="text-align:center;font-size:5rem;line-height:1">${s.ic}</div><h1 style="text-align:center">${t(s.id)}</h1>
+  <div class="hero row" style="justify-content:center"><span style="font-size:2.4rem">⏱️</span><h1 class="num">${W(s.sla,s.unit)}</h1></div>
+  <div class="grid"><button class="btn btn-ghost" data-act="closeOv">✖</button><button class="btn btn-gold" data-act="reqgo" data-id="${s.id}"><span class="ic">✔</span>${t("request")}</button></div>`);
+ render();
+}
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;overlay="";render();toast("Installed · see your home screen","✅");});
+function installEnv(){
+ const ua=navigator.userAgent||"";
+ const ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ const android=/Android/.test(ua);
+ const safari=ios&&!/CriOS|FxiOS|EdgiOS|GSA|Instagram|FBAN|FBAV|WhatsApp/.test(ua);
+ let framed=false;try{framed=window.self!==window.top;}catch(_){framed=true;}
+ const standalone=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+ const hostable=location.protocol==="https:"&&!framed&&!/claude\.ai|claudeusercontent/.test(location.hostname)&&!!document.querySelector('link[rel="manifest"]');
+ return {ios,android,safari,framed,standalone,hostable};
+}
+function openInstall(){
+ const E=installEnv();let body;
+ if(E.standalone){
+  body=`<div style="text-align:center;font-size:4.5rem">✅</div><h1 style="text-align:center">Already installed</h1><div class="note" style="justify-content:center">You are using the app from your home screen.</div>`;
+ }else if(!E.hostable){
+  body=`<div style="text-align:center;font-size:4.5rem">🔗</div><h1 style="text-align:center">Open the app link first</h1>
+  <div class="item"><span class="eic">⚠️</span><span class="grow"><span class="ttl">This preview link cannot be installed</span><br><span class="muted small">Previews and files opened from a folder can't be added as an app.</span></span></div>
+  <div class="item"><span class="eic">🌐</span><span class="grow"><span class="ttl">Open Anubandham's own web link</span><br><span class="muted small">for example https://anubandham-praneeth.netlify.app, then tap 📲 again</span></span></div>`;
+ }else if(deferredPrompt){
+  body=`<div style="text-align:center;font-size:4.5rem">📲</div><h1 style="text-align:center">${t("install")}</h1><button class="btn btn-gold wide" data-act="installNow" style="min-height:4.4rem;font-size:1.15rem"><span class="ic">⬇️</span>Install Anubandham</button>`;
+ }else if(E.ios&&!E.safari){
+  body=`<div style="text-align:center;font-size:4.5rem">🧭</div><h1 style="text-align:center">Open in Safari</h1>
+  <div class="item"><span class="eic">1️⃣</span><span class="grow ttl">Tap ⋯ or the share icon → "Open in Safari"</span></div>
+  <div class="item"><span class="eic">2️⃣</span><span class="grow ttl">In Safari tap 📲 again</span></div>`;
+ }else if(E.ios){
+  body=`<h1>📲 ${t("install")}</h1>
+  <div class="item"><span class="eic">1️⃣</span><span class="grow"><span class="ttl">Tap Share</span><br><span class="muted small">the square with ⬆️ arrow, bottom of Safari</span></span><span style="font-size:2rem">⬆️</span></div>
+  <div class="item"><span class="eic">2️⃣</span><span class="grow"><span class="ttl">Scroll down · Add to Home Screen</span></span><span style="font-size:2rem">➕</span></div>
+  <div class="item"><span class="eic">3️⃣</span><span class="grow"><span class="ttl">Tap Add (top right)</span></span><span style="font-size:2rem">✅</span></div>`;
+ }else{
+  body=`<h1>📲 ${t("install")}</h1>
+  <div class="item"><span class="eic">1️⃣</span><span class="grow"><span class="ttl">Open in Chrome</span><br><span class="muted small">not inside WhatsApp's browser</span></span></div>
+  <div class="item"><span class="eic">2️⃣</span><span class="grow"><span class="ttl">Tap ⋮ menu (top right)</span></span></div>
+  <div class="item"><span class="eic">3️⃣</span><span class="grow"><span class="ttl">Install app / Add to Home screen</span></span></div>`;
+ }
+ overlay=sheet(body+`<button class="btn btn-ghost wide" data-act="closeOv">OK</button>`);
+ render();
+}
+
+/* ================= events ================= */
+document.addEventListener("click",e=>{
+ const el=e.target.closest("[data-act]");if(!el)return;
+ if(el.dataset.act==="closeOv"&&e.target.closest("[data-stop]")&&!e.target.closest("button[data-act='closeOv']"))return;
+ const a=el.dataset.act,id=el.dataset.id;keepScroll=true;
+ switch(a){
+  case "role":S.role=id;overlay="";keepScroll=false;window.scrollTo(0,0);break;
+  case "switch":S.role=null;overlay="";keepScroll=false;break;
+  case "home":S.tab[S.role]=S.role==="resident"?"home":S.role==="family"?"today":"board";keepScroll=false;window.scrollTo(0,0);break;
+  case "lang":S.lang=id;break;
+  case "size":S.size=+id;break;
+  case "theme":S.theme=isDark()?"light":"dark";document.documentElement.setAttribute("data-theme",S.theme);break;
+  case "tab":S.tab[S.role]=id;keepScroll=false;window.scrollTo(0,0);break;
+  case "sos":S.alert={raised:now(),closed:null};overlay="";try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch(_){}break;
+  case "closeAlert":if(S.alert)S.alert.closed=now();toast("✔ "+t("resolved"));break;
+  case "med":S.meds[id]=!S.meds[id];break;
+  case "meal":S.meals[el.dataset.id]=S.meals[el.dataset.id]===el.dataset.v?null:el.dataset.v;if(S.meals[el.dataset.id])toast(t("ordered")+" · "+t(el.dataset.v==="room"?"room":"hall"),el.dataset.v==="room"?"🚪":"🏛️");break;
+  case "quick-lunch":S.meals.lunch="room";S.tab.resident="meals";toast(t("ordered")+" · "+t("room")+(S.unwell?" · "+t("free"):" · "+inr(ROOM_FEE)),"🍱");keepScroll=false;window.scrollTo(0,0);break;
+  case "unwell":S.unwell=!S.unwell;break;
+  case "call":openCall();return;
+  case "doctor":overlay=sheet(`<div style="text-align:center;font-size:5rem">👨‍⚕️</div><h1 style="text-align:center">${t("talkDoctor")}</h1><div class="bigclock" data-since="${now()}">00:00</div><div class="note" style="justify-content:center">Connecting to physician panel · median 4 min</div><button class="btn btn-red wide" data-act="closeOv">${t("endCall")}</button>`);break;
+  case "req":openReq(id);return;
+  case "reqgo":S.requests.push({id,t:now()});overlay="";toast(t("ordered"),"✔");break;
+  case "reqdone":{const r=S.requests.find(x=>String(x.t)===id);if(r)r.done=true;break;}
+  case "vote":S.votes.v1=id;break;
+  case "consent":S.consent[id]=!S.consent[id];S.log.push({t:now(),p:id,v:S.consent[id],lang:S.lang});toast((S.consent[id]?t("on"):t("off"))+" · "+fmtT(now()),S.consent[id]?"🟢":"🔴");break;
+  case "export":{const txt=S.log.map(l=>`${new Date(l.t).toISOString()}  ${l.p}  ${l.v?"GRANTED":"WITHDRAWN"}  notice v1.0 (${l.lang})`).join("\n");
+   const done=()=>toast(t("copied"),"📋");
+   try{navigator.clipboard.writeText(txt).then(done,()=>{overlay=sheet(`<h1>📜</h1><textarea id="exp" style="width:100%;height:14rem;font:inherit;font-size:.7rem">${esc(txt)}</textarea><button class="btn btn-gold" data-act="closeOv">OK</button>`);render();});}catch(_){}
+   return;}
+  case "copy":try{navigator.clipboard.writeText(id).then(()=>toast(t("copied"),"📋"),()=>toast(id));}catch(_){toast(id);}return;
+  case "cur":S.cur=id;break;
+  case "pay":overlay=sheet(`<div style="text-align:center;font-size:4rem">🔒</div><h1 style="text-align:center">${t("payNow")}</h1><div class="note" style="justify-content:center">Demo: the licensed payment gateway opens here.</div><button class="btn btn-gold wide" data-act="paydemo">✔ Mark as paid (demo)</button><button class="btn btn-ghost wide" data-act="closeOv">✖</button>`);break;
+  case "paydemo":S.paid=true;overlay="";toast(t("paid"),"✅");break;
+  case "vdate":S.visit.dates=id;break;
+  case "airport":S.visit.airport=!S.visit.airport;break;
+  case "book":S.visit.booked=true;toast(t("booked"),"🛏️");break;
+  case "unbook":S.visit.booked=false;break;
+  case "rdone":{const r=S.roster[+id];r.s="done";r.t=fmtT(now());r.by="Marked by duty desk";break;}
+  case "install":openInstall();return;
+  case "installNow":if(deferredPrompt){const dp=deferredPrompt;deferredPrompt=null;dp.prompt();dp.userChoice.then(c=>{overlay="";render();if(c.outcome==="accepted")toast("Installed · see your home screen","✅");}).catch(()=>{});}return;
+  case "closeOv":overlay="";break;
+ }
+ render();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&overlay){overlay="";render();}});
+
+/* live clocks */
+function tick(){
+ document.querySelectorAll("[data-since]").forEach(el=>{el.textContent=mmss(now()-(+el.dataset.since));});
+ if(S.role==="resident"&&S.alert&&!S.alert.closed){
+  const el=now()-S.alert.raised;
+  const d=document.querySelector('[data-step="d"]'),ar=document.querySelector('[data-step="a"]');
+  if(d&&el>3000&&!d.classList.contains("on"))render();
+  else if(ar&&el>45000&&!ar.classList.contains("on"))render();
+ }
+}
+setInterval(tick,1000);
+window.addEventListener("storage",e=>{if(e.key===KEY){try{const n=JSON.parse(e.newValue);const keep={role:S.role,tab:S.tab};S=Object.assign({},defaults,n,keep);render();}catch(_){}}});
+render();
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+ addEventListener("load",()=>{
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{
+   r.update();
+   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")r.update();});
+  }).catch(()=>{});
+ });
+ let reloaded=false;
+ navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded)return;reloaded=true;location.reload();});
+}
+</script>
+</body></html>
