@@ -1148,7 +1148,7 @@ export default function MasterPlanPage() {
                       cursor,
                       border,
                       background: bg,
-                      borderRadius: "2px",
+                      borderRadius: paintShareColors ? 0 : "2px",
                       transition: "border 0.15s, background 0.15s",
                       zIndex: isSelected ? 20 : isHovered ? 10 : 1,
                       boxSizing: "border-box",
