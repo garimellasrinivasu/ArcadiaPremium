@@ -676,15 +676,21 @@ export default function MasterPlanPage() {
             ctx.fillStyle = SHARE_FILLS[getVillaCategory(plot.villa)];
             ctx.fillRect(x, y, w, h);
             // Redraw number + size in black (the fill hides the image's own labels)
-            const numSize = Math.round(Math.min(h * 0.34, w * 0.22));
-            const sizeSize = Math.round(Math.min(h * 0.24, w * 0.15));
+            const lines: [string, string, number][] = [
+              ["bold", String(plot.villa), Math.round(Math.min(h * 0.28, w * 0.2))],
+              ["600", `${plot.sqYards} SQYD`, Math.round(Math.min(h * 0.2, w * 0.14))],
+            ];
+            if (plot.dimensions) lines.push(["500", plot.dimensions, Math.round(Math.min(h * 0.18, w * 0.12))]);
+            const totalH = lines.reduce((sum, [, , px]) => sum + px * 1.1, 0);
+            let lineY = y + h / 2 - totalH / 2;
             ctx.fillStyle = "#000";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.font = `bold ${numSize}px sans-serif`;
-            ctx.fillText(String(plot.villa), x + w / 2, y + h / 2 - sizeSize * 0.6);
-            ctx.font = `600 ${sizeSize}px sans-serif`;
-            ctx.fillText(`${plot.sqYards} SQYD`, x + w / 2, y + h / 2 + numSize * 0.55);
+            lines.forEach(([weight, text, px]) => {
+              ctx.font = `${weight} ${px}px sans-serif`;
+              ctx.fillText(text, x + w / 2, lineY + (px * 1.1) / 2);
+              lineY += px * 1.1;
+            });
           }
           return;
         }
@@ -1170,8 +1176,9 @@ export default function MasterPlanPage() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        <span style={{ fontSize: "min(34cqh, 22cqw)", fontWeight: 700 }}>{plot.villa}</span>
-                        <span style={{ fontSize: "min(24cqh, 15cqw)", fontWeight: 600 }}>{plot.sqYards} SQYD</span>
+                        <span style={{ fontSize: plot.dimensions ? "min(28cqh, 20cqw)" : "min(34cqh, 22cqw)", fontWeight: 700 }}>{plot.villa}</span>
+                        <span style={{ fontSize: plot.dimensions ? "min(20cqh, 14cqw)" : "min(24cqh, 15cqw)", fontWeight: 600 }}>{plot.sqYards} SQYD</span>
+                        {plot.dimensions && <span style={{ fontSize: "min(18cqh, 12cqw)", fontWeight: 500 }}>{plot.dimensions}</span>}
                       </span>
                     )}
                     {statusLabel && (
@@ -1221,7 +1228,7 @@ export default function MasterPlanPage() {
                     }}
                   >
                     <div style={{ fontWeight: 700, marginBottom: "2px" }}>{plotLabel(selectedProject)} {hovPlot.villa}</div>
-                    <div>{hovPlot.sqYards} Sq.Yards &bull; {hovPlot.facing} Facing</div>
+                    <div>{hovPlot.sqYards} Sq.Yards{hovPlot.dimensions ? ` (${hovPlot.dimensions})` : ""} &bull; {hovPlot.facing} Facing</div>
                     {hovBlocked && blocker && (
                       <div style={{ color: "#fca5a5", marginTop: "3px", fontWeight: 600 }}>
                         Blocked: {blocker.customerName}
@@ -1252,7 +1259,7 @@ export default function MasterPlanPage() {
             <div className="grid grid-cols-3 gap-2 sm:gap-3 text-sm">
               <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
                 <div className="text-gray-500 text-[10px] sm:text-xs">Plot Area</div>
-                <div className="font-semibold text-base sm:text-lg">{selected.sqYards} SqYd</div>
+                <div className="font-semibold text-base sm:text-lg">{selected.sqYards} SqYd{selected.dimensions ? ` (${selected.dimensions})` : ""}</div>
               </div>
               <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
                 <div className="text-gray-500 text-[10px] sm:text-xs">Facing</div>
