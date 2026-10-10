@@ -817,6 +817,90 @@ export default function MasterPlanPage() {
     [blockedVillas, activePlots, selectedProject, activeShare]
   );
 
+  /** Download every blocked villa with its full blocking details as an Excel sheet. */
+  const handleExportBlocked = useCallback(() => {
+    setShowExportMenu(false);
+    const esc = (v: unknown) =>
+      String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    // blocked_at is saved in server time (UTC); show it in IST
+    const fmtDate = (iso?: string) =>
+      iso
+        ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+          })
+        : "";
+    const plotByVilla = new Map(activePlots.map((p) => [p.villa, p]));
+    const blocked = Array.from(blockedVillas.values()).sort((a, b) => a.villaNumber - b.villaNumber);
+    const pLabel = plotLabel(selectedProject);
+    const td = "border:1px solid #999;padding:4px;vertical-align:top";
+    const th = "border:1px solid #999;padding:6px;background:#1e3a5f;color:#fff;font-weight:bold";
+
+    const typeCounts = { hmda: 0, installment: 0, other: 0 } as Record<BlockType, number>;
+    let totalBooking = 0;
+    const rows = blocked.map((b, i) => {
+      const plot = plotByVilla.get(b.villaNumber);
+      const type = getBlockType(b.customerName);
+      typeCounts[type]++;
+      totalBooking += b.bookingAmount || 0;
+      const c = BLOCK_COLORS[type];
+      const alloc = plot ? (activeShare.has(b.villaNumber) ? "Praneeth" : "Landlord") : "";
+      return `<tr>
+        <td style="${td};text-align:center">${i + 1}</td>
+        <td style="${td};text-align:center;font-weight:bold">${b.villaNumber}</td>
+        <td style="${td}">${esc(plot?.facing)}</td>
+        <td style="${td};text-align:right">${esc(plot?.sqYards)}</td>
+        <td style="${td}">${esc(plot?.dimensions)}</td>
+        <td style="${td}">${alloc}</td>
+        <td style="${td};text-align:center;background:${c.solid};color:#fff;font-weight:bold">${c.label}</td>
+        <td style="${td}">${esc(b.customerName)}</td>
+        <td style="${td};mso-number-format:'\\@'">${esc(b.customerPhone)}</td>
+        <td style="${td}">${esc(b.customerEmail)}</td>
+        <td style="${td};text-align:right;mso-number-format:'#\\,##0'">${b.bookingAmount ?? ""}</td>
+        <td style="${td}">${esc(b.blockedBy)}</td>
+        <td style="${td}">${fmtDate(b.blockedAt || b.createdAt)}</td>
+        <td style="${td}">${fmtDate(b.updatedAt)}</td>
+        <td style="${td};width:300px">${esc(b.notes)}</td>
+      </tr>`;
+    });
+
+    const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const title = `${selectedProject} - Blocked ${pLabel}s`;
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="utf-8">
+      <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Blocked ${pLabel}s</x:Name>
+      <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+      </head><body style="font-family:Arial;font-size:12px">
+      <table cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial;font-size:12px">
+        <tr><td colspan="15" style="font-size:16px;font-weight:bold">${esc(title)}</td></tr>
+        <tr><td colspan="15" style="color:#555">Exported on ${now} (IST)</td></tr>
+        <tr><td colspan="15"></td></tr>
+        <tr><td colspan="3" style="${td};font-weight:bold">Total blocked</td><td style="${td};font-weight:bold;text-align:right">${blocked.length}</td></tr>
+        <tr><td colspan="3" style="${td}">${BLOCK_COLORS.hmda.label} (HMDA General Mortgage)</td><td style="${td};text-align:right">${typeCounts.hmda}</td></tr>
+        <tr><td colspan="3" style="${td}">${BLOCK_COLORS.installment.label} (HMDA Installment Mortgage)</td><td style="${td};text-align:right">${typeCounts.installment}</td></tr>
+        <tr><td colspan="3" style="${td}">Blocked for customers</td><td style="${td};text-align:right">${typeCounts.other}</td></tr>
+        <tr><td colspan="3" style="${td};font-weight:bold">Total booking amount (₹)</td><td style="${td};font-weight:bold;text-align:right;mso-number-format:'#\\,##0'">${totalBooking}</td></tr>
+        <tr><td colspan="15"></td></tr>
+        <tr>
+          <th style="${th}">S.No</th><th style="${th}">${pLabel} No</th><th style="${th}">Facing</th><th style="${th}">Size (Sq.Yds)</th>
+          <th style="${th}">Dimensions</th><th style="${th}">Allocation</th><th style="${th}">Block Type</th><th style="${th}">Customer Name</th>
+          <th style="${th}">Phone</th><th style="${th}">Email</th><th style="${th}">Booking Amount (₹)</th><th style="${th}">Blocked By</th>
+          <th style="${th}">Blocked On</th><th style="${th}">Last Updated</th><th style="${th}">Notes</th>
+        </tr>
+        ${rows.join("") || `<tr><td colspan="15" style="${td}">No ${pLabel.toLowerCase()}s are blocked.</td></tr>`}
+      </table></body></html>`;
+
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedProject.replace(/\s+/g, "_")}_Blocked_${pLabel}s_${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [blockedVillas, activePlots, selectedProject, activeShare]);
+
   // Close export menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -950,7 +1034,7 @@ export default function MasterPlanPage() {
                     Full Data
                   </button>
                   <button
-                    onClick={() => handleExportExcel("blocked")}
+                    onClick={handleExportBlocked}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
                     <span className="w-4 h-3 rounded bg-red-500" />
