@@ -5,6 +5,9 @@ import com.arcadia.premium.model.DocumentFolder;
 import com.arcadia.premium.model.ProjectDocument;
 import com.arcadia.premium.repository.DocumentFolderRepository;
 import com.arcadia.premium.repository.ProjectDocumentRepository;
+import com.arcadia.premium.repository.ProjectDocumentVersionRepository;
+import com.arcadia.premium.model.ProjectDocumentVersion;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,10 +36,17 @@ public class ProjectDocumentService {
     private final ProjectDocumentRepository repository;
     private final DocumentFolderRepository folderRepository;
 
+    /** Previous copies kept per document; the oldest are dropped beyond this */
+    private static final int MAX_VERSIONS = 20;
+
+    private final ProjectDocumentVersionRepository versionRepository;
+
     public ProjectDocumentService(ProjectDocumentRepository repository,
-                                   DocumentFolderRepository folderRepository) {
+                                   DocumentFolderRepository folderRepository,
+                                   ProjectDocumentVersionRepository versionRepository) {
         this.repository = repository;
         this.folderRepository = folderRepository;
+        this.versionRepository = versionRepository;
     }
 
     @Transactional(timeout = 300) // 5 minutes for large file uploads
@@ -135,6 +145,7 @@ public class ProjectDocumentService {
         if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
             throw new RuntimeException("You can only delete documents you uploaded.");
         }
+        versionRepository.deleteByDocumentId(id);
         repository.deleteById(id);
     }
 
@@ -148,6 +159,7 @@ public class ProjectDocumentService {
             if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
                 continue; // skip docs the user doesn't own
             }
+            versionRepository.deleteByDocumentId(id);
             repository.deleteById(id);
             count++;
         }
@@ -166,5 +178,74 @@ public class ProjectDocumentService {
                 .map(ProjectDocumentDto::fromEntity)
                 .collect(Collectors.toList());
     }
-}
 
+    // ── Content replacement with version history ─────────────────────────
+
+    /**
+     * Replace a document's file content (e.g. saved from the in-app Excel editor), keeping the
+     * current content as a version. Same permission rule as delete; the file type cannot change.
+     */
+    @Transactional(timeout = 300)
+    public ProjectDocumentDto replaceContent(Long id, MultipartFile file, String callerEmail,
+                                             boolean isAdminOrPartner) throws IOException {
+        ProjectDocument doc = getById(id);
+        if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
+            throw new RuntimeException("You can only edit documents you uploaded.");
+        }
+        if (file.isEmpty()) throw new RuntimeException("File is empty.");
+        if (file.getSize() > MAX_SIZE) throw new RuntimeException("File size exceeds 100 MB limit.");
+        archiveCurrent(doc, callerEmail);
+        doc.setFileData(file.getBytes());
+        doc.setFileSize(file.getSize());
+        doc.setUpdatedAt(LocalDateTime.now());
+        doc.setUpdatedBy(callerEmail);
+        return ProjectDocumentDto.fromEntity(repository.save(doc));
+    }
+
+    public List<ProjectDocumentVersionRepository.Summary> listVersions(Long id) {
+        getById(id);
+        return versionRepository.findByDocumentIdOrderByVersionNumberDesc(id);
+    }
+
+    public ProjectDocumentVersion getVersion(Long id, Long versionId) {
+        return versionRepository.findByIdAndDocumentId(versionId, id)
+                .orElseThrow(() -> new RuntimeException("Version not found."));
+    }
+
+    /** Put an earlier version back as the current content; the current content is kept as a version first. */
+    @Transactional(timeout = 300)
+    public ProjectDocumentDto restoreVersion(Long id, Long versionId, String callerEmail, boolean isAdminOrPartner) {
+        ProjectDocument doc = getById(id);
+        if (!isAdminOrPartner && !doc.getUploadedBy().equals(callerEmail)) {
+            throw new RuntimeException("You can only restore documents you uploaded.");
+        }
+        ProjectDocumentVersion v = getVersion(id, versionId);
+        byte[] data = v.getFileData();
+        archiveCurrent(doc, callerEmail);
+        doc.setFileData(data);
+        doc.setFileSize(data.length);
+        doc.setUpdatedAt(LocalDateTime.now());
+        doc.setUpdatedBy(callerEmail);
+        return ProjectDocumentDto.fromEntity(repository.save(doc));
+    }
+
+    private void archiveCurrent(ProjectDocument doc, String replacedBy) {
+        int next = versionRepository.findTopByDocumentIdOrderByVersionNumberDesc(doc.getId())
+                .map(s -> s.getVersionNumber() + 1).orElse(1);
+        ProjectDocumentVersion v = new ProjectDocumentVersion();
+        v.setDocumentId(doc.getId());
+        v.setVersionNumber(next);
+        v.setFileData(doc.getFileData());
+        v.setFileSize(doc.getFileSize());
+        v.setContentType(doc.getContentType());
+        v.setCreatedBy(doc.getUpdatedBy() != null ? doc.getUpdatedBy() : doc.getUploadedBy());
+        v.setCreatedAt(doc.getUpdatedAt() != null ? doc.getUpdatedAt() : doc.getCreatedAt());
+        v.setReplacedBy(replacedBy);
+        v.setReplacedAt(LocalDateTime.now());
+        versionRepository.save(v);
+        List<ProjectDocumentVersionRepository.Summary> all = versionRepository.findByDocumentIdOrderByVersionNumberAsc(doc.getId());
+        for (int i = 0; i < all.size() - MAX_VERSIONS; i++) {
+            versionRepository.deleteById(all.get(i).getId());
+        }
+    }
+}

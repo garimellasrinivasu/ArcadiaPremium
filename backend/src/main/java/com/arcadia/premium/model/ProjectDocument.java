@@ -48,6 +48,10 @@ public class ProjectDocument {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    /** Last time the file content was replaced (in-app edit or restore), and by whom */
+    private LocalDateTime updatedAt;
+    private String updatedBy;
+
     public ProjectDocument() {}
 
     // --- Getters & Setters ---
@@ -80,6 +84,11 @@ public class ProjectDocument {
 
     public String getUploadedBy() { return uploadedBy; }
     public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

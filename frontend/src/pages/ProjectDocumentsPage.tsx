@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { projectService, type ProjectDto } from "../services/projectService";
 import { documentService, type DocumentDto, type UploadHandle } from "../services/documentService";
 import { folderService, type FolderDto } from "../services/folderService";
 import { folderPermissionService, type FolderPermissionDto, type SimpleUser } from "../services/folderPermissionService";
 import { authService } from "../services/authService";
 import { useIsViewOnly } from "../components/ViewOnlyWrapper";
+// Loaded only when an Excel file is opened (keeps the formula engine out of the main bundle)
+const ExcelEditor = lazy(() => import("../components/ExcelEditor"));
+const WordEditor = lazy(() => import("../components/WordEditor"));
 import type { User } from "../types/user";
 
 /* ─── helpers ─── */
@@ -125,6 +128,8 @@ function FileViewerModal({
   onNavigate,
   isViewOnly = false,
   downloadDisabled = false,
+  canEdit = false,
+  onDocUpdated,
 }: {
   doc: DocumentDto;
   allDocs: DocumentDto[];
@@ -132,17 +137,22 @@ function FileViewerModal({
   onNavigate: (doc: DocumentDto) => void;
   isViewOnly?: boolean;
   downloadDisabled?: boolean;
+  /** May save edits (Excel) — same rule as delete */
+  canEdit?: boolean;
+  onDocUpdated?: (doc: DocumentDto) => void;
 }) {
   const canDownload = !isViewOnly && !downloadDisabled;
+  // Unsaved spreadsheet/document edits: ask before closing or moving to another file
+  const [xlsxDirty, setXlsxDirty] = useState(false);
+  const confirmLeave = () => !xlsxDirty || window.confirm("You have unsaved changes in this file. Discard them?");
+  const close = () => { if (confirmLeave()) onClose(); };
   const token = sessionStorage.getItem("token") || "";
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [xlsxHtml, setXlsxHtml] = useState<string>("");
-  const [xlsxSheets, setXlsxSheets] = useState<string[]>([]);
-  const [xlsxActiveSheet, setXlsxActiveSheet] = useState(0);
-  const [xlsxAllHtml, setXlsxAllHtml] = useState<Record<string, string>>({});
+  // The editor loads the file once per document; later saves update objectUrl without reloading it
+  const editorSrc = useRef<{ id: number; url: string } | null>(null);
 
   // PPTX slide viewer state
   const [pptCurrentSlide, setPptCurrentSlide] = useState(0);
@@ -161,8 +171,6 @@ function FileViewerModal({
   const viewerFullscreenRef = useRef<HTMLDivElement>(null);
   const viewerMouseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // DOCX rendered HTML state
-  const [docxHtml, setDocxHtml] = useState<string>("");
 
   const isImage = doc.contentType.startsWith("image/");
   const isPdf = doc.contentType === "application/pdf";
@@ -176,10 +184,10 @@ function FileViewerModal({
   const hasNext = currentIndex < allDocs.length - 1;
 
   function goPrev() {
-    if (hasPrev) onNavigate(allDocs[currentIndex - 1]);
+    if (hasPrev && confirmLeave()) { setXlsxDirty(false); onNavigate(allDocs[currentIndex - 1]); }
   }
   function goNext() {
-    if (hasNext) onNavigate(allDocs[currentIndex + 1]);
+    if (hasNext && confirmLeave()) { setXlsxDirty(false); onNavigate(allDocs[currentIndex + 1]); }
   }
 
   // Keyboard navigation: left/right arrows, Escape to close (or exit fullscreen first)
@@ -191,7 +199,7 @@ function FileViewerModal({
         e.preventDefault();
         if (pptFullscreen) { setPptFullscreen(false); }
         else if (viewerFullscreen) { setViewerFullscreen(false); }
-        else { onClose(); }
+        else { close(); }
       }
       else if (e.key === "f" || e.key === "F") {
         if (e.target instanceof HTMLInputElement) return;
@@ -209,7 +217,7 @@ function FileViewerModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, allDocs.length, pptFullscreen, viewerFullscreen, isPpt, pptTotalSlides, isPdf, isXlsx, isDocx, isImage]);
+  }, [currentIndex, allDocs.length, pptFullscreen, viewerFullscreen, isPpt, pptTotalSlides, isPdf, isXlsx, isDocx, isImage, xlsxDirty]);
 
   // Enter/exit native browser fullscreen when pptFullscreen toggles
   useEffect(() => {
@@ -322,7 +330,6 @@ function FileViewerModal({
     setError("");
     setPptCurrentSlide(0);
     setPptTotalSlides(0);
-    setDocxHtml("");
 
     // For PPTX, use the slides endpoint instead of blob
     if (isPpt) {
@@ -420,73 +427,7 @@ function FileViewerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id, pptCurrentSlide, pptTotalSlides, isPpt, pptFullscreen]);
 
-  // Parse DOCX files using mammoth.js
-  useEffect(() => {
-    if (!isDocx || !objectUrl) return;
-    setDocxHtml("");
 
-    async function parseDocx() {
-      try {
-        if (!(window as any).mammoth) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error("Failed to load mammoth.js"));
-            document.head.appendChild(script);
-          });
-        }
-        const mammoth = (window as any).mammoth;
-        const resp = await fetch(objectUrl!);
-        const arrayBuffer = await resp.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        setDocxHtml(result.value);
-      } catch (e: any) {
-        console.error("DOCX parse error:", e);
-        setDocxHtml(`<p style="color:red;padding:20px;">Failed to render document: ${e.message}</p>`);
-      }
-    }
-    parseDocx();
-  }, [objectUrl, isDocx]);
-
-  // Parse XLSX files into HTML tables using SheetJS (loaded from CDN)
-  useEffect(() => {
-    if (!isXlsx || !objectUrl) return;
-    setXlsxHtml("");
-    setXlsxSheets([]);
-    setXlsxAllHtml({});
-    setXlsxActiveSheet(0);
-
-    async function parseXlsx() {
-      try {
-        if (!(window as any).XLSX) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error("Failed to load SheetJS"));
-            document.head.appendChild(script);
-          });
-        }
-        const XLSX = (window as any).XLSX;
-        const resp = await fetch(objectUrl!);
-        const arrayBuffer = await resp.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const sheets = workbook.SheetNames as string[];
-        setXlsxSheets(sheets);
-        const allHtml: Record<string, string> = {};
-        sheets.forEach((name: string) => {
-          allHtml[name] = XLSX.utils.sheet_to_html(workbook.Sheets[name], { id: "xlsx-table" });
-        });
-        setXlsxAllHtml(allHtml);
-        if (sheets.length > 0) setXlsxHtml(allHtml[sheets[0]]);
-      } catch (e: any) {
-        console.error("XLSX parse error:", e);
-        setXlsxHtml(`<p style="color:red;padding:20px;">Failed to render spreadsheet: ${e.message}</p>`);
-      }
-    }
-    parseXlsx();
-  }, [objectUrl, isXlsx]);
 
   // Helper to get download URL (fetch blob on demand for PPT since we skip blob loading)
   function handleDownload() {
@@ -582,7 +523,7 @@ function FileViewerModal({
                 Download
               </button>
             )}
-            <button onClick={onClose}
+            <button onClick={close}
               className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition text-lg leading-none">
               &times;
             </button>
@@ -652,65 +593,53 @@ function FileViewerModal({
               </div>
             )}
 
-            {/* DOCX Document Viewer (inside fullscreen container) */}
-            {isDocx && objectUrl && (
-              <div className={`w-full ${viewerFullscreen ? "h-full" : "h-full"} flex flex-col ${viewerFullscreen ? "" : "min-h-[70vh]"}`}>
-                {docxHtml ? (
-                  <div className={`flex-1 overflow-auto ${viewerFullscreen ? "bg-white p-8 sm:p-12" : "bg-white rounded-lg p-6 sm:p-10"}`}
-                    dangerouslySetInnerHTML={{ __html: docxHtml }}
-                  />
-                ) : (
-                  <div className="flex items-center gap-2 text-gray-500 text-sm justify-center py-12">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-arcadia-600" />
-                    Rendering document...
-                  </div>
-                )}
-                <style>{`
-                  .docx-viewer-content h1 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; }
-                  .docx-viewer-content h2 { font-size: 1.25rem; font-weight: bold; margin: 0.8rem 0 0.4rem; }
-                  .docx-viewer-content p { margin: 0.4rem 0; line-height: 1.6; }
-                  .docx-viewer-content table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
-                  .docx-viewer-content td, .docx-viewer-content th { border: 1px solid #e5e7eb; padding: 6px 10px; }
-                  .docx-viewer-content img { max-width: 100%; height: auto; }
-                `}</style>
-              </div>
-            )}
-
-            {/* XLSX Spreadsheet Viewer (inside fullscreen container) */}
-            {isXlsx && objectUrl && (
-              <div className={`w-full ${viewerFullscreen ? "h-full" : "h-full"} flex flex-col ${viewerFullscreen ? "" : "min-h-[70vh]"}`}>
-                {xlsxSheets.length > 1 && (
-                  <div className="flex gap-1 px-3 py-2 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
-                    {xlsxSheets.map((name, i) => (
-                      <button key={name} onClick={() => { setXlsxActiveSheet(i); setXlsxHtml(xlsxAllHtml[name] || ""); }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition ${
-                          i === xlsxActiveSheet
-                            ? "bg-arcadia-100 text-arcadia-700 border border-arcadia-300"
-                            : "text-gray-600 hover:bg-gray-100 border border-transparent"
-                        }`}>
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="flex-1 overflow-auto bg-white rounded-lg"
-                  dangerouslySetInnerHTML={{ __html: xlsxHtml }}
-                  style={{ fontSize: viewerFullscreen ? "15px" : "13px" }}
+            {/* DOCX viewer/editor: real page rendering + paragraph text editing (inside fullscreen container) */}
+            {isDocx && objectUrl && (() => {
+              if (!editorSrc.current || editorSrc.current.id !== doc.id) editorSrc.current = { id: doc.id, url: objectUrl };
+              return (
+                <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Opening document...</div>}>
+                <WordEditor
+                  key={doc.id}
+                  doc={doc}
+                  objectUrl={editorSrc.current.url}
+                  canEdit={canEdit && !isViewOnly}
+                  canDownload={canDownload}
+                  fullscreen={viewerFullscreen}
+                  onDirtyChange={setXlsxDirty}
+                  onContentChanged={(bytes, dto) => {
+                    const url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: doc.contentType }));
+                    docBlobCache.set(doc.id, url);
+                    setObjectUrl(url);
+                    onDocUpdated?.(dto);
+                  }}
                 />
-                <style>{`
-                  #xlsx-table { border-collapse: collapse; width: 100%; }
-                  #xlsx-table td, #xlsx-table th {
-                    border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left;
-                    white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis;
-                  }
-                  #xlsx-table tr:first-child td, #xlsx-table th {
-                    background: #f9fafb; font-weight: 600; color: #374151;
-                    position: sticky; top: 0; z-index: 1;
-                  }
-                  #xlsx-table tr:hover td { background: #f0fdf4; }
-                `}</style>
-              </div>
-            )}
+                </Suspense>
+              );
+            })()}
+
+            {/* XLSX Spreadsheet viewer/editor (inside fullscreen container) */}
+            {isXlsx && objectUrl && (() => {
+              if (!editorSrc.current || editorSrc.current.id !== doc.id) editorSrc.current = { id: doc.id, url: objectUrl };
+              return (
+                <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Opening spreadsheet...</div>}>
+                <ExcelEditor
+                  key={doc.id}
+                  doc={doc}
+                  objectUrl={editorSrc.current.url}
+                  canEdit={canEdit && !isViewOnly}
+                  canDownload={canDownload}
+                  fullscreen={viewerFullscreen}
+                  onDirtyChange={setXlsxDirty}
+                  onContentChanged={(bytes, dto) => {
+                    const url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: doc.contentType }));
+                    docBlobCache.set(doc.id, url);
+                    setObjectUrl(url);
+                    onDocUpdated?.(dto);
+                  }}
+                />
+                </Suspense>
+              );
+            })()}
           </div>
 
           {/* PPTX Slide Viewer — renders one slide at a time via img src */}
@@ -2293,6 +2222,11 @@ export default function ProjectDocumentsPage() {
           onNavigate={(d) => setViewingDoc(d)}
           isViewOnly={isViewOnly}
           downloadDisabled={currentUser?.downloadEnabled === false}
+          canEdit={canDelete(viewingDoc)}
+          onDocUpdated={(d) => {
+            setViewingDoc(d);
+            setDocuments((list) => list.map((x) => (x.id === d.id ? d : x)));
+          }}
         />
       )}
 

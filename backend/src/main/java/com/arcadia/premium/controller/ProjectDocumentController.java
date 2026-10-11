@@ -124,6 +124,57 @@ public class ProjectDocumentController {
         return buildFileResponse(doc);
     }
 
+    /** Replace a document's content (in-app Excel editor). The previous content is kept as a version. */
+    @PutMapping(value = "/{id}/content", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
+    public ResponseEntity<?> replaceContent(@PathVariable Long id,
+                                            @RequestParam("file") MultipartFile file,
+                                            Principal principal) {
+        try {
+            return ResponseEntity.ok(service.replaceContent(id, file, principal.getName(), isCurrentUserAdminOrPartner()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Earlier versions of a document (newest first), without file contents */
+    @GetMapping("/{id}/versions")
+    public ResponseEntity<?> listVersions(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.listVersions(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Download an earlier version */
+    @GetMapping("/{id}/versions/{versionId}")
+    public ResponseEntity<byte[]> downloadVersion(@PathVariable Long id, @PathVariable Long versionId) {
+        ProjectDocument doc = service.getById(id);
+        var v = service.getVersion(id, versionId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(v.getContentType()));
+        headers.setContentLength(v.getFileSize());
+        String name = doc.getFileName();
+        int dot = name.lastIndexOf('.');
+        String versioned = dot > 0
+                ? name.substring(0, dot) + " (v" + v.getVersionNumber() + ")" + name.substring(dot)
+                : name + " (v" + v.getVersionNumber() + ")";
+        headers.setContentDisposition(ContentDisposition.attachment().filename(versioned).build());
+        return new ResponseEntity<>(v.getFileData(), headers, HttpStatus.OK);
+    }
+
+    /** Restore an earlier version as the current content */
+    @PostMapping("/{id}/versions/{versionId}/restore")
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")
+    public ResponseEntity<?> restoreVersion(@PathVariable Long id, @PathVariable Long versionId, Principal principal) {
+        try {
+            return ResponseEntity.ok(service.restoreVersion(id, versionId, principal.getName(), isCurrentUserAdminOrPartner()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** Delete a document — admin/partner can delete any; regular users only their own */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'PROJECT_DOCUMENTS')")

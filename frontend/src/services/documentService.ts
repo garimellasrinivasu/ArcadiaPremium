@@ -10,6 +10,19 @@ export interface DocumentDto {
   folderId: number | null;
   uploadedBy: string;
   createdAt: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+/** An earlier copy of a document, kept each time its content is replaced */
+export interface DocumentVersionDto {
+  id: number;
+  versionNumber: number;
+  fileSize: number;
+  createdBy: string | null;
+  createdAt: string | null;
+  replacedBy: string | null;
+  replacedAt: string | null;
 }
 
 export interface UploadHandle {
@@ -119,6 +132,35 @@ export const documentService = {
   getSlideImageUrl(id: number, slideIndex: number, width = 960): string {
     const base = api.defaults.baseURL || "/api";
     return `${base}/documents/${id}/slides/${slideIndex}?width=${width}`;
+  },
+
+  /** Replace a document's file (in-app Excel editor). The server keeps the previous file as a version. */
+  async replaceContent(id: number, data: Uint8Array, fileName: string, contentType: string): Promise<DocumentDto> {
+    const form = new FormData();
+    form.append("file", new Blob([data as Uint8Array<ArrayBuffer>], { type: contentType }), fileName);
+    const { data: dto } = await api.put<DocumentDto>(`/documents/${id}/content`, form, {
+      timeout: 300000,
+      headers: { "Content-Type": "multipart/form-data" }, // api defaults to JSON, which would serialise the form
+    });
+    return dto;
+  },
+
+  /** Earlier versions of a document, newest first */
+  async listVersions(id: number): Promise<DocumentVersionDto[]> {
+    const { data } = await api.get<DocumentVersionDto[]>(`/documents/${id}/versions`);
+    return data;
+  },
+
+  /** Download an earlier version as a Blob */
+  async downloadVersion(id: number, versionId: number): Promise<Blob> {
+    const { data } = await api.get(`/documents/${id}/versions/${versionId}`, { responseType: "blob" });
+    return data;
+  },
+
+  /** Make an earlier version the current file (current file is kept as a version first) */
+  async restoreVersion(id: number, versionId: number): Promise<DocumentDto> {
+    const { data } = await api.post<DocumentDto>(`/documents/${id}/versions/${versionId}/restore`);
+    return data;
   },
 
   /** Delete a document (admin only) */

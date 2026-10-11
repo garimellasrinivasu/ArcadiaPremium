@@ -15,6 +15,8 @@ public class ProjectDocumentDto {
     private Long folderId;
     private String uploadedBy;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String updatedBy;
 
     public static ProjectDocumentDto fromEntity(ProjectDocument doc) {
         ProjectDocumentDto dto = new ProjectDocumentDto();
@@ -27,6 +29,8 @@ public class ProjectDocumentDto {
         dto.folderId = doc.getFolderId();
         dto.uploadedBy = doc.getUploadedBy();
         dto.createdAt = doc.getCreatedAt();
+        dto.updatedAt = doc.getUpdatedAt();
+        dto.updatedBy = doc.getUpdatedBy();
         return dto;
     }
 
@@ -48,4 +52,8 @@ public class ProjectDocumentDto {
     public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 }
