@@ -87,6 +87,24 @@ if [ $? -eq 0 ]; then
         fi
     fi
     
+    # Checklist page uploads live on disk (Docker volume), not in the database: keep one mirror copy
+    # (overwritten each night, so it doesn't multiply disk usage)
+    if docker exec backend test -d /app/data/checklist-files 2>/dev/null; then
+        echo "Copying checklist files..."
+        rm -rf "$BACKUP_DIR/checklist-files.new"
+        if docker cp backend:/app/data/checklist-files "$BACKUP_DIR/checklist-files.new"; then
+            rm -rf "$BACKUP_DIR/checklist-files" && mv "$BACKUP_DIR/checklist-files.new" "$BACKUP_DIR/checklist-files"
+            echo "Checklist files copied: $(du -sh "$BACKUP_DIR/checklist-files" | cut -f1)"
+            if [ "$REMOTE_SYNC_ENABLED" = "true" ] && [ -n "$REMOTE_SERVER" ] && [ -n "$REMOTE_USER" ]; then
+                scp -r -o StrictHostKeyChecking=no "$BACKUP_DIR/checklist-files" "$REMOTE_USER@$REMOTE_SERVER:$REMOTE_DIR/" \
+                    || echo "Warning: Failed to sync checklist files to $REMOTE_SERVER."
+            fi
+        else
+            rm -rf "$BACKUP_DIR/checklist-files.new"
+            send_email_alert "WARNING: Checklist files backup failed" "The nightly copy of checklist page uploads (Sales Preparation / RERA) failed. The database backup itself completed."
+        fi
+    fi
+
     # Clean up old backups
     echo "Cleaning up backups older than $RETENTION_DAYS days..."
     find "$BACKUP_DIR" -name "${DB_NAME}_backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete

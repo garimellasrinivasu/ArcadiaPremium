@@ -32,3 +32,6 @@ logs/
 
 # --- Environment ---
 .env
+
+# Local checklist page uploads (stored on disk)
+backend/data/

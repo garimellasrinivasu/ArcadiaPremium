@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { todoTaskService } from "../services/todoTaskService";
-import type { TodoTaskDto, CreateTodoTaskRequest } from "../services/todoTaskService";
+import type { TodoTaskDto, CreateTodoTaskRequest, TodoImportResult } from "../services/todoTaskService";
+import { downloadXlsx, loadSheetJS } from "../utils/sheetjs";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -17,6 +18,15 @@ const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-800",
   OVERDUE: "bg-red-100 text-red-800",
 };
+
+/** Export columns — the same headings are read back on import. */
+const EXPORT_COLUMNS: [keyof TodoTaskDto, string][] = [
+  ["taskCode", "Task Code"], ["title", "Title"], ["description", "Description"], ["category", "Category"],
+  ["priority", "Priority"], ["status", "Status"], ["targetDate", "Target Date"], ["actualCompletionDate", "Completed On"],
+  ["project", "Project"], ["assignedTo", "Assigned To (email)"], ["assignedToName", "Assigned To Name"],
+  ["assignedBy", "Assigned By (email)"], ["assignedByName", "Assigned By Name"], ["remarks", "Remarks"],
+  ["dailyUpdate", "Latest Update"], ["reminderEnabled", "Reminders"],
+];
 
 const PRIORITY_COLORS: Record<string, string> = {
   HIGH: "bg-red-100 text-red-700",
@@ -192,6 +202,54 @@ export default function TodoTaskPage() {
     }
   };
 
+  // ── Export / Import ──
+  const [importing, setImporting] = useState<{ fileName: string; rows: Record<string, unknown>[]; preview: TodoImportResult | null; busy: boolean; done: boolean } | null>(null);
+
+  const handleExport = async () => {
+    try {
+      const tab = activeTab === "my" ? "My Tasks" : activeTab === "assigned" ? "Assigned by Me" : "All Tasks";
+      const date = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      await downloadXlsx(`Todo Tasks - ${tab} - ${date}.xlsx`, "Todo Tasks", filteredTasks.map((t) =>
+        Object.fromEntries(EXPORT_COLUMNS.map(([k, h]) => [h, k === "reminderEnabled" ? (t.reminderEnabled ? "Yes" : "No") : (t[k] ?? "")]))));
+    } catch (e: any) {
+      setError(e?.message || "Export failed");
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    try {
+      const XLSX = await loadSheetJS();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false, dateNF: "yyyy-mm-dd" });
+      const byHeader = Object.fromEntries(EXPORT_COLUMNS.map(([k, h]) => [h.toLowerCase(), k]));
+      const rows = raw.map((r) => {
+        const o: Record<string, unknown> = {};
+        Object.entries(r).forEach(([h, v]) => { const k = byHeader[h.trim().toLowerCase()]; if (k) o[k] = typeof v === "string" ? v.trim() : v; });
+        return o;
+      }).filter((o) => Object.values(o).some((v) => v !== ""));
+      if (!rows.length || !rows.some((r) => r.title)) { setError("No tasks found. Use a file exported from this page (it needs a 'Title' column)."); return; }
+      setImporting({ fileName: file.name, rows, preview: null, busy: true, done: false });
+      const preview = await todoTaskService.importTasks(rows, true);
+      setImporting({ fileName: file.name, rows, preview, busy: false, done: false });
+    } catch (e: any) {
+      setImporting(null);
+      setError(e?.response?.data?.message || e?.message || "Could not read the file");
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importing) return;
+    setImporting({ ...importing, busy: true });
+    try {
+      const result = await todoTaskService.importTasks(importing.rows, false);
+      setImporting({ ...importing, preview: result, busy: false, done: true });
+      loadTasks();
+    } catch (e: any) {
+      setImporting({ ...importing, busy: false });
+      setError(e?.response?.data?.message || "Import failed");
+    }
+  };
+
   // Summary counts
   const pendingCount = tasks.filter((t) => t.status === "PENDING").length;
   const inProgressCount = tasks.filter((t) => t.status === "IN_PROGRESS").length;
@@ -200,9 +258,9 @@ export default function TodoTaskPage() {
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Todo Tasks</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h1 className="text-2xl font-bold text-gray-800 whitespace-nowrap">Todo Tasks</h1>
+        <div className="flex flex-wrap justify-end gap-2">
           {isAdmin && (
             <>
               <button
@@ -221,7 +279,18 @@ export default function TodoTaskPage() {
               </button>
             </>
           )}
-          <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+          <button onClick={() => void handleExport()} disabled={!filteredTasks.length} title="Download the tasks shown below as Excel"
+            className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50 text-xs whitespace-nowrap disabled:opacity-50">
+            ⬇ Export
+          </button>
+          {isAdmin && (
+            <label title="Import tasks from an exported Excel file" className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50 text-xs whitespace-nowrap cursor-pointer">
+              ⬆ Import
+              <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void handleImportFile(f); }} />
+            </label>
+          )}
+          <button onClick={openNew} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm whitespace-nowrap">
             + New Task
           </button>
         </div>
@@ -426,6 +495,52 @@ export default function TodoTaskPage() {
                 <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">{editingTask ? "Update" : "Create"} Task</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import preview */}
+      {importing && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-lg font-bold">{importing.done ? "Import complete" : "Import tasks — preview"}</h2>
+              <button onClick={() => setImporting(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div className="p-4 overflow-y-auto space-y-3">
+              <p className="text-sm text-gray-600">File: <strong>{importing.fileName}</strong> · {importing.rows.length} row(s)</p>
+              {!importing.preview ? <p className="text-sm text-gray-400">Checking…</p> : (
+                <>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    {[["New", importing.preview.created, "text-green-700 bg-green-50"], ["Updated", importing.preview.updated, "text-blue-700 bg-blue-50"],
+                      ["Unchanged", importing.preview.unchanged, "text-gray-600 bg-gray-50"], ["Skipped", importing.preview.skipped, "text-red-700 bg-red-50"]].map(([l, v, c]) => (
+                      <div key={l as string} className={`rounded p-2 ${c}`}><div className="text-xl font-bold">{v as number}</div><div className="text-xs">{l as string}{importing.done ? "" : " (will be)"}</div></div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">A row updates an existing task when its Title and Project match; otherwise it is added as a new task with the next task code.</p>
+                  {importing.preview.warnings.map((w) => <div key={w} className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded p-2">{w}</div>)}
+                  <table className="w-full text-xs border">
+                    <thead className="bg-gray-50"><tr><th className="text-left p-1.5">Row</th><th className="text-left p-1.5">Title</th><th className="text-left p-1.5">Action</th><th className="text-left p-1.5">Note</th></tr></thead>
+                    <tbody>{importing.preview.rows.map((r) => (
+                      <tr key={r.row} className="border-t">
+                        <td className="p-1.5 text-gray-400">{r.row}</td><td className="p-1.5">{r.title}</td>
+                        <td className={`p-1.5 font-medium ${r.action === "CREATE" ? "text-green-700" : r.action === "UPDATE" ? "text-blue-700" : r.action === "SKIPPED" ? "text-red-700" : "text-gray-500"}`}>{r.action}</td>
+                        <td className="p-1.5 text-gray-500">{r.note || ""}</td>
+                      </tr>))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <button onClick={() => setImporting(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">{importing.done ? "Close" : "Cancel"}</button>
+              {!importing.done && (
+                <button onClick={() => void confirmImport()} disabled={importing.busy || !importing.preview || importing.preview.created + importing.preview.updated === 0}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                  {importing.busy ? "Working…" : `Import ${importing.preview ? importing.preview.created + importing.preview.updated : ""} task(s)`}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

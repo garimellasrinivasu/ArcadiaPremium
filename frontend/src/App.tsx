@@ -24,6 +24,7 @@ import ApprovalChainAdminPage from "./pages/ApprovalChainAdminPage";
 import AttendanceReportsPage from "./pages/AttendanceReportsPage";
 import ProjectManagementPage from "./pages/ProjectManagementPage";
 import ProjectDocumentsPage from "./pages/ProjectDocumentsPage";
+import ChecklistTrackerPage from "./pages/ChecklistTrackerPage";
 import CapitolFundPage from "./pages/CapitolFundPage";
 import ProjectEstimationPage from "./pages/ProjectEstimationPage";
 import PartnerInvestmentPage from "./pages/PartnerInvestmentPage";
@@ -128,6 +129,8 @@ export default function App() {
         <Route path="activities/work-execution" element={<WorkExecutionUpdatesPage />} />
         <Route path="activities/site-attendance" element={<SiteAttendancePage />} />
         <Route path="activities/documents" element={<ProjectDocumentsPage />} />
+        <Route path="activities/sales-preparation" element={<ChecklistTrackerPage key="SALES_PREP" tracker="SALES_PREP" title="Sales Preparation Data" />} />
+        <Route path="activities/rera-documentation" element={<ChecklistTrackerPage key="RERA_DOCS" tracker="RERA_DOCS" title="RERA Documentation" />} />
         <Route path="activities/partner-investment" element={<PartnerInvestmentPage />} />
         <Route path="activities/walk-ins" element={<WalkInsPage />} />
         <Route path="activities/land-converter" element={<LandConverterPage />} />

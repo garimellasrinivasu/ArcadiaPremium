@@ -28,6 +28,8 @@ services:
     environment:
       # JVM heap limits — sized for 3.7GB server with large base64 receipt images
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx768m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:ParallelGCThreads=2
+      # Checklist page uploads (Sales Preparation / RERA) are stored here, on a named volume
+      - CHECKLIST_STORAGE_DIR=/app/data/checklist-files
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/arcadia
       - SPRING_DATASOURCE_USERNAME=dev_user
       - SPRING_DATASOURCE_PASSWORD=dev_password
@@ -48,6 +50,8 @@ services:
       - WHATSAPP_API_URL=${WHATSAPP_API_URL:-https://graph.facebook.com/v25.0}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
+    volumes:
+      - checklist_files:/app/data/checklist-files
     ports:
       - "3001:8080"
     networks:
@@ -82,3 +86,4 @@ networks:
 
 volumes:
   postgres_data:
+  checklist_files:

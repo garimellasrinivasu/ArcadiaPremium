@@ -94,6 +94,23 @@ public class TodoTaskController {
         return ResponseEntity.ok(todoTaskService.getOverdueTasks());
     }
 
+    /**
+     * Import tasks exported from another environment (admin only).
+     * Body: {"rows": [...], "dryRun": true|false}. Run with dryRun first to preview.
+     */
+    @PostMapping("/import")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> importTasks(@RequestBody Map<String, Object> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean admin = auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        if (!admin) return ResponseEntity.status(403).body(Map.of("message", "Only admins can import tasks"));
+        Object rows = body.get("rows");
+        if (!(rows instanceof List<?> list)) return ResponseEntity.badRequest().body(Map.of("message", "No rows to import"));
+        if (list.size() > 5000) return ResponseEntity.badRequest().body(Map.of("message", "Too many rows (max 5000)"));
+        boolean dryRun = !Boolean.FALSE.equals(body.get("dryRun"));
+        return ResponseEntity.ok(todoTaskService.importTasks((List<Map<String, Object>>) list, dryRun, auth.getName()));
+    }
+
     /** Test: Trigger daily reminder manually */
     @PostMapping("/test/daily-reminder")
     public ResponseEntity<Map<String, String>> testDailyReminder() {

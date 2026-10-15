@@ -7,6 +7,21 @@ import { folderPermissionService } from "../services/folderPermissionService";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import type { User, Role } from "../types/user";
+import { checklistService, type ChecklistPerms, type TrackerType } from "../services/checklistService";
+
+/** Checklist pages managed on the "Checklist Pages" tab (their menu access follows the View permission) */
+const CHECKLIST_PAGES: { key: TrackerType; label: string }[] = [
+  { key: "SALES_PREP", label: "Sales Preparation Data" },
+  { key: "RERA_DOCS", label: "RERA Documentation" },
+];
+const CHECKLIST_FLAGS: { key: keyof ChecklistPerms; label: string }[] = [
+  { key: "view", label: "View" },
+  { key: "upload", label: "Upload" },
+  { key: "download", label: "Download" },
+  { key: "delete", label: "Delete" },
+  { key: "editStatus", label: "Edit status" },
+];
+const NO_PERMS: ChecklistPerms = { view: false, upload: false, download: false, delete: false, editStatus: false };
 
 /* ─── All configurable pages grouped by section ─── */
 interface PageDef {
@@ -187,7 +202,28 @@ export default function UserAccessConfigPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Tab state for right panel
-  const [activeTab, setActiveTab] = useState<"pages" | "documents" | "projects">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "documents" | "projects" | "checklists">("pages");
+
+  // Checklist page permissions (email -> page -> flags)
+  const [checklistPerms, setChecklistPerms] = useState<Record<string, Record<TrackerType, ChecklistPerms>> | null>(null);
+  const [checklistEdit, setChecklistEdit] = useState<Record<TrackerType, ChecklistPerms>>({ SALES_PREP: NO_PERMS, RERA_DOCS: NO_PERMS });
+  const [checklistMsg, setChecklistMsg] = useState("");
+  const [savingChecklist, setSavingChecklist] = useState(false);
+
+  // Load checklist permissions when the tab is first opened; show the selected user's settings
+  useEffect(() => {
+    if (activeTab !== "checklists" || checklistPerms !== null) return;
+    checklistService
+      .listPermissions()
+      .then((rows) => setChecklistPerms(Object.fromEntries(rows.map((r) => [r.email, r.permissions]))))
+      .catch(() => setChecklistPerms({}));
+  }, [activeTab, checklistPerms]);
+  useEffect(() => {
+    const email = users.find((u) => u.id === selectedUserId)?.email;
+    const saved = email && checklistPerms ? checklistPerms[email] : undefined;
+    setChecklistEdit({ SALES_PREP: saved?.SALES_PREP ?? NO_PERMS, RERA_DOCS: saved?.RERA_DOCS ?? NO_PERMS });
+    setChecklistMsg("");
+  }, [selectedUserId, checklistPerms, users]);
 
   // Document Access state
   const [projects, setProjects] = useState<ProjectDto[]>([]);
@@ -290,10 +326,13 @@ export default function UserAccessConfigPage() {
     setSaving(selectedUserId);
     setError("");
     try {
+      // Checklist pages are managed on their own tab — keep whatever access they already have
+      const checklistKeys = new Set<string>(CHECKLIST_PAGES.map((c) => c.key));
+      const keepChecklist = (users.find((u) => u.id === selectedUserId)?.allowedPages || []).filter((k) => checklistKeys.has(k));
       const updated = await userService.updatePageAccess(
         selectedUserId,
-        Array.from(editPages),
-        Array.from(editViewOnlyPages),
+        Array.from(new Set([...Array.from(editPages).filter((k) => !checklistKeys.has(k)), ...keepChecklist])),
+        Array.from(editViewOnlyPages).filter((k) => !checklistKeys.has(k)),
         editDownloadEnabled,
         Array.from(editAllowedProjects),
       );
@@ -698,6 +737,16 @@ export default function UserAccessConfigPage() {
                     >
                       Project Access
                     </button>
+                    <button
+                      onClick={() => setActiveTab("checklists")}
+                      className={`flex-1 px-4 py-3 text-xs sm:text-sm font-medium transition border-b-2 ${
+                        activeTab === "checklists"
+                          ? "border-arcadia-600 text-arcadia-700 bg-arcadia-50/40"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Checklist Pages
+                    </button>
                   </div>
 
                   {/* ═══ Page Access Tab ═══ */}
@@ -1012,6 +1061,87 @@ export default function UserAccessConfigPage() {
                         </div>
                       )}
                     </>
+                  )}
+
+                  {/* ═══ Checklist Pages Tab (Sales Preparation Data / RERA Documentation) ═══ */}
+                  {activeTab === "checklists" && (
+                    <div className="px-4 sm:px-6 py-4">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-1">Checklist page permissions</h3>
+                      <p className="text-xs text-gray-500 mb-3">
+                        View shows the page in this user's menu. Upload, Download, Delete and Edit status (status, owner, target date, remarks, add items) each need View.
+                      </p>
+                      {checklistPerms === null ? (
+                        <p className="text-sm text-gray-500">Loading…</p>
+                      ) : (
+                        <>
+                          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                            <thead className="bg-gray-50 text-xs text-gray-600">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Page</th>
+                                {CHECKLIST_FLAGS.map((f) => <th key={f.key} className="px-2 py-2 text-center">{f.label}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {CHECKLIST_PAGES.map((pg) => (
+                                <tr key={pg.key} className="border-t border-gray-100">
+                                  <td className="px-3 py-2 font-medium text-gray-800">{pg.label}</td>
+                                  {CHECKLIST_FLAGS.map((f) => {
+                                    const cur = checklistEdit[pg.key];
+                                    const disabled = f.key !== "view" && !cur.view;
+                                    return (
+                                      <td key={f.key} className="px-2 py-2 text-center">
+                                        <input
+                                          type="checkbox"
+                                          className="w-4 h-4 accent-arcadia-600"
+                                          checked={cur[f.key]}
+                                          disabled={disabled}
+                                          onChange={(e) => {
+                                            const next = { ...cur, [f.key]: e.target.checked };
+                                            if (f.key === "view" && !e.target.checked) Object.assign(next, NO_PERMS);
+                                            setChecklistEdit({ ...checklistEdit, [pg.key]: next });
+                                          }}
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <div className="flex items-center gap-3 mt-3">
+                            <button
+                              disabled={savingChecklist || !selectedUser}
+                              onClick={async () => {
+                                if (!selectedUser) return;
+                                setSavingChecklist(true);
+                                setChecklistMsg("");
+                                try {
+                                  for (const pg of CHECKLIST_PAGES) await checklistService.savePermission(selectedUser.email, pg.key, checklistEdit[pg.key]);
+                                  setChecklistPerms({ ...checklistPerms, [selectedUser.email]: checklistEdit });
+                                  // View controls menu access; reflect it locally
+                                  setUsers((prev) => prev.map((u) => {
+                                    if (u.id !== selectedUser.id) return u;
+                                    const pages = new Set(u.allowedPages || []);
+                                    CHECKLIST_PAGES.forEach((pg) => (checklistEdit[pg.key].view ? pages.add(pg.key) : pages.delete(pg.key)));
+                                    return { ...u, allowedPages: Array.from(pages) };
+                                  }));
+                                  setChecklistMsg("Checklist permissions saved.");
+                                  setTimeout(() => setChecklistMsg(""), 3000);
+                                } catch (err: any) {
+                                  setChecklistMsg(err?.response?.data?.error || "Failed to save checklist permissions.");
+                                } finally {
+                                  setSavingChecklist(false);
+                                }
+                              }}
+                              className="px-4 py-2 text-sm rounded-lg bg-arcadia-600 text-white disabled:opacity-50"
+                            >
+                              {savingChecklist ? "Saving…" : "Save checklist permissions"}
+                            </button>
+                            {checklistMsg && <span className="text-sm text-gray-700">{checklistMsg}</span>}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
 
                   {/* ═══ Project Access Tab ═══ */}

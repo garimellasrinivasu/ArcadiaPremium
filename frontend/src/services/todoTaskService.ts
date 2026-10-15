@@ -36,7 +36,21 @@ export interface CreateTodoTaskRequest {
   reminderEnabled?: boolean;
 }
 
+export interface TodoImportResult {
+  dryRun: boolean;
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  warnings: string[];
+  rows: { row: number; title: string; action: "CREATE" | "UPDATE" | "UNCHANGED" | "SKIPPED"; note?: string }[];
+}
+
 export const todoTaskService = {
+  // Import exported rows (admin). dryRun=true only previews.
+  importTasks: (rows: Record<string, unknown>[], dryRun: boolean) =>
+    api.post<TodoImportResult>("/todo-tasks/import", { rows, dryRun }).then((r) => r.data),
+
   /** Create a new task */
   create: (req: CreateTodoTaskRequest) =>
     api.post<TodoTaskDto>("/todo-tasks", req).then((r) => r.data),

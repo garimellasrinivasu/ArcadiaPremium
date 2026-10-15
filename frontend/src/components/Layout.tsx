@@ -44,6 +44,8 @@ const menuSections: MenuSection[] = [
       { label: "Work Execution Updates", path: "/activities/work-execution", pageKey: "WORK_EXECUTION" },
       { label: "Site Attendance", path: "/activities/site-attendance", pageKey: "SITE_ATTENDANCE" },
       { label: "Project Documents", path: "/activities/documents", pageKey: "PROJECT_DOCUMENTS" },
+      { label: "Sales Preparation Data", path: "/activities/sales-preparation", pageKey: "SALES_PREP" },
+      { label: "RERA Documentation", path: "/activities/rera-documentation", pageKey: "RERA_DOCS" },
       { label: "Partner Investment", path: "/activities/partner-investment", pageKey: "PARTNER_INVESTMENT" },
       { label: "Walk-Ins", path: "/activities/walk-ins", pageKey: "WALK_INS" },
       { label: "Land Converter", path: "/activities/land-converter", pageKey: "LAND_CONVERTER" },
