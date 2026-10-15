@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { projectService, type ProjectDto } from "../services/projectService";
 import { authService } from "../services/authService";
 import ChecklistFileViewer from "../components/ChecklistFileViewer";
-import { downloadXlsx } from "../utils/sheetjs";
+import { downloadXlsx, loadSheetJS } from "../utils/sheetjs";
 import {
   checklistService,
   type ChecklistDocumentDto,
@@ -150,6 +150,7 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
   const openItem = (i: ChecklistItemDto, fid: number | null = null) => { setSection(i.section); setItemId(i.id); setFolderId(fid); setQueue([]); setRenaming(null); setNewFolder({ open: false, name: "" }); setExpanded((e) => new Set(e).add(i.section)); };
 
   // ── Item updates ──
+  useEffect(() => { loadSheetJS().catch(() => {}); }, []);
   const exportSummary = async () => {
     try {
       await downloadXlsx(`${title} - ${project} - ${today}.xlsx`, "Summary", items.map((i, n) => ({

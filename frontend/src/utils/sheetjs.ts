@@ -20,5 +20,14 @@ export async function downloadXlsx(fileName: string, sheetName: string, rows: Re
   ws["!cols"] = headers.map((h) => ({ wch: Math.min(60, Math.max(h.length, ...rows.map((r) => String(r[h] ?? "").length)) + 2) }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
-  XLSX.writeFile(wb, fileName);
+  // Build the file ourselves and click a real link — works in Safari as well as Chrome/Edge
+  const data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName.replace(/[\\/:*?"<>|]/g, "-");
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 60000);
 }

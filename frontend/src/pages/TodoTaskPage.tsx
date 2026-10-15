@@ -205,7 +205,14 @@ export default function TodoTaskPage() {
   // ── Export / Import ──
   const [importing, setImporting] = useState<{ fileName: string; rows: Record<string, unknown>[]; preview: TodoImportResult | null; busy: boolean; done: boolean } | null>(null);
 
+  // Load the Excel library up front so the download starts straight from the click (Safari blocks late downloads)
+  useEffect(() => { loadSheetJS().catch(() => {}); }, []);
+
   const handleExport = async () => {
+    if (!filteredTasks.length) {
+      setError(`No tasks to export in this view. ${isAdmin && activeTab !== "all" ? "Open the All Tasks tab to export every task." : "Clear the filters or switch tabs."}`);
+      return;
+    }
     try {
       const tab = activeTab === "my" ? "My Tasks" : activeTab === "assigned" ? "Assigned by Me" : "All Tasks";
       const date = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -279,7 +286,7 @@ export default function TodoTaskPage() {
               </button>
             </>
           )}
-          <button onClick={() => void handleExport()} disabled={!filteredTasks.length} title="Download the tasks shown below as Excel"
+          <button onClick={() => void handleExport()} title="Download the tasks shown below as Excel"
             className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-50 text-xs whitespace-nowrap disabled:opacity-50">
             ⬇ Export
           </button>
