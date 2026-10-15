@@ -212,12 +212,12 @@ export default function UserAccessConfigPage() {
 
   // Load checklist permissions when the tab is first opened; show the selected user's settings
   useEffect(() => {
-    if (activeTab !== "checklists" || checklistPerms !== null) return;
+    if (checklistPerms !== null) return;
     checklistService
       .listPermissions()
       .then((rows) => setChecklistPerms(Object.fromEntries(rows.map((r) => [r.email, r.permissions]))))
       .catch(() => setChecklistPerms({}));
-  }, [activeTab, checklistPerms]);
+  }, [checklistPerms]);
   useEffect(() => {
     const email = users.find((u) => u.id === selectedUserId)?.email;
     const saved = email && checklistPerms ? checklistPerms[email] : undefined;
@@ -336,7 +336,17 @@ export default function UserAccessConfigPage() {
         editDownloadEnabled,
         Array.from(editAllowedProjects),
       );
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      let saved = updated;
+      // Sales Preparation / RERA Documentation rows shown under Activities are saved here too
+      const email = users.find((u) => u.id === selectedUserId)?.email;
+      if (email && checklistPerms !== null) {
+        for (const pg of CHECKLIST_PAGES) await checklistService.savePermission(email, pg.key, checklistEdit[pg.key]);
+        setChecklistPerms({ ...checklistPerms, [email]: checklistEdit });
+        const pages = new Set(saved.allowedPages || []);
+        CHECKLIST_PAGES.forEach((pg) => (checklistEdit[pg.key].view ? pages.add(pg.key) : pages.delete(pg.key)));
+        saved = { ...saved, allowedPages: Array.from(pages) };
+      }
+      setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)));
       setSuccessMsg("Page access saved successfully!");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err: any) {
@@ -883,6 +893,29 @@ export default function UserAccessConfigPage() {
                                             Full
                                           </button>
                                         </div>
+                                      </div>
+                                    );
+                                  })}
+                                  {section.section === "Activities" && CHECKLIST_PAGES.map((pg) => {
+                                    const cur = checklistEdit[pg.key];
+                                    return (
+                                      <div key={pg.key} className="py-1.5 px-2 rounded-lg hover:bg-gray-50 transition">
+                                        <div className="text-xs sm:text-sm text-gray-700">{pg.label}</div>
+                                        {checklistPerms === null ? <div className="text-[11px] text-gray-400">Loading…</div> : (
+                                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                            {CHECKLIST_FLAGS.map((f) => (
+                                              <label key={f.key} className={`flex items-center gap-1 text-[11px] ${f.key !== "view" && !cur.view ? "text-gray-300" : "text-gray-600"}`}>
+                                                <input type="checkbox" className="w-3.5 h-3.5 accent-arcadia-600" checked={cur[f.key]} disabled={f.key !== "view" && !cur.view}
+                                                  onChange={(e) => {
+                                                    const next = { ...cur, [f.key]: e.target.checked };
+                                                    if (f.key === "view" && !e.target.checked) Object.assign(next, NO_PERMS);
+                                                    setChecklistEdit({ ...checklistEdit, [pg.key]: next });
+                                                  }} />
+                                                {f.label}
+                                              </label>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}
