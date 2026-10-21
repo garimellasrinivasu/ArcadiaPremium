@@ -8,12 +8,16 @@ export interface VillaBlockingDto {
   customerPhone: string;
   customerEmail?: string;
   bookingAmount?: number;
+  /** Praneeth / Prakash Garu - Dr Cpl / Suresh Garu - Dr Cpl */
+  belongsTo?: string;
   notes?: string;
   blockedBy?: string;
   blockedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
+
+export const BELONGS_TO_OPTIONS = ["Praneeth", "Prakash Garu - Dr Cpl", "Suresh Garu - Dr Cpl"] as const;
 
 export const villaBlockingService = {
   async getAll(projectName?: string): Promise<VillaBlockingDto[]> {

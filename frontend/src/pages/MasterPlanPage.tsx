@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { villaBlockingService } from "../services/villaBlockingService";
+import { villaBlockingService, BELONGS_TO_OPTIONS } from "../services/villaBlockingService";
 import type { VillaBlockingDto } from "../services/villaBlockingService";
 import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { KALPAVRUKSHA_PLOTS, KALPAVRUKSHA_PRANEETH_SHARE } from "../data/kalpavrukshaPlots";
@@ -419,6 +419,7 @@ export default function MasterPlanPage() {
   const [blockEmail, setBlockEmail] = useState("");
   const [blockAmount, setBlockAmount] = useState("");
   const [blockNotes, setBlockNotes] = useState("");
+  const [blockBelongsTo, setBlockBelongsTo] = useState("");
 
   // Hover tooltip state
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -537,7 +538,7 @@ export default function MasterPlanPage() {
   }, [selected, navigate]);
 
   const handleBlockVilla = useCallback(async () => {
-    if (!selected || !blockName.trim() || !blockPhone.trim()) return;
+    if (!selected || !blockName.trim() || !blockPhone.trim() || !blockBelongsTo) return;
     try {
       const dto: VillaBlockingDto = {
         villaNumber: selected.villa,
@@ -547,6 +548,7 @@ export default function MasterPlanPage() {
         customerEmail: blockEmail.trim() || undefined,
         bookingAmount: parseFloat(blockAmount) || 0,
         notes: blockNotes.trim() || undefined,
+        belongsTo: blockBelongsTo || undefined,
       };
       const saved = await villaBlockingService.blockVilla(dto);
       setBlockedVillas((prev) => {
@@ -562,6 +564,7 @@ export default function MasterPlanPage() {
       setBlockEmail("");
       setBlockAmount("");
       setBlockNotes("");
+      setBlockBelongsTo("");
       setShowBlockForm(false);
       setSelected(null);
     } catch (err: unknown) {
@@ -574,7 +577,7 @@ export default function MasterPlanPage() {
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
-  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
+  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes, blockBelongsTo]);
 
   const handleUnblock = useCallback(async (villaNum: number) => {
     if (!confirm(`Are you sure you want to unblock ${plotLabel(selectedProject)} ${villaNum}?`)) return;
@@ -610,11 +613,12 @@ export default function MasterPlanPage() {
     setBlockEmail(info.customerEmail || "");
     setBlockAmount(info.bookingAmount ? String(info.bookingAmount) : "");
     setBlockNotes(info.notes || "");
+    setBlockBelongsTo(info.belongsTo || "");
     setShowEditForm(true);
   }, [selected, blockedVillas]);
 
   const handleUpdateBlocked = useCallback(async () => {
-    if (!selected || !blockName.trim() || !blockPhone.trim()) return;
+    if (!selected || !blockName.trim() || !blockPhone.trim() || !blockBelongsTo) return;
     try {
       const dto: VillaBlockingDto = {
         villaNumber: selected.villa,
@@ -624,6 +628,7 @@ export default function MasterPlanPage() {
         customerEmail: blockEmail.trim() || undefined,
         bookingAmount: parseFloat(blockAmount) || 0,
         notes: blockNotes.trim() || undefined,
+        belongsTo: blockBelongsTo || undefined,
       };
       const saved = await villaBlockingService.updateBlockedVilla(selected.villa, dto, selectedProject);
       setBlockedVillas((prev) => {
@@ -634,7 +639,7 @@ export default function MasterPlanPage() {
       setToastError(false);
       setToast(`${plotLabel(selectedProject)} ${selected.villa} details updated`);
       setTimeout(() => setToast(null), 3000);
-      setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes("");
+      setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setBlockBelongsTo("");
       setShowEditForm(false);
     } catch (err: unknown) {
       const axErr = err as any;
@@ -643,7 +648,7 @@ export default function MasterPlanPage() {
       setToast(msg);
       setTimeout(() => setToast(null), 4000);
     }
-  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes]);
+  }, [selected, selectedProject, blockName, blockPhone, blockEmail, blockAmount, blockNotes, blockBelongsTo]);
 
   const zoomIn = useCallback(() => setZoom((z) => Math.min(4, z + 0.25)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(0.5, z - 0.25)), []);
@@ -763,6 +768,7 @@ export default function MasterPlanPage() {
           <td style="border:1px solid #999;padding:4px;text-align:right">${p.sqYards}</td>
           <td style="border:1px solid #999;padding:4px;background:${allocBg}">${cat === "praneeth" ? "Praneeth" : "Landlord"}</td>
           <td style="border:1px solid #999;padding:4px;text-align:center;${blockColors ? `background:${blockColors.solid};color:#fff;font-weight:bold` : ""}">${blockColors ? blockColors.label : "Available"}</td>
+          <td style="border:1px solid #999;padding:4px">${info?.belongsTo || ""}</td>
           <td style="border:1px solid #999;padding:4px">${info?.customerName || ""}</td>
           <td style="border:1px solid #999;padding:4px">${info?.customerPhone || ""}</td>
           <td style="border:1px solid #999;padding:4px;text-align:right">${info?.bookingAmount ? info.bookingAmount.toLocaleString("en-IN") : ""}</td>
@@ -791,6 +797,7 @@ export default function MasterPlanPage() {
               <th style="border:1px solid #999;padding:6px">${pLabel} Size (Sq.Yds)</th>
               <th style="border:1px solid #999;padding:6px">Allocation Type</th>
               <th style="border:1px solid #999;padding:6px">Status</th>
+              <th style="border:1px solid #999;padding:6px">Belongs To</th>
               <th style="border:1px solid #999;padding:6px">Customer Name</th>
               <th style="border:1px solid #999;padding:6px">Phone</th>
               <th style="border:1px solid #999;padding:6px">Booking Amount</th>
@@ -836,11 +843,14 @@ export default function MasterPlanPage() {
     const th = "border:1px solid #999;padding:6px;background:#1e3a5f;color:#fff;font-weight:bold";
 
     const typeCounts = { hmda: 0, installment: 0, other: 0 } as Record<BlockType, number>;
+    const belongsCounts = new Map<string, number>();
     let totalBooking = 0;
     const rows = blocked.map((b, i) => {
       const plot = plotByVilla.get(b.villaNumber);
       const type = getBlockType(b.customerName);
       typeCounts[type]++;
+      const owner = b.belongsTo || "Not set";
+      belongsCounts.set(owner, (belongsCounts.get(owner) || 0) + 1);
       totalBooking += b.bookingAmount || 0;
       const c = BLOCK_COLORS[type];
       const alloc = plot ? (activeShare.has(b.villaNumber) ? "Praneeth" : "Landlord") : "";
@@ -852,6 +862,7 @@ export default function MasterPlanPage() {
         <td style="${td}">${esc(plot?.dimensions)}</td>
         <td style="${td}">${alloc}</td>
         <td style="${td};text-align:center;background:${c.solid};color:#fff;font-weight:bold">${c.label}</td>
+        <td style="${td}">${esc(b.belongsTo)}</td>
         <td style="${td}">${esc(b.customerName)}</td>
         <td style="${td};mso-number-format:'\\@'">${esc(b.customerPhone)}</td>
         <td style="${td}">${esc(b.customerEmail)}</td>
@@ -872,22 +883,25 @@ export default function MasterPlanPage() {
       <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
       </head><body style="font-family:Arial;font-size:12px">
       <table cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial;font-size:12px">
-        <tr><td colspan="15" style="font-size:16px;font-weight:bold">${esc(title)}</td></tr>
-        <tr><td colspan="15" style="color:#555">Exported on ${now} (IST)</td></tr>
-        <tr><td colspan="15"></td></tr>
+        <tr><td colspan="16" style="font-size:16px;font-weight:bold">${esc(title)}</td></tr>
+        <tr><td colspan="16" style="color:#555">Exported on ${now} (IST)</td></tr>
+        <tr><td colspan="16"></td></tr>
         <tr><td colspan="3" style="${td};font-weight:bold">Total blocked</td><td style="${td};font-weight:bold;text-align:right">${blocked.length}</td></tr>
         <tr><td colspan="3" style="${td}">${BLOCK_COLORS.hmda.label} (HMDA General Mortgage)</td><td style="${td};text-align:right">${typeCounts.hmda}</td></tr>
         <tr><td colspan="3" style="${td}">${BLOCK_COLORS.installment.label} (HMDA Installment Mortgage)</td><td style="${td};text-align:right">${typeCounts.installment}</td></tr>
         <tr><td colspan="3" style="${td}">Blocked for customers</td><td style="${td};text-align:right">${typeCounts.other}</td></tr>
         <tr><td colspan="3" style="${td};font-weight:bold">Total booking amount (₹)</td><td style="${td};font-weight:bold;text-align:right;mso-number-format:'#\\,##0'">${totalBooking}</td></tr>
-        <tr><td colspan="15"></td></tr>
+        <tr><td colspan="16"></td></tr>
+        <tr><td colspan="3" style="${td};font-weight:bold">Belongs to</td><td style="${td};font-weight:bold;text-align:right">Count</td></tr>
+        ${[...BELONGS_TO_OPTIONS, "Not set"].filter((o) => belongsCounts.has(o)).map((o) => `<tr><td colspan="3" style="${td}">${esc(o)}</td><td style="${td};text-align:right">${belongsCounts.get(o)}</td></tr>`).join("")}
+        <tr><td colspan="16"></td></tr>
         <tr>
           <th style="${th}">S.No</th><th style="${th}">${pLabel} No</th><th style="${th}">Facing</th><th style="${th}">Size (Sq.Yds)</th>
-          <th style="${th}">Dimensions</th><th style="${th}">Allocation</th><th style="${th}">Block Type</th><th style="${th}">Customer Name</th>
+          <th style="${th}">Dimensions</th><th style="${th}">Allocation</th><th style="${th}">Block Type</th><th style="${th}">Belongs To</th><th style="${th}">Customer Name</th>
           <th style="${th}">Phone</th><th style="${th}">Email</th><th style="${th}">Booking Amount (₹)</th><th style="${th}">Blocked By</th>
           <th style="${th}">Blocked On</th><th style="${th}">Last Updated</th><th style="${th}">Notes</th>
         </tr>
-        ${rows.join("") || `<tr><td colspan="15" style="${td}">No ${pLabel.toLowerCase()}s are blocked.</td></tr>`}
+        ${rows.join("") || `<tr><td colspan="16" style="${td}">No ${pLabel.toLowerCase()}s are blocked.</td></tr>`}
       </table></body></html>`;
 
     const blob = new Blob([html], { type: "application/vnd.ms-excel" });
@@ -1362,6 +1376,10 @@ export default function MasterPlanPage() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm space-y-2">
                   <div className="font-semibold text-red-800 text-base">{plotLabel(selectedProject)} Owner Details</div>
                   <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <span className="text-gray-500 text-xs">Belongs To</span>
+                      <div className="font-semibold">{info.belongsTo || <span className="text-gray-400 font-normal">Not set — use Edit to choose</span>}</div>
+                    </div>
                     <div>
                       <span className="text-gray-500 text-xs">Customer Name</span>
                       <div className="font-medium">{info.customerName}</div>
@@ -1398,7 +1416,7 @@ export default function MasterPlanPage() {
               {!blockedVillas.has(selected.villa) && (
                 <>
                   <button
-                    onClick={() => { setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setShowBlockForm(true); }}
+                    onClick={() => { setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setBlockBelongsTo(""); setShowBlockForm(true); }}
                     className="flex-1 min-w-[100px] bg-amber-500 text-white py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium hover:bg-amber-600 active:bg-amber-700 transition"
                   >
                     Block {plotLabel(selectedProject)}
@@ -1443,14 +1461,14 @@ export default function MasterPlanPage() {
 
       {/* Block Villa form modal */}
       {selected && showBlockForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => { setShowBlockForm(false); setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); }}>
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => { setShowBlockForm(false); setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setBlockBelongsTo(""); }}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h2 className="text-xl font-bold text-amber-700">Block {plotLabel(selectedProject)} {selected.villa}</h2>
               <button
                 onClick={() => {
                   setShowBlockForm(false);
-                  setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes("");
+                  setBlockName(""); setBlockPhone(""); setBlockEmail(""); setBlockAmount(""); setBlockNotes(""); setBlockBelongsTo("");
                 }}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
               >&times;</button>
@@ -1461,6 +1479,18 @@ export default function MasterPlanPage() {
             </div>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Belongs To <span className="text-red-500">*</span></label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {BELONGS_TO_OPTIONS.map((o) => (
+                    <button key={o} type="button" onClick={() => setBlockBelongsTo(o)}
+                      className={`px-2 py-2 rounded-lg border text-sm font-medium transition ${blockBelongsTo === o ? "bg-amber-500 border-amber-500 text-white" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+                {!blockBelongsTo && <p className="text-[11px] text-gray-400 mt-1">Choose whose villa this is</p>}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name <span className="text-red-500">*</span></label>
                 <input type="text" value={blockName} onChange={(e) => setBlockName(e.target.value)}
@@ -1489,7 +1519,7 @@ export default function MasterPlanPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={handleBlockVilla} disabled={!blockName.trim() || !blockPhone.trim()}
+              <button onClick={handleBlockVilla} disabled={!blockName.trim() || !blockPhone.trim() || !blockBelongsTo}
                 className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-medium hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 Confirm Blocking
               </button>
@@ -1509,6 +1539,18 @@ export default function MasterPlanPage() {
             <h3 className="text-lg font-bold text-gray-800 mb-4">Edit {plotLabel(selectedProject)} {selected.villa} Details</h3>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Belongs To <span className="text-red-500">*</span></label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {BELONGS_TO_OPTIONS.map((o) => (
+                    <button key={o} type="button" onClick={() => setBlockBelongsTo(o)}
+                      className={`px-2 py-2 rounded-lg border text-sm font-medium transition ${blockBelongsTo === o ? "bg-blue-600 border-blue-600 text-white" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+                {!blockBelongsTo && <p className="text-[11px] text-gray-400 mt-1">Choose whose villa this is</p>}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
                 <input type="text" value={blockName} onChange={(e) => setBlockName(e.target.value)}
@@ -1537,7 +1579,7 @@ export default function MasterPlanPage() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button onClick={handleUpdateBlocked} disabled={!blockName.trim() || !blockPhone.trim()}
+              <button onClick={handleUpdateBlocked} disabled={!blockName.trim() || !blockPhone.trim() || !blockBelongsTo}
                 className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 Update Details
               </button>

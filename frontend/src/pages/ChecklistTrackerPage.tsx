@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { projectService, type ProjectDto } from "../services/projectService";
 import { authService } from "../services/authService";
+import { userService } from "../services/userService";
 import ChecklistFileViewer from "../components/ChecklistFileViewer";
 import { downloadXlsx, loadSheetJS } from "../utils/sheetjs";
 import {
@@ -43,6 +44,121 @@ const MAX_FILE = 2 * 1024 * 1024 * 1024;
 
 interface QueueItem { id: number; file: File; status: "pending" | "uploading" | "done" | "error" | "cancelled"; progress: number; loaded: number; error?: string }
 
+/** Text box with a drop-down of known names; any new name can be typed and becomes a choice once saved. */
+function OwnerPicker({ value, onChange, onEnter, options, placeholder }: {
+  value: string; onChange: (v: string) => void; onEnter: () => void; options: string[]; placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState(false); // filter only after typing; opening shows every name
+  const q = value.trim().toLowerCase();
+  const matches = options.filter((o) => !typed || !q || o.toLowerCase().includes(q)).slice(0, 100);
+  const exact = options.some((o) => o.toLowerCase() === q);
+  return (
+    <div className="relative mt-1">
+      <input value={value} placeholder={placeholder}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); setTyped(true); }}
+        onFocus={() => { setOpen(true); setTyped(false); }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setOpen(false); onEnter(); } if (e.key === "Escape") setOpen(false); }}
+        className="w-full border border-gray-300 rounded-lg pl-2 pr-14 py-1.5 text-sm" />
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+        {value && <button type="button" title="Clear" onMouseDown={(e) => e.preventDefault()} onClick={() => onChange("")} className="px-1 text-gray-400 hover:text-gray-600">&times;</button>}
+        <button type="button" title="Choose a name" onMouseDown={(e) => e.preventDefault()} onClick={() => { setOpen((o) => !o); setTyped(false); }} className="px-1 text-gray-500 hover:text-gray-700">▾</button>
+      </div>
+      {open && (matches.length > 0 || (typed && q && !exact)) && (
+        <div className="absolute z-20 mt-1 w-full max-h-56 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg text-sm">
+          {typed && q && !exact && <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-100">New name: <b>{value.trim()}</b> — press Save to add it</div>}
+          {matches.map((o) => (
+            <button key={o} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { onChange(o); setOpen(false); }}
+              className={`block w-full text-left px-3 py-1.5 hover:bg-arcadia-50 ${o === value ? "font-semibold text-arcadia-700" : ""}`}>{o}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type DetailsDraft = { status: ChecklistStatus; owner: string; technicalOwner: string; targetDate: string; remarks: string };
+
+/** Status, owners, target date and remarks of one checklist item, saved with the Save button (or Enter). */
+function ItemDetailsEditor({ item, edit, owners, overdue, onSave }: {
+  item: ChecklistItemDto; edit: boolean; owners: string[]; overdue: boolean; onSave: (patch: Partial<ChecklistItemDto>) => Promise<boolean>;
+}) {
+  const fromItem = (): DetailsDraft => ({ status: item.status, owner: item.owner || "", technicalOwner: item.technicalOwner || "",
+    targetDate: item.targetDate || "", remarks: item.remarks || "" });
+  const [draft, setDraft] = useState<DetailsDraft>(fromItem);
+  const [state, setState] = useState<"" | "saving" | "saved">("");
+  const original = fromItem();
+  const changed = (Object.keys(draft) as (keyof DetailsDraft)[]).filter((k) => draft[k].trim() !== original[k].trim());
+  const dirty = changed.length > 0;
+
+  const save = async () => {
+    if (!dirty) return;
+    setState("saving");
+    const patch: Record<string, string | null> = {};
+    changed.forEach((k) => { patch[k] = draft[k].trim() || null; });
+    const ok = await onSave(patch as Partial<ChecklistItemDto>);
+    setState(ok ? "saved" : "");
+    if (ok) setTimeout(() => setState((s) => (s === "saved" ? "" : s)), 4000);
+  };
+  // Save unsaved edits if the user moves to another item without pressing Save
+  const pending = useRef<() => void>(() => {});
+  pending.current = () => { if (dirty && state !== "saving") void save(); };
+  useEffect(() => () => pending.current(), []);
+
+  const set = (k: keyof DetailsDraft, v: string) => { setDraft((d) => ({ ...d, [k]: v })); setState(""); };
+  const ownerField = (k: "owner" | "technicalOwner", label: string, ph: string) => (
+    <div className="text-xs text-gray-600">{label}
+      {edit ? <OwnerPicker value={draft[k]} onChange={(v) => set(k, v)} onEnter={() => void save()} options={owners} placeholder={ph} />
+        : <div className="mt-1 text-sm text-gray-800">{item[k] || "—"}</div>}
+    </div>
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-4 text-sm">
+        <label className="text-xs text-gray-600">Status
+          {edit ? (
+            <select value={draft.status} onChange={(e) => set("status", e.target.value)}
+              className={`mt-1 w-full border rounded-lg px-2 py-1.5 text-sm font-medium ${STATUS_META[draft.status].pill}`}>
+              {Object.entries(STATUS_META).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+            </select>
+          ) : <div className={`mt-1 inline-block border rounded px-2 py-1 text-sm ${STATUS_META[item.status].pill}`}>{STATUS_META[item.status].label}</div>}
+        </label>
+        {ownerField("owner", "SPG Owner", "Type or choose SPG owner")}
+        {ownerField("technicalOwner", "Technical Owner", "Type or choose technical owner")}
+        <label className="text-xs text-gray-600">Target date
+          {edit ? (
+            <input type="date" value={draft.targetDate} onChange={(e) => set("targetDate", e.target.value)}
+              className={`mt-1 w-full border rounded-lg px-2 py-1.5 text-sm ${overdue ? "border-red-400 text-red-700" : "border-gray-300"}`} />
+          ) : <div className={`mt-1 text-sm ${overdue ? "text-red-700 font-semibold" : "text-gray-800"}`}>{fmtDate(item.targetDate)}</div>}
+          {overdue && <span className="text-[11px] text-red-700 font-semibold">Overdue</span>}
+        </label>
+        <div className="text-xs text-gray-600">Completed on<div className="mt-1 text-sm text-gray-800 py-1.5">{fmtDate(item.completedDate)}</div></div>
+      </div>
+      <label className="block text-xs text-gray-600 mt-3">Remarks
+        {edit ? (
+          <textarea rows={2} value={draft.remarks} onChange={(e) => set("remarks", e.target.value)} placeholder="Add remarks"
+            className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
+        ) : <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap">{item.remarks || "—"}</div>}
+      </label>
+      {edit && (
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <button onClick={() => void save()} disabled={!dirty || state === "saving"}
+            className="px-4 py-1.5 text-sm rounded-lg bg-arcadia-600 text-white hover:bg-arcadia-700 disabled:opacity-40">
+            {state === "saving" ? "Saving…" : "Save changes"}
+          </button>
+          {dirty && state !== "saving" && (
+            <button onClick={() => { setDraft(fromItem()); setState(""); }} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Discard</button>
+          )}
+          {dirty && state !== "saving" && <span className="text-xs text-amber-700">Unsaved changes</span>}
+          {state === "saved" && !dirty && <span className="text-xs text-green-700 font-medium">✓ Saved</span>}
+        </div>
+      )}
+    </>
+  );
+}
+
 /**
  * Sales Preparation Data / RERA Documentation — laid out like Project Documents:
  * project root → section folders → checklist-item folders, each with status, owner, target date and files.
@@ -79,6 +195,7 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
   const [viewer, setViewer] = useState<{ docs: ChecklistDocumentDto[]; startId: number } | null>(null);
   const [showMail, setShowMail] = useState(false);
   const [mail, setMail] = useState<ChecklistMailConfigDto | null>(null);
+  const [userNames, setUserNames] = useState<string[]>([]);
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 3500); };
   const errMsg = (e: any) => e?.response?.data?.error || e?.message || "Something went wrong";
@@ -86,6 +203,9 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
   useEffect(() => {
     authService.getCurrentUser().then((u) => setIsAdmin(u.role?.name === "ADMIN")).catch(() => {});
     checklistService.myPermissions().then((p) => setPerms(p[tracker])).catch(() => setPerms(null));
+    userService.getAllBasic()
+      .then((us) => setUserNames(us.filter((u) => u.active !== false).map((u) => `${u.firstName || ""} ${u.lastName || ""}`.trim()).filter(Boolean)))
+      .catch(() => {});
     projectService.getMyProjects().then((list) => {
       setProjects(list);
       const arcadia = list.find((p) => p.name.toLowerCase().includes("arcadia"));
@@ -119,7 +239,8 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
     extraSections.forEach((x) => !s.includes(x) && s.push(x));
     return s;
   }, [items, extraSections]);
-  const owners = useMemo(() => Array.from(new Set(items.flatMap((i) => [i.owner, i.technicalOwner]).filter(Boolean) as string[])).sort(), [items]);
+  const owners = useMemo(() => Array.from(new Set([...userNames, ...(items.flatMap((i) => [i.owner, i.technicalOwner]).filter(Boolean) as string[])]))
+    .sort((a, b) => a.localeCompare(b)), [items, userNames]);
   const isOverdue = (i: ChecklistItemDto) => !!i.targetDate && i.targetDate < today && i.status !== "COMPLETED" && i.status !== "NOT_APPLICABLE";
   const sectionStats = (sec: string) => {
     const list = items.filter((i) => i.section === sec && i.status !== "NOT_APPLICABLE");
@@ -160,13 +281,15 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
       })));
     } catch (e) { setError(errMsg(e)); }
   };
-  const update = async (it: ChecklistItemDto, patch: Partial<ChecklistItemDto>) => {
+  const update = async (it: ChecklistItemDto, patch: Partial<ChecklistItemDto>): Promise<boolean> => {
     try {
       const saved = await checklistService.updateItem(tracker, it.id, patch);
-      setItems((list) => list.map((i) => (i.id === it.id ? { ...i, ...saved, documents: i.documents } : i)));
+      setItems((list) => list.map((i) => (i.id === it.id ? { ...i, ...saved, documents: i.documents, folders: i.folders } : i)));
       checklistService.summary(tracker, project).then(setSummary).catch(() => {});
+      return true;
     } catch (e) {
       setError(errMsg(e));
+      return false;
     }
   };
 
@@ -673,42 +796,7 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
                       <button onClick={() => void deleteItem(item)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 flex-shrink-0">Delete item</button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-4 text-sm">
-                    <label className="text-xs text-gray-600">Status
-                      {edit ? (
-                        <select value={item.status} onChange={(e) => void update(item, { status: e.target.value as ChecklistStatus })}
-                          className={`mt-1 w-full border rounded-lg px-2 py-1.5 text-sm font-medium ${STATUS_META[item.status].pill}`}>
-                          {Object.entries(STATUS_META).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
-                        </select>
-                      ) : <div className={`mt-1 inline-block border rounded px-2 py-1 text-sm ${STATUS_META[item.status].pill}`}>{STATUS_META[item.status].label}</div>}
-                    </label>
-                    {([["owner", "SPG Owner", "Assign SPG owner"], ["technicalOwner", "Technical Owner", "Assign technical owner"]] as const).map(([field, label, ph]) => (
-                      <label key={field} className="text-xs text-gray-600">{label}
-                        {edit ? (
-                          <input key={`${field}${item.id}`} defaultValue={item[field] || ""} list="checklist-owners" placeholder={ph}
-                            onBlur={(e) => e.target.value.trim() !== (item[field] || "") && void update(item, { [field]: e.target.value.trim() })}
-                            className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
-                        ) : <div className="mt-1 text-sm text-gray-800">{item[field] || "—"}</div>}
-                      </label>
-                    ))}
-                    <datalist id="checklist-owners">{owners.map((o) => <option key={o} value={o} />)}</datalist>
-                    <label className="text-xs text-gray-600">Target date
-                      {edit ? (
-                        <input type="date" key={`t${item.id}-${item.targetDate}`} defaultValue={item.targetDate || ""}
-                          onChange={(e) => e.target.value !== (item.targetDate || "") && void update(item, { targetDate: e.target.value || null })}
-                          className={`mt-1 w-full border rounded-lg px-2 py-1.5 text-sm ${isOverdue(item) ? "border-red-400 text-red-700" : "border-gray-300"}`} />
-                      ) : <div className={`mt-1 text-sm ${isOverdue(item) ? "text-red-700 font-semibold" : "text-gray-800"}`}>{fmtDate(item.targetDate)}</div>}
-                      {isOverdue(item) && <span className="text-[11px] text-red-700 font-semibold">Overdue</span>}
-                    </label>
-                    <div className="text-xs text-gray-600">Completed on<div className="mt-1 text-sm text-gray-800 py-1.5">{fmtDate(item.completedDate)}</div></div>
-                  </div>
-                  <label className="block text-xs text-gray-600 mt-3">Remarks
-                    {edit ? (
-                      <textarea key={`r${item.id}`} rows={2} defaultValue={item.remarks || ""} placeholder="Add remarks"
-                        onBlur={(e) => e.target.value.trim() !== (item.remarks || "") && void update(item, { remarks: e.target.value.trim() })}
-                        className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
-                    ) : <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap">{item.remarks || "—"}</div>}
-                  </label>
+                  <ItemDetailsEditor key={item.id} item={item} edit={edit} owners={owners} overdue={isOverdue(item)} onSave={(patch) => update(item, patch)} />
                   {item.updatedBy && <p className="text-[11px] text-gray-400 mt-2">Last updated {fmtDateTime(item.updatedAt)} · {item.updatedBy}</p>}
                 </div>
                 )}

@@ -24,6 +24,15 @@ public class VillaBlockingService {
         this.villaBlockingRepo = villaBlockingRepo;
     }
 
+    /** Allowed "belongs to" choices (null = not set, for villas blocked before this field existed) */
+    public static final List<String> BELONGS_TO = List.of("Praneeth", "Prakash Garu - Dr Cpl", "Suresh Garu - Dr Cpl");
+
+    private static String belongsTo(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        return BELONGS_TO.stream().filter(b -> b.equalsIgnoreCase(raw.trim())).findFirst()
+                .orElseThrow(() -> new RuntimeException("Belongs to must be one of: " + String.join(", ", BELONGS_TO)));
+    }
+
     public List<VillaBlockingDto> getAll() {
         return villaBlockingRepo.findAll().stream()
                 .map(VillaBlockingDto::fromEntity).collect(Collectors.toList());
@@ -64,6 +73,7 @@ public class VillaBlockingService {
         v.setCustomerEmail(dto.getCustomerEmail());
         v.setBookingAmount(dto.getBookingAmount());
         v.setNotes(dto.getNotes());
+        v.setBelongsTo(belongsTo(dto.getBelongsTo()));
         v.setBlockedBy(dto.getBlockedBy());
         v.setBlockedAt(LocalDateTime.now());
         v = villaBlockingRepo.save(v);
@@ -80,6 +90,7 @@ public class VillaBlockingService {
         v.setCustomerEmail(dto.getCustomerEmail());
         v.setBookingAmount(dto.getBookingAmount());
         v.setNotes(dto.getNotes());
+        v.setBelongsTo(belongsTo(dto.getBelongsTo()));
         v = villaBlockingRepo.save(v);
         log.info("Updated blocked villa {} in project {} (id={})", villaNumber, projectName, v.getId());
         return VillaBlockingDto.fromEntity(v);

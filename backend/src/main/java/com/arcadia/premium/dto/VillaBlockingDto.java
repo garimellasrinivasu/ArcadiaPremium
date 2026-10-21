@@ -12,6 +12,7 @@ public class VillaBlockingDto {
     private String customerPhone;
     private String customerEmail;
     private Double bookingAmount;
+    private String belongsTo;
     private String notes;
     private String blockedBy;
     private LocalDateTime blockedAt;
@@ -27,6 +28,7 @@ public class VillaBlockingDto {
         d.customerPhone = e.getCustomerPhone();
         d.customerEmail = e.getCustomerEmail();
         d.bookingAmount = e.getBookingAmount();
+        d.belongsTo = e.getBelongsTo();
         d.notes = e.getNotes();
         d.blockedBy = e.getBlockedBy();
         d.blockedAt = e.getBlockedAt();
@@ -50,6 +52,8 @@ public class VillaBlockingDto {
     public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
     public Double getBookingAmount() { return bookingAmount; }
     public void setBookingAmount(Double bookingAmount) { this.bookingAmount = bookingAmount; }
+    public String getBelongsTo() { return belongsTo; }
+    public void setBelongsTo(String belongsTo) { this.belongsTo = belongsTo; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public String getBlockedBy() { return blockedBy; }

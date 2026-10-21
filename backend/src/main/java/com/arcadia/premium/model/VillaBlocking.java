@@ -32,6 +32,10 @@ public class VillaBlocking {
     @Column(name = "booking_amount")
     private Double bookingAmount;
 
+    /** Whose share the villa belongs to: Praneeth, Prakash Garu - Dr Cpl, Suresh Garu - Dr Cpl */
+    @Column(name = "belongs_to")
+    private String belongsTo;
+
     @Column(name = "notes", length = 2000)
     private String notes;
 
@@ -62,6 +66,8 @@ public class VillaBlocking {
     public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
     public Double getBookingAmount() { return bookingAmount; }
     public void setBookingAmount(Double bookingAmount) { this.bookingAmount = bookingAmount; }
+    public String getBelongsTo() { return belongsTo; }
+    public void setBelongsTo(String belongsTo) { this.belongsTo = belongsTo; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public String getBlockedBy() { return blockedBy; }
