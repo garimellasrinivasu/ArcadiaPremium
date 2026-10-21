@@ -3,6 +3,7 @@ import { projectService, type ProjectDto } from "../services/projectService";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
 import ChecklistFileViewer from "../components/ChecklistFileViewer";
+import OwnerActivitySheet, { UNASSIGNED } from "../components/OwnerActivitySheet";
 import { downloadXlsx, loadSheetJS } from "../utils/sheetjs";
 import {
   checklistService,
@@ -185,6 +186,8 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
   const [newFolder, setNewFolder] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   const [search, setSearch] = useState("");
   const [showSummary, setShowSummary] = useState<"" | "items" | "owners">("");
+  const [sheetOwner, setSheetOwner] = useState<string>(""); // "" = all owners
+  const [sheetCompleted, setSheetCompleted] = useState(false);
 
   // Upload queue (same behaviour as Project Documents)
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -229,7 +232,7 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
   }, [tracker, project, perms?.view]);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    setSection(null); setItemId(null); setFolderId(null); setExtraSections([]); setMail(null); setShowMail(false); setQueue([]);
+    setSection(null); setItemId(null); setFolderId(null); setExtraSections([]); setMail(null); setShowMail(false); setQueue([]); setSheetOwner("");
   }, [project]);
 
   const today = todayIST();
@@ -587,21 +590,43 @@ export default function ChecklistTrackerPage({ tracker, title }: { tracker: Trac
             </div>
           )}
           {showSummary === "owners" && (
-            <div className="border-t border-gray-100 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs text-gray-600"><tr>
-                  <th className="text-left px-4 py-2">SPG Owner</th><th className="px-2 text-center">Total</th><th className="px-2 text-center">Completed</th>
-                  <th className="px-2 text-center">Pending</th><th className="px-2 text-center">Overdue</th><th className="text-left px-4">Next target</th></tr></thead>
-                <tbody>{summary.owners.map((o) => (
-                  <tr key={o.owner} className="border-t border-gray-100">
-                    <td className="px-4 py-1.5 font-medium text-gray-800">{o.owner}</td><td className="text-center">{o.total}</td>
-                    <td className="text-center text-green-700">{o.completed}</td><td className="text-center">{o.pending}</td>
-                    <td className={`text-center ${o.overdue ? "text-red-700 font-semibold" : "text-gray-400"}`}>{o.overdue || "–"}</td>
-                    <td className="px-4">{fmtDate(o.nextTarget)}</td>
-                  </tr>))}
-                </tbody>
-              </table>
+            <div className="border-t border-gray-100">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-xs text-gray-600"><tr>
+                    <th className="text-left px-4 py-2">SPG Owner</th><th className="px-2 text-center">Total</th><th className="px-2 text-center">Completed</th>
+                    <th className="px-2 text-center">Pending</th><th className="px-2 text-center">Overdue</th><th className="text-left px-4">Next target</th><th /></tr></thead>
+                  <tbody>{summary.owners.map((o) => (
+                    <tr key={o.owner} onClick={() => setSheetOwner(o.owner)}
+                      className={`border-t border-gray-100 cursor-pointer hover:bg-arcadia-50 ${sheetOwner === o.owner ? "bg-arcadia-50" : ""}`}>
+                      <td className="px-4 py-1.5 font-medium text-gray-800">{o.owner}</td><td className="text-center">{o.total}</td>
+                      <td className="text-center text-green-700">{o.completed}</td><td className="text-center">{o.pending}</td>
+                      <td className={`text-center ${o.overdue ? "text-red-700 font-semibold" : "text-gray-400"}`}>{o.overdue || "–"}</td>
+                      <td className="px-4">{fmtDate(o.nextTarget)}</td>
+                      <td className="px-3 text-xs text-arcadia-700 whitespace-nowrap">View sheet ›</td>
+                    </tr>))}
+                  </tbody>
+                </table>
+              </div>
               {summary.noTargetDate > 0 && <p className="px-4 py-2 text-xs text-amber-700">{summary.noTargetDate} open item{summary.noTargetDate === 1 ? "" : "s"} without a target date.</p>}
+
+              {/* Individual activity sheets — screenshot / save as image and send to each owner */}
+              <div className="border-t border-gray-100 px-4 py-3 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-800 mr-1">Activity sheet for</span>
+                  <select value={sheetOwner} onChange={(e) => setSheetOwner(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                    <option value="">All SPG owners (one sheet each)</option>
+                    {summary.owners.map((o) => <option key={o.owner} value={o.owner}>{o.owner}</option>)}
+                  </select>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-600 ml-2">
+                    <input type="checkbox" checked={sheetCompleted} onChange={(e) => setSheetCompleted(e.target.checked)} /> Include completed
+                  </label>
+                  <span className="text-[11px] text-gray-400 w-full sm:w-auto sm:ml-auto">Use Copy image / Download image and send it to the owner on WhatsApp or email.</span>
+                </div>
+                {(sheetOwner ? [sheetOwner] : summary.owners.map((o) => o.owner).filter((o) => o !== UNASSIGNED || summary.owners.length === 1)).map((o) => (
+                  <OwnerActivitySheet key={o} owner={o} items={items} pageTitle={title} project={project} today={today} includeCompleted={sheetCompleted} />
+                ))}
+              </div>
             </div>
           )}
         </div>
