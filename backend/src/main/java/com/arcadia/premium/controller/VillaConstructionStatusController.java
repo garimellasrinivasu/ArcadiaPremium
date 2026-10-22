@@ -99,6 +99,24 @@ public class VillaConstructionStatusController {
         }
     }
 
+    /** Import planned dates / completed stages for many villas (admin). Body: {projectName, dryRun, cells:[{villa, phase, value}]} */
+    @PostMapping("/import")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> importSchedule(@RequestBody Map<String, Object> body) {
+        try {
+            String projectName = (String) body.get("projectName");
+            if (projectName == null || projectName.isBlank()) throw new IllegalArgumentException("projectName is required");
+            List<Map<String, Object>> cells = (List<Map<String, Object>>) body.get("cells");
+            if (cells == null || cells.isEmpty()) throw new IllegalArgumentException("Nothing to import");
+            if (cells.size() > 20000) throw new IllegalArgumentException("Too many cells");
+            boolean dryRun = !Boolean.FALSE.equals(body.get("dryRun"));
+            return ResponseEntity.ok(service.importSchedule(projectName, cells, dryRun));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Import failed"));
+        }
+    }
+
     @GetMapping("/summary")
     @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'MASTER_PLAN') or @pageAccess.hasAccess(authentication, 'WORK_EXECUTION')")
     public ResponseEntity<Map<String, List<VillaConstructionStatusDto>>> getSummary(

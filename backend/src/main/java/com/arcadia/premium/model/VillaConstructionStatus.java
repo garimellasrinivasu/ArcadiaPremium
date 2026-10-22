@@ -34,6 +34,10 @@ public class VillaConstructionStatus {
     @Column(name = "planned_target_date")
     private LocalDate plannedTargetDate;
 
+    /** True when the planned date was filled in with the import day because the plan had no date for it */
+    @Column(name = "planned_date_defaulted")
+    private Boolean plannedDateDefaulted;
+
     @Column(name = "revised_planned_date")
     private LocalDate revisedPlannedDate;
 
@@ -75,6 +79,8 @@ public class VillaConstructionStatus {
     public String getIncharge() { return incharge; }
     public void setIncharge(String incharge) { this.incharge = incharge; }
 
+    public boolean isPlannedDateDefaulted() { return Boolean.TRUE.equals(plannedDateDefaulted); }
+    public void setPlannedDateDefaulted(boolean v) { this.plannedDateDefaulted = v; }
     public LocalDate getPlannedTargetDate() { return plannedTargetDate; }
     public void setPlannedTargetDate(LocalDate plannedTargetDate) { this.plannedTargetDate = plannedTargetDate; }
 

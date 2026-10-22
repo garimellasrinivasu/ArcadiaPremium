@@ -52,7 +52,8 @@ public class SummaryImageGenerator {
     // --- Phases ---
     private static final String[] PHASES = {
             "EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION",
-            "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_SLAB"
+            "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB",
+            "FIRST_FLOOR_COLUMNS", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_COLUMNS", "SECOND_FLOOR_SLAB"
     };
 
     private static final Map<String, String> PHASE_LABELS = new LinkedHashMap<>();
@@ -63,15 +64,17 @@ public class SummaryImageGenerator {
         PHASE_LABELS.put("NECK_COLUMNS", "Neck Columns");
         PHASE_LABELS.put("BACK_FILLING_COMPACTION", "Back Filling & Compaction");
         PHASE_LABELS.put("PLINTH_BEAM", "Plinth Beam");
-        PHASE_LABELS.put("COLUMNS", "Columns");
+        PHASE_LABELS.put("COLUMNS", "Ground Floor Columns");
         PHASE_LABELS.put("GROUND_FLOOR_SLAB", "Ground Floor Slab");
+        PHASE_LABELS.put("FIRST_FLOOR_COLUMNS", "First Floor Columns");
         PHASE_LABELS.put("FIRST_FLOOR_SLAB", "First Floor Slab");
+        PHASE_LABELS.put("SECOND_FLOOR_COLUMNS", "Second Floor Columns");
         PHASE_LABELS.put("SECOND_FLOOR_SLAB", "Second Floor Slab");
     }
 
     private static final int TOTAL_VILLAS = 237;
-    private static final int TOTAL_PHASES = 10;
-    private static final int TOTAL_ACTIVITIES = TOTAL_VILLAS * TOTAL_PHASES; // 2370
+    private static final int TOTAL_PHASES = PHASES.length;
+    private static final int TOTAL_ACTIVITIES = TOTAL_VILLAS * TOTAL_PHASES;
 
     // --- Cluster definitions ---
     private static final int[] CLUSTER_1_VILLAS = {

@@ -123,8 +123,9 @@ public class VillaConstructionStatusService {
         }
 
         entity.setIncharge(incharge);
-        entity.setPlannedTargetDate(plannedTargetDate != null && !plannedTargetDate.isEmpty()
-                ? LocalDate.parse(plannedTargetDate) : null);
+        LocalDate newPlanned = plannedTargetDate != null && !plannedTargetDate.isEmpty() ? LocalDate.parse(plannedTargetDate) : null;
+        if (!java.util.Objects.equals(newPlanned, entity.getPlannedTargetDate())) entity.setPlannedDateDefaulted(false);
+        entity.setPlannedTargetDate(newPlanned);
         entity.setRevisedPlannedDate(revisedPlannedDate != null && !revisedPlannedDate.isEmpty()
                 ? LocalDate.parse(revisedPlannedDate) : null);
         entity.setActualCompletionDate(actualCompletionDate != null && !actualCompletionDate.isEmpty()
@@ -168,6 +169,81 @@ public class VillaConstructionStatusService {
         return results.stream()
                 .map(VillaConstructionStatusDto::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    // ── Import of planned dates / completed stages (from the cluster schedule Excel) ──
+
+    public static final java.util.Set<String> PHASE_KEYS = java.util.Set.of(
+            "EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION", "PLINTH_BEAM", "COLUMNS",
+            "GROUND_FLOOR_SLAB", "FIRST_FLOOR_COLUMNS", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_COLUMNS", "SECOND_FLOOR_SLAB");
+
+    /**
+     * Each cell is a villa + phase + value: "COMPLETED", a date (yyyy-MM-dd) or "" (no information).
+     * COMPLETED marks the stage done (no completion date); a date becomes the planned target date;
+     * "" gives a stage that is not done and has no planned date today's date, flagged as not updated.
+     * Stages already marked done are never un-marked. With dryRun nothing is saved.
+     */
+    @Transactional
+    public java.util.Map<String, Object> importSchedule(String projectName, List<java.util.Map<String, Object>> cells, boolean dryRun) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        LocalDate today = LocalDate.now(IST);
+        java.util.Map<String, VillaConstructionStatus> existing = new java.util.HashMap<>();
+        for (VillaConstructionStatus e : repository.findByProjectName(projectName)) existing.put(e.getVillaNumber() + "|" + e.getPhase(), e);
+
+        int markedDone = 0, datesSet = 0, defaulted = 0, unchanged = 0;
+        List<String> warnings = new java.util.ArrayList<>();
+        List<VillaConstructionStatus> toSave = new java.util.ArrayList<>();
+        for (java.util.Map<String, Object> c : cells) {
+            int villa = ((Number) c.get("villa")).intValue();
+            String phase = String.valueOf(c.get("phase"));
+            if (!PHASE_KEYS.contains(phase)) throw new IllegalArgumentException("Unknown stage: " + phase);
+            String value = c.get("value") == null ? "" : String.valueOf(c.get("value")).trim();
+            VillaConstructionStatus e = existing.get(villa + "|" + phase);
+            boolean isNew = e == null;
+            if (isNew) {
+                e = new VillaConstructionStatus();
+                e.setProjectName(projectName);
+                e.setVillaNumber(villa);
+                e.setPhase(phase);
+            }
+            boolean changed = false;
+            if ("COMPLETED".equalsIgnoreCase(value)) {
+                if (!e.isActivity1Done()) { e.setActivity1Done(true); markedDone++; changed = true; }
+            } else if (!value.isEmpty()) {
+                LocalDate d = LocalDate.parse(value);
+                if (!d.equals(e.getPlannedTargetDate()) || e.isPlannedDateDefaulted()) {
+                    e.setPlannedTargetDate(d);
+                    e.setPlannedDateDefaulted(false);
+                    datesSet++; changed = true;
+                }
+                if (e.isActivity1Done()) warnings.add("Villa " + villa + " " + phase + ": already marked done here; the plan gives " + d + " (kept as done)");
+            } else if (!e.isActivity1Done() && e.getPlannedTargetDate() == null) {
+                e.setPlannedTargetDate(today);
+                e.setPlannedDateDefaulted(true);
+                defaulted++; changed = true;
+            }
+            if (!changed) { unchanged++; continue; }
+            e.setUpdatedAt(LocalDateTime.now(IST));
+            e.setUpdatedBy(username);
+            toSave.add(e);
+            if (isNew) existing.put(villa + "|" + phase, e);
+        }
+        if (dryRun) {
+            // loaded rows were changed in memory — make sure a preview writes nothing
+            org.springframework.transaction.interceptor.TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        } else {
+            repository.saveAll(toSave);
+        }
+        log.info("Schedule import for {} by {}: done={}, dates={}, defaulted={}, unchanged={}, dryRun={}",
+                projectName, username, markedDone, datesSet, defaulted, unchanged, dryRun);
+        java.util.Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("dryRun", dryRun);
+        out.put("markedDone", markedDone);
+        out.put("datesSet", datesSet);
+        out.put("defaulted", defaulted);
+        out.put("unchanged", unchanged);
+        out.put("warnings", warnings);
+        return out;
     }
 
     /** Sets activity 1 and records when it became done, for the daily report. */

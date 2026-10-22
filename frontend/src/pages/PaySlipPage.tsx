@@ -41,6 +41,15 @@ const monthLabel = (m: string) => {
   return `${months[parseInt(mo)]} - ${y}`;
 };
 
+/* ─────────── Letterhead logo ───────────
+   Embedded as a data URL so it is already in the page when the print dialog opens. */
+let logoSrc = `${window.location.origin}/arcadia-logo.png`;
+fetch("/arcadia-logo.png")
+  .then((r) => (r.ok ? r.blob() : Promise.reject()))
+  .then((b) => new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(b); }))
+  .then((d) => { logoSrc = d; })
+  .catch(() => { /* keep the URL */ });
+
 /* ─────────── Print via hidden iframe ─────────── */
 function printViaIframe(html: string, filename?: string) {
   if (filename) {
@@ -682,6 +691,14 @@ function buildPaySlipHtml(data: PaySlipData): string {
   @page { size: A4; margin: 15mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; font-size: 12px; color: #222; }
+  .letterhead { max-width: 700px; margin: 0 auto; text-align: center; }
+  .letterhead img { display: block; height: 76px; width: auto; margin: 0 auto 6px; }
+  .letterhead .lh-name { font-family: "Algerian", "Castellar", "Copperplate", "Copperplate Gothic Bold", Georgia, serif; font-size: 28px; font-weight: bold;
+    color: #E30613; letter-spacing: 2px; line-height: 1.15; }
+  .letterhead .lh-addr { color: #1F3864; font-size: 12px; margin-top: 5px; line-height: 1.5; }
+  .letterhead .lh-addr b { font-weight: bold; }
+  .letterhead .lh-gst { color: #1F3864; font-size: 12px; font-weight: bold; margin-top: 1px; }
+  .lh-rule { max-width: 700px; margin: 8px auto 16px; border: 0; border-top: 1.5px solid #1F3864; }
   .container { border: 2px solid #1e3a5f; padding: 0; max-width: 700px; margin: auto; }
   .header { background: #1e3a5f; color: #fff; text-align: center; padding: 12px; font-size: 14px; font-weight: bold; letter-spacing: 1px; }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #ccc; }
@@ -700,6 +717,14 @@ function buildPaySlipHtml(data: PaySlipData): string {
   .footer .sign { margin-top: 30px; font-weight: bold; font-size: 11px; color: #444; }
 </style>
 </head><body>
+<div class="letterhead">
+  <img src="${logoSrc}" alt="Arcadia Premium" />
+  <div class="lh-name">PRANEETH ARCADIA PROPERTIES</div>
+  <div class="lh-addr"><b>ADDRESS</b>: Sy No: 455P, 456, D.Pochampalli Village, Near ORR Service Road,<br>
+    Dhundigal, Medchal - Malkajgiri Dist, Telangana - 500043</div>
+  <div class="lh-gst">GSTIN: 36ABGFP4764M1ZM</div>
+</div>
+<hr class="lh-rule" />
 <div class="container">
   <div class="header">PAY SLIP FOR THE MONTH OF ${monthLabel(data.payMonth)}</div>
   <div class="info-grid">

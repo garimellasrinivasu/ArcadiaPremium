@@ -29,7 +29,7 @@ public class WorkExecutionReportService {
     private static final String[] PHASES = {
             "EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION",
             "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB",
-            "FIRST_FLOOR_SLAB", "SECOND_FLOOR_SLAB"
+            "FIRST_FLOOR_COLUMNS", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_COLUMNS", "SECOND_FLOOR_SLAB"
     };
 
     private static final Map<String, String> PHASE_LABELS = new LinkedHashMap<>();
@@ -40,9 +40,11 @@ public class WorkExecutionReportService {
         PHASE_LABELS.put("NECK_COLUMNS", "Neck Columns");
         PHASE_LABELS.put("BACK_FILLING_COMPACTION", "Back Filling & Compaction");
         PHASE_LABELS.put("PLINTH_BEAM", "Plinth Beam");
-        PHASE_LABELS.put("COLUMNS", "Columns");
+        PHASE_LABELS.put("COLUMNS", "Ground Floor Columns");
         PHASE_LABELS.put("GROUND_FLOOR_SLAB", "Ground Floor Slab");
+        PHASE_LABELS.put("FIRST_FLOOR_COLUMNS", "First Floor Columns");
         PHASE_LABELS.put("FIRST_FLOOR_SLAB", "First Floor Slab");
+        PHASE_LABELS.put("SECOND_FLOOR_COLUMNS", "Second Floor Columns");
         PHASE_LABELS.put("SECOND_FLOOR_SLAB", "Second Floor Slab");
     }
 
@@ -421,13 +423,14 @@ public class WorkExecutionReportService {
             // --- Header row ---
             Row headerRow = sheet.createRow(3);
             headerRow.setHeightInPoints(35);
-            String[] headers = new String[13]; // Villa, Cluster, 10 phases, Status
+            final int np = PHASES.length;
+            String[] headers = new String[np + 3]; // Villa, Cluster, phases, Status
             headers[0] = "Villa";
             headers[1] = "Cluster";
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < np; i++) {
                 headers[i + 2] = PHASE_LABELS.getOrDefault(PHASES[i], PHASES[i]);
             }
-            headers[12] = "Status";
+            headers[np + 2] = "Status";
 
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
@@ -459,7 +462,7 @@ public class WorkExecutionReportService {
 
                 // Phase columns
                 int completedCount = 0;
-                for (int p = 0; p < 10; p++) {
+                for (int p = 0; p < np; p++) {
                     String phase = PHASES[p];
                     boolean done = phaseStatus.getOrDefault(phase, false);
                     Cell phaseCell = row.createCell(p + 2);
@@ -473,10 +476,10 @@ public class WorkExecutionReportService {
                     }
                 }
 
-                // Status column (e.g. "3/10")
-                Cell statusCell = row.createCell(12);
-                statusCell.setCellValue(completedCount + "/10");
-                if (completedCount == 10) {
+                // Status column (e.g. "3/12")
+                Cell statusCell = row.createCell(np + 2);
+                statusCell.setCellValue(completedCount + "/" + np);
+                if (completedCount == np) {
                     statusCell.setCellStyle(statusGreenStyle);
                 } else if (completedCount > 0) {
                     statusCell.setCellStyle(statusOrangeStyle);
@@ -488,10 +491,10 @@ public class WorkExecutionReportService {
             // --- Set column widths ---
             sheet.setColumnWidth(0, 2500);  // Villa
             sheet.setColumnWidth(1, 3000);  // Cluster
-            for (int i = 2; i < 12; i++) {
+            for (int i = 2; i < np + 2; i++) {
                 sheet.setColumnWidth(i, 4500);  // Phase columns
             }
-            sheet.setColumnWidth(12, 2500); // Status
+            sheet.setColumnWidth(np + 2, 2500); // Status
 
             // Freeze header row
             sheet.createFreezePane(0, 4);

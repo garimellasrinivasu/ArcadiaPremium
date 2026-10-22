@@ -293,9 +293,11 @@ export const CONSTRUCTION_PHASES: { key: string; label: string; activity1: strin
   { key: "NECK_COLUMNS", label: "Neck Columns", activity1: "Neck Columns", activity2: "", single: true },
   { key: "BACK_FILLING_COMPACTION", label: "Back Filling & Compaction", activity1: "Back Filling & Compaction", activity2: "", single: true },
   { key: "PLINTH_BEAM", label: "Plinth Beam", activity1: "Plinth Beam", activity2: "", single: true },
-  { key: "COLUMNS", label: "Columns", activity1: "Columns", activity2: "", single: true },
+  { key: "COLUMNS", label: "Ground Floor Columns", activity1: "Ground Floor Columns", activity2: "", single: true },
   { key: "GROUND_FLOOR_SLAB", label: "Ground Floor Slab", activity1: "Ground Floor Slab", activity2: "", single: true },
+  { key: "FIRST_FLOOR_COLUMNS", label: "First Floor Columns", activity1: "First Floor Columns", activity2: "", single: true },
   { key: "FIRST_FLOOR_SLAB", label: "First Floor Slab", activity1: "First Floor Slab", activity2: "", single: true },
+  { key: "SECOND_FLOOR_COLUMNS", label: "Second Floor Columns", activity1: "Second Floor Columns", activity2: "", single: true },
   { key: "SECOND_FLOOR_SLAB", label: "Second Floor Slab", activity1: "Second Floor Slab", activity2: "", single: true },
 ];
 

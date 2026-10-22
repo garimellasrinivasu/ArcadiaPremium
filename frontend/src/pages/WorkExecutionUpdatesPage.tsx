@@ -16,6 +16,8 @@ import { KALPAVRUKSHA_PLOTS } from "../data/kalpavrukshaPlots";
 import type { PlotDef } from "../data/kalpavrukshaPlots";
 import { ARAVINDHAM_PLOTS } from "../data/aravindhamPlots";
 import { clusterInchargeService, type ClusterInchargeDto } from "../services/clusterInchargeService";
+import { authService } from "../services/authService";
+import ScheduleImportExport from "../components/ScheduleImportExport";
 
 type WETab = "construction" | "summary" | "daily";
 
@@ -24,6 +26,9 @@ export default function WorkExecutionUpdatesPage() {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [activeTab, setActiveTab] = useState<WETab>("construction");
   const [activePhase, setActivePhase] = useState(CONSTRUCTION_PHASES[0].key);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  useEffect(() => { authService.getCurrentUser().then((u) => setIsAdmin(u.role?.name === "ADMIN")).catch(() => {}); }, []);
 
   const activePlots = isAravindham(selectedProject)
     ? ARAVINDHAM_PLOTS
@@ -57,6 +62,10 @@ export default function WorkExecutionUpdatesPage() {
         <h1 className="text-lg sm:text-xl font-bold text-gray-800">
           Work Execution Updates &mdash; {selectedProject}
         </h1>
+        <div className="flex flex-wrap items-center gap-2">
+        {projectHasMasterPlan && isArcadia(selectedProject) && (
+          <ScheduleImportExport projectName={selectedProject} plots={activePlots} isAdmin={isAdmin} onImported={() => setReloadKey((k) => k + 1)} />
+        )}
         <select
           value={selectedProject}
           onChange={(e) => {
@@ -70,6 +79,7 @@ export default function WorkExecutionUpdatesPage() {
             <option key={p.id} value={p.name}>{p.name}</option>
           ))}
         </select>
+        </div>
       </div>
 
       {/* Tabs — construction phases + summary (NO Sales tab) */}
@@ -109,6 +119,7 @@ export default function WorkExecutionUpdatesPage() {
       {/* Construction Map */}
       {projectHasMasterPlan && isArcadia(selectedProject) && activeTab === "construction" && (
         <ConstructionMapView
+          key={`${activePhase}-${reloadKey}`}
           projectName={selectedProject}
           phase={activePhase}
           plots={activePlots}
@@ -124,6 +135,7 @@ export default function WorkExecutionUpdatesPage() {
       {/* Summary */}
       {projectHasMasterPlan && isArcadia(selectedProject) && activeTab === "summary" && (
         <ConstructionSummaryView
+          key={reloadKey}
           projectName={selectedProject}
           plots={activePlots}
         />
@@ -260,6 +272,10 @@ function ConstructionMapView({
           <span className="w-4 h-3 rounded bg-green-500" />
           Done
         </span>
+        <span className="flex items-center gap-1.5" title="No date in the schedule — planned date set to the import day">
+          <span className="w-4 h-3 rounded bg-amber-300 border border-amber-500" />
+          Planned date not updated
+        </span>
         {!phaseInfo.single && (
           <span className="flex items-center gap-1.5">
             <span className="w-1 h-3 rounded bg-red-600" />
@@ -333,6 +349,8 @@ function ConstructionMapView({
               const a1 = status?.activity1Done ?? false;
               const a2 = status?.activity2Done ?? false;
               const isSingle = !!phaseInfo.single;
+              const notUpdated = !a1 && !!status?.plannedDateDefaulted;
+              const planned = !a1 && status?.plannedTargetDate ? status.plannedTargetDate : "";
 
               return (
                 <div
@@ -352,14 +370,14 @@ function ConstructionMapView({
                   {isSingle ? (
                     <div
                       onClick={() => openModal(plot, 1)}
-                      title={`Villa ${plot.villa} - ${phaseInfo.activity1}: ${a1 ? "Done" : "Not Done"} (Click to edit)`}
+                      title={`Villa ${plot.villa} - ${phaseInfo.activity1}: ${a1 ? "Done" : "Not Done"}${!a1 && status?.plannedTargetDate ? ` · Planned ${status.plannedTargetDate.split("-").reverse().join("-")}${notUpdated ? " (not updated)" : ""}` : ""} (Click to edit)`}
                       style={{
                         width: "100%",
                         height: "100%",
                         background: a1
                           ? "rgba(34, 197, 94, 1)"
-                          : "rgba(220, 220, 220, 1)",
-                        border: `1px solid ${a1 ? "#16a34a" : "#999"}`,
+                          : notUpdated ? "rgba(252, 211, 77, 1)" : "rgba(220, 220, 220, 1)",
+                        border: `1px solid ${a1 ? "#16a34a" : notUpdated ? "#d97706" : "#999"}`,
                         cursor: "pointer",
                         transition: "background 0.2s",
                         borderRadius: "2px",
@@ -434,6 +452,11 @@ function ConstructionMapView({
                     <span style={{ fontSize: "clamp(3px, 0.4vw, 6px)", fontWeight: 700, color: "#333", textShadow: "0 0 2px rgba(255,255,255,0.7)" }}>
                       {plot.facing}
                     </span>
+                    {planned && (
+                      <span style={{ fontSize: "clamp(3px, 0.4vw, 6px)", fontWeight: 800, color: !notUpdated && planned < new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) ? "#b91c1c" : "#1f2937", textShadow: "0 0 2px rgba(255,255,255,0.7)" }}>
+                        {planned.slice(8, 10)}/{planned.slice(5, 7)}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -560,8 +583,13 @@ function ConstructionMapView({
                     type="date"
                     value={modalPlannedDate}
                     onChange={(e) => setModalPlannedDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none ${
+                      modalVilla && statuses.get(modalVilla.villa)?.plannedDateDefaulted && modalPlannedDate === statuses.get(modalVilla.villa)?.plannedTargetDate
+                        ? "border-amber-500 bg-amber-50" : "border-gray-300"}`}
                   />
+                  {modalVilla && statuses.get(modalVilla.villa)?.plannedDateDefaulted && modalPlannedDate === statuses.get(modalVilla.villa)?.plannedTargetDate && (
+                    <p className="text-[11px] text-amber-700 mt-1">Not updated — no date in the schedule, set to the import day. Enter the real date and Save.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Revised Planned Target Date</label>

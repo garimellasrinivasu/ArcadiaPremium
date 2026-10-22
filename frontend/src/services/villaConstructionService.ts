@@ -9,6 +9,8 @@ export interface VillaConstructionStatusDto {
   activity2Done: boolean;
   incharge?: string;
   plannedTargetDate?: string;
+  /** Planned date was filled with the import day because the schedule had none */
+  plannedDateDefaulted?: boolean;
   revisedPlannedDate?: string;
   delayInDays?: number;
   actualCompletionDate?: string;
@@ -28,7 +30,22 @@ export interface VillaInchargeLogDto {
   changedAt: string;
 }
 
+export interface ScheduleImportResult {
+  dryRun: boolean;
+  markedDone: number;
+  datesSet: number;
+  defaulted: number;
+  unchanged: number;
+  warnings: string[];
+}
+
 export const villaConstructionService = {
+  /** Admin: import planned dates / completed stages. value = "COMPLETED" | "yyyy-MM-dd" | "" */
+  importSchedule: async (projectName: string, cells: { villa: number; phase: string; value: string }[], dryRun: boolean): Promise<ScheduleImportResult> => {
+    const res = await api.post("/villa-construction/import", { projectName, cells, dryRun }, { timeout: 120000 });
+    return res.data;
+  },
+
   getAllByProject: async (projectName: string): Promise<VillaConstructionStatusDto[]> => {
     const res = await api.get("/villa-construction", { params: { projectName } });
     return res.data;
