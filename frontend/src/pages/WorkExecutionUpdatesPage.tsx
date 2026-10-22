@@ -18,8 +18,9 @@ import { ARAVINDHAM_PLOTS } from "../data/aravindhamPlots";
 import { clusterInchargeService, type ClusterInchargeDto } from "../services/clusterInchargeService";
 import { authService } from "../services/authService";
 import ScheduleImportExport from "../components/ScheduleImportExport";
+import PlanVsActualView from "../components/PlanVsActualView";
 
-type WETab = "construction" | "summary" | "daily";
+type WETab = "construction" | "summary" | "daily" | "plan";
 
 export default function WorkExecutionUpdatesPage() {
   const [projects, setProjects] = useState<ProjectDto[]>([]);
@@ -101,6 +102,12 @@ export default function WorkExecutionUpdatesPage() {
             Summary
           </button>
           <button
+            onClick={() => setActiveTab("plan")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition ${activeTab === "plan" ? "bg-purple-600 text-white shadow" : "text-gray-600 hover:bg-gray-200"}`}
+          >
+            Plan vs Actual
+          </button>
+          <button
             onClick={() => setActiveTab("daily")}
             className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition ${activeTab === "daily" ? "bg-blue-600 text-white shadow" : "text-gray-600 hover:bg-gray-200"}`}
           >
@@ -130,6 +137,11 @@ export default function WorkExecutionUpdatesPage() {
       {/* Daily Report */}
       {projectHasMasterPlan && isArcadia(selectedProject) && activeTab === "daily" && (
         <DailyReportView projectName={selectedProject} plots={activePlots} />
+      )}
+
+      {/* Plan vs Actual (day / week / month) */}
+      {projectHasMasterPlan && isArcadia(selectedProject) && activeTab === "plan" && (
+        <PlanVsActualView key={reloadKey} projectName={selectedProject} isAdmin={isAdmin} />
       )}
 
       {/* Summary */}
@@ -971,6 +983,7 @@ function completionDay(s: VillaConstructionStatusDto): { day: string; exact: boo
   if (!s.activity1Done) return null;
   if (s.completedAt) return { day: s.completedAt.slice(0, 10), exact: true };
   if (s.actualCompletionDate) return { day: s.actualCompletionDate.slice(0, 10), exact: false };
+  if (s.completionImported) return null; // marked done by a schedule import, not completed on any particular day
   if (s.updatedAt) return { day: istDate(new Date(`${s.updatedAt}Z`)), exact: false };
   return null;
 }

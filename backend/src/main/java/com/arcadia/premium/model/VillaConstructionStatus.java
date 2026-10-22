@@ -35,6 +35,10 @@ public class VillaConstructionStatus {
     private LocalDate plannedTargetDate;
 
     /** True when the planned date was filled in with the import day because the plan had no date for it */
+    /** Marked done by a schedule import (no real completion day) — kept out of day/week/month completion counts */
+    @Column(name = "completion_imported")
+    private Boolean completionImported;
+
     @Column(name = "planned_date_defaulted")
     private Boolean plannedDateDefaulted;
 
@@ -79,6 +83,8 @@ public class VillaConstructionStatus {
     public String getIncharge() { return incharge; }
     public void setIncharge(String incharge) { this.incharge = incharge; }
 
+    public boolean isCompletionImported() { return Boolean.TRUE.equals(completionImported); }
+    public void setCompletionImported(boolean v) { this.completionImported = v; }
     public boolean isPlannedDateDefaulted() { return Boolean.TRUE.equals(plannedDateDefaulted); }
     public void setPlannedDateDefaulted(boolean v) { this.plannedDateDefaulted = v; }
     public LocalDate getPlannedTargetDate() { return plannedTargetDate; }

@@ -251,7 +251,7 @@ public class WorkExecutionReportService {
             230,231,232,233,234,235,236,237
     };
 
-    private static final Map<Integer, String> VILLA_CLUSTER_MAP = new HashMap<>();
+    static final Map<Integer, String> VILLA_CLUSTER_MAP = new HashMap<>();
     static {
         for (int v : CLUSTER_1) VILLA_CLUSTER_MAP.put(v, "C1");
         for (int v : CLUSTER_2) VILLA_CLUSTER_MAP.put(v, "C2");

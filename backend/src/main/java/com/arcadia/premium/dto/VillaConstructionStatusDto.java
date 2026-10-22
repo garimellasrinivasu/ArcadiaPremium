@@ -18,6 +18,7 @@ public class VillaConstructionStatusDto {
     private String incharge;
     private String plannedTargetDate;
     private boolean plannedDateDefaulted;
+    private boolean completionImported;
     private String revisedPlannedDate;
     private Long delayInDays;
     private String actualCompletionDate;
@@ -36,6 +37,7 @@ public class VillaConstructionStatusDto {
         d.incharge = e.getIncharge();
         d.plannedTargetDate = e.getPlannedTargetDate() != null ? e.getPlannedTargetDate().toString() : null;
         d.plannedDateDefaulted = e.isPlannedDateDefaulted();
+        d.completionImported = e.isCompletionImported();
         d.revisedPlannedDate = e.getRevisedPlannedDate() != null ? e.getRevisedPlannedDate().toString() : null;
         if (e.getPlannedTargetDate() != null && e.getActualCompletionDate() != null) {
             d.delayInDays = ChronoUnit.DAYS.between(e.getPlannedTargetDate(), e.getActualCompletionDate());
@@ -74,6 +76,8 @@ public class VillaConstructionStatusDto {
     public void setIncharge(String incharge) { this.incharge = incharge; }
 
     public boolean isPlannedDateDefaulted() { return plannedDateDefaulted; }
+    public boolean isCompletionImported() { return completionImported; }
+    public void setCompletionImported(boolean v) { this.completionImported = v; }
     public void setPlannedDateDefaulted(boolean v) { this.plannedDateDefaulted = v; }
     public String getPlannedTargetDate() { return plannedTargetDate; }
     public void setPlannedTargetDate(String plannedTargetDate) { this.plannedTargetDate = plannedTargetDate; }

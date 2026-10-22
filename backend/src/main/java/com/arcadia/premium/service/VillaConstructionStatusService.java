@@ -208,7 +208,7 @@ public class VillaConstructionStatusService {
             }
             boolean changed = false;
             if ("COMPLETED".equalsIgnoreCase(value)) {
-                if (!e.isActivity1Done()) { e.setActivity1Done(true); markedDone++; changed = true; }
+                if (!e.isActivity1Done()) { e.setActivity1Done(true); e.setCompletionImported(true); markedDone++; changed = true; }
             } else if (!value.isEmpty()) {
                 LocalDate d = LocalDate.parse(value);
                 if (!d.equals(e.getPlannedTargetDate()) || e.isPlannedDateDefaulted()) {
@@ -250,8 +250,10 @@ public class VillaConstructionStatusService {
     private static void setActivity1Done(VillaConstructionStatus entity, boolean done) {
         if (done && !entity.isActivity1Done()) {
             entity.setCompletedAt(LocalDateTime.now(IST));
+            entity.setCompletionImported(false);
         } else if (!done) {
             entity.setCompletedAt(null);
+            entity.setCompletionImported(false);
         }
         entity.setActivity1Done(done);
     }
