@@ -252,6 +252,19 @@ function PlanMailSettings({ projectName }: { projectName: string }) {
     try { setCfg(await villaConstructionService.savePlanMailConfig({ ...cfg, projectName })); setMsg("Saved."); } catch (e) { setMsg(errOf(e)); }
     setBusy("");
   };
+  const image = async (type: "daily" | "weekly") => {
+    setBusy(`img-${type}`); setMsg("");
+    try {
+      const blob = await villaConstructionService.planMailImage(projectName, type);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${type === "daily" ? "Daily" : "Weekly"} work plan - ${projectName} - ${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) { setMsg(errOf(e)); }
+    setBusy("");
+  };
   const send = async (type: "daily" | "weekly") => {
     setBusy(type); setMsg("");
     try { setMsg(await villaConstructionService.sendPlanMail(projectName, type)); } catch (e) { setMsg(errOf(e)); }
@@ -262,7 +275,7 @@ function PlanMailSettings({ projectName }: { projectName: string }) {
     <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
       <h3 className="text-sm font-semibold text-gray-800">Work plan emails</h3>
       <p className="text-xs text-gray-500">Daily (7:00 AM): today's planned work by cluster and incharge, overdue items, and yesterday's planned vs completed.
-        Weekly (Monday 7:30 AM): this week's plan and last week's planned vs completed. Save the recipients first.</p>
+        Weekly (Monday 7:30 AM): this week's plan and last week's planned vs completed. Each email also carries the report as an image to forward on WhatsApp. Save the recipients first.</p>
       <label className="block text-xs text-gray-600">Send to (comma-separated email IDs)
         <textarea rows={2} value={cfg.recipients || ""} onChange={(e) => setCfg({ ...cfg, recipients: e.target.value })}
           className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="name@example.com, site.engineer@example.com" />
@@ -275,6 +288,8 @@ function PlanMailSettings({ projectName }: { projectName: string }) {
         <button onClick={() => void save()} disabled={!!busy} className="px-4 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50">{busy === "save" ? "Saving…" : "Save"}</button>
         <button onClick={() => villaConstructionService.planMailPreview(projectName, "daily").then(setPreview).catch((e) => setMsg(errOf(e)))} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Preview daily</button>
         <button onClick={() => villaConstructionService.planMailPreview(projectName, "weekly").then(setPreview).catch((e) => setMsg(errOf(e)))} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Preview weekly</button>
+        <button onClick={() => void image("daily")} disabled={!!busy} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">{busy === "img-daily" ? "Preparing…" : "🖼 Daily image"}</button>
+        <button onClick={() => void image("weekly")} disabled={!!busy} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">{busy === "img-weekly" ? "Preparing…" : "🖼 Weekly image"}</button>
         <button onClick={() => void send("daily")} disabled={!!busy} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">{busy === "daily" ? "Sending…" : "Send daily now"}</button>
         <button onClick={() => void send("weekly")} disabled={!!busy} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">{busy === "weekly" ? "Sending…" : "Send weekly now"}</button>
         {msg && <span className="text-xs text-gray-700">{msg}</span>}

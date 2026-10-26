@@ -21,7 +21,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         python3 python3-pip python3-venv \
         libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
-        tesseract-ocr tesseract-ocr-eng && \
+        tesseract-ocr tesseract-ocr-eng \
+        fontconfig fonts-dejavu-core && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python AI packages (lightweight stack: insightface + onnxruntime, no TensorFlow)

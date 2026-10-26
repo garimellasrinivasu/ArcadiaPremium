@@ -55,6 +55,13 @@ public class WorkPlanReportController {
         return ResponseEntity.ok(service.mailHtml(projectName, type));
     }
 
+    /** The work plan as a PNG (same picture that is attached to the emails). */
+    @GetMapping(value = "/mail-image", produces = MediaType.IMAGE_PNG_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'WORK_EXECUTION')")
+    public ResponseEntity<byte[]> image(@RequestParam String projectName, @RequestParam(defaultValue = "daily") String type) {
+        return ResponseEntity.ok(service.mailImage(projectName, "weekly".equals(type) ? "weekly" : "daily"));
+    }
+
     @PostMapping("/send")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> send(@RequestParam String projectName, @RequestParam(defaultValue = "daily") String type) {

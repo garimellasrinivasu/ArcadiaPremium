@@ -249,6 +249,9 @@ public class WorkPlanReportService {
             helper.setTo(to.toArray(new String[0]));
             helper.setSubject(subject);
             helper.setText(mailHtml(projectName, type), true);
+            byte[] png = mailImage(projectName, type);
+            helper.addAttachment((weekly ? "Weekly" : "Daily") + " work plan " + periodLabel(type).replace(" ", "") + ".png",
+                    new org.springframework.core.io.ByteArrayResource(png), "image/png");
             mailSender.send(message);
             result = (weekly ? "Weekly" : "Daily") + " plan sent to " + to.size() + " recipient" + (to.size() == 1 ? "" : "s") + " (" + trigger + ")";
         } catch (Exception e) {
@@ -269,32 +272,103 @@ public class WorkPlanReportService {
         return mon.format(DS) + " to " + mon.plusDays(6).format(D);
     }
 
-    /** Email body: the work plan for the coming day/week, then planned vs completed for the one just gone. */
+    /** Everything the daily / weekly mail shows (used for both the HTML body and the image). */
+    private record MailData(boolean weekly, LocalDate today, LocalDate planFrom, LocalDate planTo, LocalDate prevFrom, LocalDate prevTo,
+                            List<Map<String, Object>> todo, List<Map<String, Object>> carried, Map<String, Object> prevSummary,
+                            List<Map<String, Object>> missed, List<Map<String, Object>> extra) {}
+
     @SuppressWarnings("unchecked")
-    public String mailHtml(String projectName, String type) {
+    private MailData gather(String projectName, String type) {
         boolean weekly = "weekly".equals(type);
         LocalDate t = today();
         LocalDate planFrom = weekly ? t.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) : t;
         LocalDate planTo = weekly ? planFrom.plusDays(6) : t;
         LocalDate prevFrom = weekly ? planFrom.minusDays(7) : t.minusDays(1);
         LocalDate prevTo = weekly ? planFrom.minusDays(1) : t.minusDays(1);
-
         Map<String, Object> plan = report(projectName, planFrom, planTo);
         Map<String, Object> prev = report(projectName, prevFrom, prevTo);
-        // Still-open work that was due before this period (carried over)
         List<Map<String, Object>> carried = new ArrayList<>();
-        for (Map<String, Object> r : (List<Map<String, Object>>) report(projectName, LocalDate.of(2000, 1, 1), planFrom.minusDays(1)).get("planned")) {
+        for (Map<String, Object> r : (List<Map<String, Object>>) report(projectName, LocalDate.of(2000, 1, 1), planFrom.minusDays(1)).get("planned"))
             if ("OVERDUE".equals(r.get("status"))) carried.add(r);
-        }
+        List<Map<String, Object>> todo = new ArrayList<>();
+        for (Map<String, Object> r : (List<Map<String, Object>>) plan.get("planned")) if (!Boolean.TRUE.equals(r.get("done"))) todo.add(r);
+        List<Map<String, Object>> missed = new ArrayList<>();
+        for (Map<String, Object> r : (List<Map<String, Object>>) prev.get("planned")) if (!Boolean.TRUE.equals(r.get("done"))) missed.add(r);
+        Comparator<Map<String, Object>> byCluster = Comparator.comparing((Map<String, Object> m) -> String.valueOf(m.get("cluster")))
+                .thenComparing(m -> String.valueOf(m.getOrDefault("plannedDate", ""))).thenComparing(m -> (Integer) m.get("villa"));
+        todo.sort(byCluster); carried.sort(byCluster); missed.sort(byCluster);
+        return new MailData(weekly, t, planFrom, planTo, prevFrom, prevTo, todo, carried, (Map<String, Object>) prev.get("summary"),
+                missed, (List<Map<String, Object>>) prev.get("extra"));
+    }
 
+    private static String heading(MailData m) {
+        return m.weekly() ? "Week of " + m.planFrom().format(DS) + " to " + m.planTo().format(D) : m.today().format(DateTimeFormatter.ofPattern("EEEE, dd-MMM-yyyy"));
+    }
+
+    private static String prevHeading(MailData m) {
+        return m.weekly() ? "Last week (" + m.prevFrom().format(DS) + " – " + m.prevTo().format(DS) + ")" : "Yesterday (" + m.prevFrom().format(D) + ")";
+    }
+
+    /** The mail as a PNG: work plan + overdue + previous period's planned vs completed. */
+    public byte[] mailImage(String projectName, String type) {
+        MailData m = gather(projectName, type);
+        java.awt.Color red = new java.awt.Color(0xC0, 0, 0), purple = new java.awt.Color(0x6A, 0x1B, 0x9A), navy = new java.awt.Color(0x1F, 0x4E, 0x5F),
+                green = new java.awt.Color(0x2E, 0x7D, 0x32), redBg = new java.awt.Color(0xFD, 0xEC, 0xEA), amberBg = new java.awt.Color(0xFF, 0xF8, 0xE1),
+                purpleBg = new java.awt.Color(0xF3, 0xE5, 0xF5);
+        List<TableImageRenderer.Section> sections = new ArrayList<>();
+        sections.add(workSection((m.weekly() ? "Planned this week" : "Planned for today") + " (" + m.todo().size() + ")", navy, m.todo(), m.weekly(), redBg, amberBg));
+        if (!m.carried().isEmpty())
+            sections.add(workSection("Overdue — planned earlier, still pending (" + m.carried().size() + ")", red, m.carried(), true, redBg, amberBg));
+        Map<String, Object> ps = m.prevSummary();
+        if (!m.missed().isEmpty())
+            sections.add(workSection(prevHeading(m) + ": planned but not completed (" + m.missed().size() + ")", red, m.missed(), true, redBg, amberBg));
+        if (!m.extra().isEmpty()) {
+            List<String[]> rows = new ArrayList<>();
+            for (Map<String, Object> r : m.extra())
+                rows.add(new String[]{String.valueOf(r.get("villa")), String.valueOf(r.get("cluster")), String.valueOf(r.get("stage")), fmt((String) r.get("completedDate")), extraNote(r)});
+            sections.add(new TableImageRenderer.Section(prevHeading(m) + ": extra work — not planned (" + rows.size() + ")", purple,
+                    new String[]{"Villa", "Cluster", "Stage", "Completed", "Note"}, rows, new ArrayList<>(Collections.nCopies(rows.size(), purpleBg)), ""));
+        }
+        List<TableImageRenderer.Card> cards = List.of(
+                new TableImageRenderer.Card(m.weekly() ? "Planned this week" : "Planned today", String.valueOf(m.todo().size()), navy),
+                new TableImageRenderer.Card("Overdue", String.valueOf(m.carried().size()), m.carried().isEmpty() ? navy : red),
+                new TableImageRenderer.Card((m.weekly() ? "Last week" : "Yesterday") + ": completed", ps.get("completed") + " / " + ps.get("planned"), green),
+                new TableImageRenderer.Card((m.weekly() ? "Last week" : "Yesterday") + ": extra", String.valueOf(ps.get("extra")), purple),
+                new TableImageRenderer.Card("Achieved", ps.get("percent") + "%", navy));
+        return TableImageRenderer.render((m.weekly() ? "Weekly" : "Daily") + " work plan — " + projectName, heading(m), cards, sections,
+                "Arcadia Premium · Work Execution · generated " + LocalDateTime.now(IST).format(DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a")) + " IST");
+    }
+
+    private static TableImageRenderer.Section workSection(String title, java.awt.Color colour, List<Map<String, Object>> rowsIn, boolean showDate,
+                                                          java.awt.Color redBg, java.awt.Color amberBg) {
+        List<String[]> rows = new ArrayList<>();
+        List<java.awt.Color> bgs = new ArrayList<>();
+        for (Map<String, Object> r : rowsIn) {
+            boolean od = "OVERDUE".equals(r.get("status")), nu = Boolean.TRUE.equals(r.get("notUpdated"));
+            String note = od ? r.get("daysOverdue") + " days overdue" : "";
+            if (nu) note = (note.isEmpty() ? "" : note + "; ") + "planned date not updated";
+            rows.add(showDate
+                    ? new String[]{String.valueOf(r.get("cluster")), String.valueOf(r.get("incharge")), String.valueOf(r.get("villa")), String.valueOf(r.get("stage")), fmt((String) r.get("plannedDate")), note}
+                    : new String[]{String.valueOf(r.get("cluster")), String.valueOf(r.get("incharge")), String.valueOf(r.get("villa")), String.valueOf(r.get("stage")), note});
+            bgs.add(od ? redBg : nu ? amberBg : null);
+        }
+        String[] headers = showDate ? new String[]{"Cluster", "Incharge", "Villa", "Stage", "Planned date", "Note"} : new String[]{"Cluster", "Incharge", "Villa", "Stage", "Note"};
+        return new TableImageRenderer.Section(title, colour, headers, rows, bgs, "Nothing planned.");
+    }
+
+    /** Email body: the work plan for the coming day/week, then planned vs completed for the one just gone. */
+    public String mailHtml(String projectName, String type) {
+        MailData m = gather(projectName, type);
+        boolean weekly = m.weekly();
+        List<Map<String, Object>> todo = m.todo(), carried = m.carried(), missed = m.missed(), extra = m.extra();
+        Map<String, Object> ps = m.prevSummary();
         String th = "style='border:1px solid #ddd;padding:5px 8px;background:#1F4E5F;color:#fff;text-align:left;font-size:12px'";
         StringBuilder h = new StringBuilder("<div style='font-family:Arial,sans-serif;font-size:13px;color:#222'>");
         h.append("<h2 style='color:#1F4E5F;margin:0 0 2px'>").append(weekly ? "Weekly" : "Daily").append(" work plan — ").append(esc(projectName)).append("</h2>");
-        h.append("<p style='color:#666;margin:0 0 12px'>").append(weekly ? "Week of " + planFrom.format(DS) + " to " + planTo.format(D) : t.format(DateTimeFormatter.ofPattern("EEEE, dd-MMM-yyyy"))).append("</p>");
+        h.append("<p style='color:#666;margin:0 0 12px'>").append(heading(m)).append("</p>");
+        h.append("<p style='color:#888;font-size:11px;margin:0 0 8px'>The same report is attached as an image to forward on WhatsApp.</p>");
 
         // 1. Work plan (assignment) grouped by cluster
-        List<Map<String, Object>> todo = new ArrayList<>();
-        for (Map<String, Object> r : (List<Map<String, Object>>) plan.get("planned")) if (!Boolean.TRUE.equals(r.get("done"))) todo.add(r);
         h.append("<h3 style='color:#1F4E5F;margin:10px 0 4px'>").append(weekly ? "Planned this week" : "Planned for today").append(" (").append(todo.size()).append(")</h3>");
         h.append(workTable(todo, th, weekly));
         if (!carried.isEmpty()) {
@@ -303,21 +377,16 @@ public class WorkPlanReportService {
         }
 
         // 2. Planned vs completed for the previous day / week
-        Map<String, Object> ps = (Map<String, Object>) prev.get("summary");
-        h.append("<h3 style='color:#1F4E5F;margin:16px 0 4px'>").append(weekly ? "Last week (" + prevFrom.format(DS) + " – " + prevTo.format(DS) + ")" : "Yesterday (" + prevFrom.format(D) + ")")
-         .append(": planned vs completed</h3>");
+        h.append("<h3 style='color:#1F4E5F;margin:16px 0 4px'>").append(prevHeading(m)).append(": planned vs completed</h3>");
         h.append("<table style='border-collapse:collapse;margin-bottom:8px'><tr>");
         Object[][] cards = {{"Planned", ps.get("planned"), "#1F4E5F"}, {"Completed", ps.get("completed"), "#2E7D32"}, {"Not completed", ((Integer) ps.get("pending")) + ((Integer) ps.get("overdue")), "#C00000"},
                 {"Extra (not planned)", ps.get("extra"), "#6A1B9A"}, {"Achieved", ps.get("percent") + "%", "#1F4E5F"}};
         for (Object[] c : cards) h.append("<td style='border:1px solid #ddd;padding:6px 12px;text-align:center'><div style='font-size:18px;font-weight:bold;color:").append(c[2]).append("'>").append(c[1]).append("</div><div style='color:#666;font-size:11px'>").append(c[0]).append("</div></td>");
         h.append("</tr></table>");
-        List<Map<String, Object>> missed = new ArrayList<>();
-        for (Map<String, Object> r : (List<Map<String, Object>>) prev.get("planned")) if (!Boolean.TRUE.equals(r.get("done"))) missed.add(r);
         if (!missed.isEmpty()) {
             h.append("<div style='font-weight:bold;color:#C00000;margin:8px 0 2px'>Planned but not completed</div>");
             h.append(workTable(missed, th, true));
         }
-        List<Map<String, Object>> extra = (List<Map<String, Object>>) prev.get("extra");
         if (!extra.isEmpty()) {
             h.append("<div style='font-weight:bold;color:#6A1B9A;margin:10px 0 2px'>Extra work done — not planned for this ").append(weekly ? "week" : "day").append("</div>");
             h.append("<table style='border-collapse:collapse'><tr><th ").append(th).append(">Villa</th><th ").append(th).append(">Cluster</th><th ").append(th).append(">Stage</th><th ")

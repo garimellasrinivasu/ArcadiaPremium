@@ -67,6 +67,8 @@ export const villaConstructionService = {
     (await api.put("/villa-construction/plan/mail-config", c)).data,
   planMailPreview: async (projectName: string, type: "daily" | "weekly"): Promise<string> =>
     (await api.get("/villa-construction/plan/mail-preview", { params: { projectName, type }, responseType: "text" })).data,
+  planMailImage: async (projectName: string, type: "daily" | "weekly"): Promise<Blob> =>
+    (await api.get("/villa-construction/plan/mail-image", { params: { projectName, type }, responseType: "blob", timeout: 60000 })).data,
   sendPlanMail: async (projectName: string, type: "daily" | "weekly"): Promise<string> =>
     (await api.post("/villa-construction/plan/send", null, { params: { projectName, type }, timeout: 60000 })).data.message,
 
