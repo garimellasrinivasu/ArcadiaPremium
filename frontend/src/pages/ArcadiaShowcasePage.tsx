@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ARCADIA_PLOTS, ARCADIA_CLUSTERS, CONSTRUCTION_PHASES } from "./MasterPlanPage";
+import { QRCodeCanvas } from "qrcode.react";
 import { villaConstructionService } from "../services/villaConstructionService";
 
 /**
@@ -9,10 +10,15 @@ import { villaConstructionService } from "../services/villaConstructionService";
  */
 const PROJECT = "Praneeth Arcadia Premium";
 const ADDRESS = "Sy No: 455P, 456, D.Pochampalli Village, Near ORR Service Road, Dhundigal, Medchal - Malkajgiri Dist, Telangana - 500043";
-const MAPS = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("D Pochampalli, Dhundigal, Hyderabad, Telangana 500043")}`;
+const MAPS = "https://maps.app.goo.gl/aMNNjbehhJdBk2Mh9";
+// TEMPORARY: QR code for verifying the link on a phone — remove after verification
+const SHOWCASE_URL = "https://arcadiapremium.duckdns.org/arcadia/";
 
-const GOLD = "#C9A227";
-const GREEN = "#1F4D2B";
+
+// Palette: deep emerald from the logo, champagne gold accents, warm ivory page
+const GREEN = "#163B2A";
+const GOLD = "#A8843F";        // on light backgrounds
+const CHAMPAGNE = "#D6B56E";   // on dark backgrounds
 
 function Diya({ className = "" }: { className?: string }) {
   return (
@@ -66,27 +72,55 @@ export default function ArcadiaShowcasePage() {
   const maxBand = Math.max(...facts.bands.map((b) => b[1]));
 
   return (
-    <div className="-m-4 md:-m-8 bg-[#FFFBF2] text-[#2B2B2B]" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+    <div className="-m-4 md:-m-8 bg-[#F7F5F0] text-[#1F2937]" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+      {/* ── TEMPORARY: QR code for verification — remove after verification ── */}
+      <section className="px-5 pt-5 pb-5 bg-white border-b border-[#E6E0D2] font-sans">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-5">
+          <div className="p-3 bg-white rounded-xl border border-[#E6E0D2] shadow-sm">
+            <QRCodeCanvas id="showcase-qr" value={SHOWCASE_URL} size={160} level="M" marginSize={2} fgColor={GREEN} />
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-[10px] tracking-[0.3em] uppercase" style={{ color: GOLD }}>For verification only</p>
+            <h3 className="text-lg font-semibold mt-1" style={{ color: GREEN }}>Scan to open this page</h3>
+            <p className="text-xs text-gray-500 mt-1 break-all">{SHOWCASE_URL}</p>
+            <p className="text-xs text-gray-500 mt-1">Opens a separate public greeting page (no login, no live data from the app).</p>
+            <button
+              onClick={() => {
+                const c = document.getElementById("showcase-qr") as HTMLCanvasElement | null;
+                if (!c) return;
+                const a = document.createElement("a");
+                a.href = c.toDataURL("image/png");
+                a.download = "Arcadia Showcase QR.png";
+                document.body.appendChild(a); a.click(); a.remove();
+              }}
+              className="mt-3 px-4 py-2 rounded-full text-white text-xs" style={{ background: GREEN }}>
+              ⬇ Download QR image
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* ── Deewali greeting ── */}
-      <section className="relative overflow-hidden text-center px-5 pt-10 pb-14" style={{ background: `radial-gradient(ellipse at top, #3A1E05 0%, #1A0E02 70%)` }}>
-        <div className="absolute inset-0 pointer-events-none opacity-60" style={{ backgroundImage: "radial-gradient(#FFD27A 1px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
+      <section className="relative overflow-hidden text-center px-5 pt-10 pb-14" style={{ background: `radial-gradient(ellipse 80% 70% at 50% 0%, #24563D 0%, ${GREEN} 55%, #0D261A 100%)` }}>
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${CHAMPAGNE}, transparent)` }} />
         <div className="relative max-w-3xl mx-auto">
           <div className="flex justify-center gap-6 sm:gap-10 mb-4">
             <Diya className="w-10 h-10 sm:w-14 sm:h-14" /><Diya className="w-14 h-14 sm:w-20 sm:h-20 -mt-2" /><Diya className="w-10 h-10 sm:w-14 sm:h-14" />
           </div>
-          <p className="tracking-[0.35em] text-xs sm:text-sm uppercase" style={{ color: GOLD }}>With warm wishes</p>
-          <h1 className="mt-2 text-3xl sm:text-5xl font-bold text-[#FFE7A3]">Happy Deewali</h1>
-          <p className="mt-3 text-sm sm:text-lg text-[#F5DEB3]/90 leading-relaxed">
+          <p className="tracking-[0.35em] text-xs sm:text-sm uppercase font-sans" style={{ color: CHAMPAGNE }}>With warm wishes</p>
+          <h1 className="mt-2 text-3xl sm:text-5xl font-normal tracking-wide text-[#FBF7EE]">Happy Deewali</h1>
+          <div className="mx-auto mt-3 flex items-center justify-center gap-2"><span className="h-px w-16" style={{ background: CHAMPAGNE }} /><span className="text-xs" style={{ color: CHAMPAGNE }}>◆</span><span className="h-px w-16" style={{ background: CHAMPAGNE }} /></div>
+          <p className="mt-3 text-sm sm:text-lg text-[#E9E4D6] leading-relaxed">
             May this festival of lights fill your home with joy, prosperity and good health.{" "}<br className="hidden sm:block" />
             Thank you for being part of our journey.
           </p>
-          <p className="mt-4 text-xs sm:text-sm text-[#F5DEB3]/70">— Team Praneeth · Venkata Praneeth Developers Pvt. Ltd.</p>
+          <p className="mt-4 text-xs sm:text-sm text-[#BFB8A6] font-sans tracking-wide">— Team Praneeth · Venkata Praneeth Developers Pvt. Ltd.</p>
         </div>
       </section>
 
       {/* ── Project intro ── */}
       <section className="px-5 -mt-8 relative">
-        <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-xl border border-[#EADFC8] p-6 sm:p-10 text-center">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.25)] border border-[#E6E0D2] p-6 sm:p-10 text-center">
           <img src="/arcadia-logo.png" alt="Praneeth Arcadia Premium" className="mx-auto h-24 sm:h-32 w-auto" />
           <p className="mt-4 text-base sm:text-xl leading-relaxed max-w-2xl mx-auto">
             A community of <b>{facts.villas} premium villas</b> coming up near the Outer Ring Road at Dhundigal, Hyderabad —
@@ -99,15 +133,15 @@ export default function ArcadiaShowcasePage() {
               ["G + 2", "Floors per villa"],
               [String(ARCADIA_CLUSTERS.length), "Clusters"],
             ].map(([v, l]) => (
-              <div key={l} className="rounded-2xl border border-[#EADFC8] bg-[#FFFBF2] py-4 sm:py-6">
-                <div className="text-2xl sm:text-4xl font-bold" style={{ color: GREEN }}>{v}</div>
+              <div key={l} className="rounded-xl border border-[#E6E0D2] bg-[#FAF8F3] py-4 sm:py-6">
+                <div className="text-xl sm:text-3xl whitespace-nowrap" style={{ color: GREEN }}>{v}</div>
                 <div className="text-[11px] sm:text-sm text-gray-600 mt-1 font-sans">{l}</div>
               </div>
             ))}
           </div>
           <div className="mt-6 flex flex-wrap justify-center gap-2 font-sans text-xs sm:text-sm">
             {["East & West facing villas", "Clubhouse", "Covered car parking", "Near ORR Service Road"].map((t) => (
-              <span key={t} className="px-3 py-1.5 rounded-full border" style={{ borderColor: GOLD, color: "#6B5413" }}>✦ {t}</span>
+              <span key={t} className="px-3 py-1.5 rounded-full border" style={{ borderColor: "#D9C9A3", color: "#5C4A22" }}>{t}</span>
             ))}
           </div>
         </div>
@@ -117,7 +151,7 @@ export default function ArcadiaShowcasePage() {
       <section className="px-5 py-12">
         <div className="max-w-5xl mx-auto">
           <SectionTitle kicker="The layout" title="Master Plan" />
-          <div className="mt-6 rounded-3xl overflow-hidden border border-[#EADFC8] bg-white shadow-lg">
+          <div className="mt-6 rounded-2xl overflow-hidden border border-[#E6E0D2] bg-white shadow-sm">
             <img src="/masterplan_colored.png" alt="Praneeth Arcadia Premium master plan" className="w-full h-auto" loading="lazy" />
           </div>
           <p className="mt-3 text-center text-xs sm:text-sm text-gray-500 font-sans">{facts.villas} villas across {ARCADIA_CLUSTERS.length} clusters · {facts.east} East-facing · {facts.west} West-facing</p>
@@ -127,21 +161,21 @@ export default function ArcadiaShowcasePage() {
       {/* ── Villa sizes ── */}
       <section className="px-5 pb-12">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-3xl border border-[#EADFC8] p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#E6E0D2] p-6 shadow-sm">
             <SectionTitle kicker="Choose your space" title="Villa plot sizes" left />
             <div className="mt-5 space-y-3 font-sans">
               {facts.bands.map(([band, n]) => (
                 <div key={band} className="flex items-center gap-3 text-sm">
                   <span className="w-24 text-gray-700">{bandLabel(band)}</span>
-                  <div className="flex-1 h-3 rounded-full bg-[#F3EBDD] overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(n / maxBand) * 100}%`, background: `linear-gradient(90deg, ${GREEN}, #3E8E57)` }} />
+                  <div className="flex-1 h-3 rounded-full bg-[#EFEBE2] overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${(n / maxBand) * 100}%`, background: `linear-gradient(90deg, ${GREEN}, #2F6B4C)` }} />
                   </div>
                   <span className="w-16 text-right text-gray-600">{n} villas</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-3xl border border-[#EADFC8] p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#E6E0D2] p-6 shadow-sm">
             <SectionTitle kicker="Your home" title="Thoughtfully planned" left />
             <ul className="mt-5 space-y-3 font-sans text-sm text-gray-700">
               {[
@@ -151,7 +185,7 @@ export default function ArcadiaShowcasePage() {
                 "Clubhouse for residents",
                 "Covered car parking",
                 "Villas planned in clusters across the layout",
-              ].map((t) => <li key={t} className="flex gap-3"><span style={{ color: GOLD }}>✦</span><span>{t}</span></li>)}
+              ].map((t) => <li key={t} className="flex gap-3"><span className="mt-2 w-1.5 h-1.5 rotate-45 shrink-0" style={{ background: GOLD }} /><span>{t}</span></li>)}
             </ul>
           </div>
         </div>
@@ -160,13 +194,13 @@ export default function ArcadiaShowcasePage() {
       {/* ── Construction progress (live) ── */}
       {progress && progress.pct > 0 && (
         <section className="px-5 pb-12">
-          <div className="max-w-5xl mx-auto rounded-3xl p-6 sm:p-10 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${GREEN}, #2F6B3D)` }}>
+          <div className="max-w-5xl mx-auto rounded-2xl p-6 sm:p-10 text-white shadow-lg" style={{ background: `linear-gradient(135deg, #0D261A, ${GREEN} 60%, #24563D)` }}>
             <div className="grid md:grid-cols-[220px_1fr] gap-6 items-center">
               <div className="text-center">
                 <div className="relative mx-auto w-40 h-40">
                   <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
                     <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,0.15)" strokeWidth="12" fill="none" />
-                    <circle cx="60" cy="60" r="52" stroke={GOLD} strokeWidth="12" fill="none" strokeLinecap="round"
+                    <circle cx="60" cy="60" r="52" stroke={CHAMPAGNE} strokeWidth="12" fill="none" strokeLinecap="round"
                       strokeDasharray={`${(progress.pct / 100) * 326.7} 326.7`} />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -176,13 +210,13 @@ export default function ArcadiaShowcasePage() {
                 </div>
               </div>
               <div>
-                <p className="tracking-[0.3em] text-xs uppercase" style={{ color: "#F3D27A" }}>Work in progress</p>
-                <h2 className="text-2xl sm:text-3xl font-bold mt-1">Construction is moving ahead</h2>
+                <p className="tracking-[0.3em] text-xs uppercase" style={{ color: CHAMPAGNE }}>Work in progress</p>
+                <h2 className="text-2xl sm:text-3xl font-normal tracking-wide mt-1">Construction is moving ahead</h2>
                 <div className="mt-5 grid sm:grid-cols-2 gap-x-6 gap-y-2 font-sans text-xs sm:text-sm">
                   {progress.stages.map((s) => (
                     <div key={s.label} className="flex items-center gap-2">
                       <span className="w-40 shrink-0 opacity-90">{s.label}</span>
-                      <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${s.done}%`, background: GOLD }} /></div>
+                      <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${s.done}%`, background: CHAMPAGNE }} /></div>
                       <span className="w-10 text-right opacity-90">{s.done}%</span>
                     </div>
                   ))}
@@ -195,11 +229,11 @@ export default function ArcadiaShowcasePage() {
 
       {/* ── Location ── */}
       <section className="px-5 pb-12">
-        <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#EADFC8] p-6 sm:p-10 shadow-sm text-center">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl border border-[#E6E0D2] p-6 sm:p-10 shadow-sm text-center">
           <SectionTitle kicker="Where we are" title="Location" />
           <p className="mt-4 text-sm sm:text-base text-gray-700 max-w-2xl mx-auto font-sans leading-relaxed">{ADDRESS}</p>
           <a href={MAPS} target="_blank" rel="noopener noreferrer"
-            className="inline-block mt-6 px-6 py-3 rounded-full text-white font-sans text-sm shadow" style={{ background: GREEN }}>
+            className="inline-block mt-6 px-6 py-3 rounded-full text-white font-sans text-sm tracking-wide shadow-sm border" style={{ background: GREEN, borderColor: CHAMPAGNE }}>
             📍 Open in Google Maps
           </a>
         </div>
@@ -219,7 +253,7 @@ function SectionTitle({ kicker, title, left = false }: { kicker: string; title: 
   return (
     <div className={left ? "" : "text-center"}>
       <p className="tracking-[0.3em] text-[10px] sm:text-xs uppercase font-sans" style={{ color: GOLD }}>{kicker}</p>
-      <h2 className="text-2xl sm:text-3xl font-bold mt-1" style={{ color: GREEN }}>{title}</h2>
+      <h2 className="text-2xl sm:text-3xl font-normal tracking-wide mt-1" style={{ color: GREEN }}>{title}</h2>
     </div>
   );
 }
