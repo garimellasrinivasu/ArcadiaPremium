@@ -53,6 +53,7 @@ const menuSections: MenuSection[] = [
       { label: "Pay Slips", path: "/activities/pay-slips", pageKey: "PAY_SLIPS" },
       { label: "Todo Tasks", path: "/activities/todo-tasks", pageKey: "TODO_TASKS" },
       { label: "Deewali Invitation", path: "/activities/deewali-invitation", pageKey: "DIWALI_INVITES" },
+      { label: "Arcadia Showcase (Deewali)", path: "/activities/arcadia-showcase", pageKey: "DIWALI_INVITES" },
     ],
   },
   {

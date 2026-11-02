@@ -27,6 +27,10 @@ public class DiwaliGift {
     /** CUSTOMER, PARTNER, VENDOR, OFFICIAL, EMPLOYEE, FRIENDS_FAMILY, OTHER */
     private String category;
 
+    /** VIP or GENERAL gift box */
+    @Column(length = 10)
+    private String boxType;
+
     private String giftItem;
     private Integer quantity;
 
@@ -72,6 +76,8 @@ public class DiwaliGift {
     public void setOrganisation(String organisation) { this.organisation = organisation; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getBoxType() { return boxType; }
+    public void setBoxType(String boxType) { this.boxType = boxType; }
     public String getGiftItem() { return giftItem; }
     public void setGiftItem(String giftItem) { this.giftItem = giftItem; }
     public Integer getQuantity() { return quantity; }

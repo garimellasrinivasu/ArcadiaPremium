@@ -131,6 +131,12 @@ public class DiwaliGiftController {
         if (g.getFestivalYear() == null) g.setFestivalYear(LocalDate.now(IST).getYear());
         if (b.containsKey("organisation")) g.setOrganisation(str(b.get("organisation")));
         if (b.containsKey("category")) g.setCategory(upper(b.get("category")));
+        if (b.containsKey("boxType")) {
+            String t = upper(b.get("boxType"));
+            if (t != null && !Set.of("VIP", "GENERAL").contains(t)) throw new IllegalArgumentException("Box type must be VIP or General");
+            g.setBoxType(t);
+        }
+        if (g.getBoxType() == null) g.setBoxType("GENERAL");
         if (b.containsKey("giftItem")) g.setGiftItem(str(b.get("giftItem")));
         if (b.containsKey("quantity")) {
             String q = str(b.get("quantity"));
