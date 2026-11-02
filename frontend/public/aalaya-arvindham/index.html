@@ -1,0 +1,187 @@
+<!doctype html>
+<!--
+  Standalone Aalaya Arvindham Deewali greeting page, opened from the QR code.
+  Kept outside the main app on purpose: no login, no app code, no API calls — static content only.
+  Temporary: remove this folder after Deewali.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Aalaya Arvindham · Happy Deewali</title>
+  <link rel="icon" href="/logo-aalaya-arvindham.svg" />
+  <style>
+    :root {
+      --navy: #17252F; --navy-dark: #0E171D; --navy-light: #24384A;
+      --saffron: #D9691A; --saffron-soft: #F0A35E;
+      --page: #F8F6F2; --line: #E7E1D7; --ink: #1F2937; --muted: #6B7280;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--ink); font-family: Georgia, "Times New Roman", serif; }
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    .wrap { max-width: 1024px; margin: 0 auto; }
+    section { padding: 0 20px; }
+
+    .hero { position: relative; text-align: center; padding: 40px 20px 72px; overflow: hidden;
+      background: radial-gradient(ellipse 80% 70% at 50% 0%, var(--navy-light) 0%, var(--navy) 55%, var(--navy-dark) 100%); }
+    .hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--saffron-soft), transparent); }
+    .diyas { display: flex; justify-content: center; align-items: flex-end; gap: 32px; margin-bottom: 16px; }
+    .diyas svg { width: 48px; height: 48px; }
+    .diyas svg.big { width: 72px; height: 72px; }
+    .kicker { letter-spacing: .35em; text-transform: uppercase; font-size: 12px; color: var(--saffron-soft); margin: 0; }
+    .hero h1 { margin: 8px 0 0; font-weight: normal; letter-spacing: .02em; color: #FBF7EE; font-size: clamp(32px, 7vw, 52px); }
+    .rule { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; color: var(--saffron-soft); font-size: 11px; }
+    .rule span { display: block; height: 1px; width: 64px; background: var(--saffron-soft); }
+    .hero p.msg { color: #E6E8EA; font-size: clamp(14px, 2.4vw, 18px); line-height: 1.7; margin: 12px auto 0; max-width: 640px; }
+    .hero p.sig { color: #AEB6BD; font-size: 13px; letter-spacing: .03em; margin-top: 16px; }
+
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+    .intro { margin-top: -40px; position: relative; text-align: center; box-shadow: 0 20px 50px -20px rgba(0,0,0,.25); }
+    .intro img { height: 84px; width: auto; max-width: 100%; }
+    .intro .tagline { letter-spacing: .25em; text-transform: uppercase; font-size: 11px; color: var(--muted); margin: 8px 0 0; }
+    .intro p.lead { font-size: clamp(16px, 2.4vw, 20px); line-height: 1.6; max-width: 660px; margin: 18px auto 0; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+    .stat { border: 1px solid var(--line); background: #FAF8F4; border-radius: 12px; padding: 18px 6px; }
+    .stat b { display: block; font-weight: normal; color: var(--navy); font-size: clamp(20px, 3.4vw, 30px); white-space: nowrap; }
+    .stat small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+    .tags span { border: 1px solid #E9C7A6; color: #7A3E0E; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+
+    .title { text-align: center; }
+    .title.left { text-align: left; }
+    .title p { letter-spacing: .3em; text-transform: uppercase; font-size: 11px; color: var(--saffron); margin: 0; }
+    .title h2 { font-weight: normal; letter-spacing: .02em; color: var(--navy); font-size: clamp(24px, 4vw, 30px); margin: 4px 0 0; }
+
+    .block { padding-top: 48px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .bar { display: flex; align-items: center; gap: 12px; font-size: 14px; margin-top: 12px; }
+    .bar .l { width: 104px; color: #374151; }
+    .bar .l, .bar .n { flex-shrink: 0; }
+    .bar .t { flex: 1; min-width: 60px; height: 12px; border-radius: 999px; background: #EFEBE4; overflow: hidden; }
+    .bar .t i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--navy), #3A5368); }
+    .bar .t i.s { background: linear-gradient(90deg, #B5520F, var(--saffron-soft)); }
+    .bar .n { width: 70px; text-align: right; color: var(--muted); }
+    ul.feat { list-style: none; padding: 0; margin: 18px 0 0; font-size: 14px; color: #374151; }
+    ul.feat li { display: flex; gap: 12px; margin-top: 12px; }
+    ul.feat li::before { content: ""; width: 6px; height: 6px; margin-top: 7px; flex-shrink: 0; background: var(--saffron); transform: rotate(45deg); }
+
+    .loc { text-align: center; }
+    .loc p { color: #374151; font-size: 15px; line-height: 1.6; max-width: 640px; margin: 16px auto 0; }
+    .btn { display: inline-block; margin-top: 22px; padding: 12px 24px; border-radius: 999px; color: #fff; text-decoration: none;
+      background: var(--navy); border: 1px solid var(--saffron-soft); font-size: 14px; letter-spacing: .02em; }
+
+    footer { text-align: center; padding: 40px 20px 48px; }
+    footer .big { color: var(--navy); font-size: 18px; margin: 12px 0 0; }
+    footer .small { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+
+    @media (max-width: 720px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .two { grid-template-columns: 1fr; }
+      .card { padding: 22px 18px; }
+      .bar { gap: 8px; font-size: 13px; }
+      .bar .l { width: auto; min-width: 72px; }
+      .bar .n { width: auto; }
+      .intro img { height: 64px; }
+      .diyas { gap: 22px; }
+      .diyas svg { width: 40px; height: 40px; }
+      .diyas svg.big { width: 56px; height: 56px; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="flame" cx="50%" cy="70%" r="60%"><stop offset="0%" stop-color="#FFF7C2" /><stop offset="55%" stop-color="#FFC93C" /><stop offset="100%" stop-color="#FF7A00" /></radialGradient>
+      <linearGradient id="bowl" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#E0A35A" /><stop offset="100%" stop-color="#8A4B16" /></linearGradient>
+      <symbol id="diya" viewBox="0 0 64 64">
+        <ellipse cx="32" cy="24" rx="12" ry="18" fill="#FFB300" opacity="0.18" />
+        <path d="M32 8 C38 18 38 26 32 30 C26 26 26 18 32 8 Z" fill="url(#flame)" />
+        <path d="M8 36 Q32 30 56 36 Q50 54 32 54 Q14 54 8 36 Z" fill="url(#bowl)" />
+        <path d="M8 36 Q32 42 56 36" stroke="#5C2E0A" stroke-width="1.5" fill="none" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="hero">
+    <div class="diyas">
+      <svg><use href="#diya" /></svg><svg class="big"><use href="#diya" /></svg><svg><use href="#diya" /></svg>
+    </div>
+    <p class="kicker sans">With warm wishes</p>
+    <h1>Happy Deewali</h1>
+    <div class="rule"><span></span>◆<span></span></div>
+    <p class="msg">May this festival of lights fill your home with joy, prosperity and good health.<br />Thank you for being part of our journey.</p>
+    <p class="sig sans">— Team Aalaya Arvindham</p>
+  </header>
+
+  <section>
+    <div class="wrap card intro">
+      <img src="/logo-aalaya-arvindham.svg" alt="Aalaya Arvindham" />
+      <p class="tagline sans">Crafting Homes · Building Trust</p>
+      <p class="lead">A residential plotted community of <b>430 plots</b> at Didgi, Zaheerabad — set on the 100-ft main road,
+        with wide internal roads and green open spaces.</p>
+      <div class="stats">
+        <div class="stat"><b>430</b><small class="sans">Plots</small></div>
+        <div class="stat"><b>~29.7</b><small class="sans">Acres</small></div>
+        <div class="stat"><b>150–471</b><small class="sans">Plot size (sq yd)</small></div>
+        <div class="stat"><b>3</b><small class="sans">Parks</small></div>
+      </div>
+      <div class="tags sans">
+        <span>On 100 ft main road</span><span>40 ft &amp; 33 ft internal roads</span><span>Parks &amp; open space</span><span>All four facings</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div class="card">
+        <div class="title left"><p class="sans">Choose your space</p><h2>Plot sizes</h2></div>
+        <div class="sans" style="margin-top:8px">
+          <div class="bar"><span class="l">150 sq yd</span><span class="t"><i style="width:100%"></i></span><span class="n">293 plots</span></div>
+          <div class="bar"><span class="l">161–199 sq yd</span><span class="t"><i style="width:37%"></i></span><span class="n">108 plots</span></div>
+          <div class="bar"><span class="l">200–249 sq yd</span><span class="t"><i style="width:6.5%"></i></span><span class="n">19 plots</span></div>
+          <div class="bar"><span class="l">250–299 sq yd</span><span class="t"><i style="width:2.4%"></i></span><span class="n">7 plots</span></div>
+          <div class="bar"><span class="l">300+ sq yd</span><span class="t"><i style="width:1.5%"></i></span><span class="n">3 plots</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="title left"><p class="sans">Pick your direction</p><h2>Plot facings</h2></div>
+        <div class="sans" style="margin-top:8px">
+          <div class="bar"><span class="l">North</span><span class="t"><i class="s" style="width:100%"></i></span><span class="n">193 plots</span></div>
+          <div class="bar"><span class="l">East</span><span class="t"><i class="s" style="width:51%"></i></span><span class="n">99 plots</span></div>
+          <div class="bar"><span class="l">West</span><span class="t"><i class="s" style="width:51%"></i></span><span class="n">98 plots</span></div>
+          <div class="bar"><span class="l">South</span><span class="t"><i class="s" style="width:21%"></i></span><span class="n">40 plots</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap card">
+      <div class="title"><p class="sans">The layout</p><h2>Thoughtfully planned</h2></div>
+      <ul class="feat sans" style="max-width:620px;margin-left:auto;margin-right:auto">
+        <li>430 residential plots across a ~29.7 acre layout</li>
+        <li>Fronting the existing 100-ft wide road between Bidar and Pastapur</li>
+        <li>40-ft and 33-ft wide internal roads throughout</li>
+        <li>Three parks — about 3 acres of open space, including a large central park</li>
+        <li>Plots from 150 to 471 square yards, in North, East, West and South facings</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap card loc">
+      <div class="title"><p class="sans">Where we are</p><h2>Location</h2></div>
+      <p class="sans">Sy. No. 71/P, Didgi Village, Zaheerabad Mandal, Sangareddy District, Telangana</p>
+      <!-- Google Maps button: add once the exact location link is provided -->
+    </div>
+  </section>
+
+  <footer>
+    <svg width="40" height="40"><use href="#diya" /></svg>
+    <p class="big">Shubh Deepavali from all of us at Aalaya Arvindham</p>
+    <p class="small sans">Aalaya Arvindham · Didgi, Zaheerabad · Telangana</p>
+  </footer>
+</body>
+</html>

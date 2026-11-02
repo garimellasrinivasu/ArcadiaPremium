@@ -81,6 +81,7 @@ import ClusterInchargeAdminPage from "./pages/ClusterInchargeAdminPage";
 import TodoTaskPage from "./pages/TodoTaskPage";
 import DiwaliInvitationPage from "./pages/DiwaliInvitationPage";
 import ArcadiaShowcasePage from "./pages/ArcadiaShowcasePage";
+import AalayaShowcasePage from "./pages/AalayaShowcasePage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -141,6 +142,7 @@ export default function App() {
         <Route path="activities/todo-tasks" element={<TodoTaskPage />} />
         <Route path="activities/deewali-invitation" element={<DiwaliInvitationPage />} />
         <Route path="activities/arcadia-showcase" element={<ArcadiaShowcasePage />} />
+        <Route path="activities/aalaya-showcase" element={<AalayaShowcasePage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />

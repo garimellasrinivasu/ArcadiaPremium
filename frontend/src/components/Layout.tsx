@@ -54,6 +54,7 @@ const menuSections: MenuSection[] = [
       { label: "Todo Tasks", path: "/activities/todo-tasks", pageKey: "TODO_TASKS" },
       { label: "Deewali Invitation", path: "/activities/deewali-invitation", pageKey: "DIWALI_INVITES" },
       { label: "Arcadia Showcase (Deewali)", path: "/activities/arcadia-showcase", pageKey: "DIWALI_INVITES" },
+      { label: "Aalaya Showcase (Deewali)", path: "/activities/aalaya-showcase", pageKey: "DIWALI_INVITES" },
     ],
   },
   {

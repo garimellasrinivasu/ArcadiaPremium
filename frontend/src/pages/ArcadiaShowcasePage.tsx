@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ARCADIA_PLOTS, ARCADIA_CLUSTERS, CONSTRUCTION_PHASES } from "./MasterPlanPage";
-import { QRCodeCanvas } from "qrcode.react";
+import ShowcaseQrCard from "../components/ShowcaseQrCard";
 import { villaConstructionService } from "../services/villaConstructionService";
 
 /**
@@ -11,8 +11,6 @@ import { villaConstructionService } from "../services/villaConstructionService";
 const PROJECT = "Praneeth Arcadia Premium";
 const ADDRESS = "Sy No: 455P, 456, D.Pochampalli Village, Near ORR Service Road, Dhundigal, Medchal - Malkajgiri Dist, Telangana - 500043";
 const MAPS = "https://maps.app.goo.gl/aMNNjbehhJdBk2Mh9";
-// TEMPORARY: QR code for verifying the link on a phone — remove after verification
-const SHOWCASE_URL = "https://arcadiapremium.duckdns.org/arcadia/";
 
 
 // Palette: deep emerald from the logo, champagne gold accents, warm ivory page
@@ -74,31 +72,7 @@ export default function ArcadiaShowcasePage() {
   return (
     <div className="-m-4 md:-m-8 bg-[#F7F5F0] text-[#1F2937]" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
       {/* ── TEMPORARY: QR code for verification — remove after verification ── */}
-      <section className="px-5 pt-5 pb-5 bg-white border-b border-[#E6E0D2] font-sans">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-5">
-          <div className="p-3 bg-white rounded-xl border border-[#E6E0D2] shadow-sm">
-            <QRCodeCanvas id="showcase-qr" value={SHOWCASE_URL} size={160} level="M" marginSize={2} fgColor={GREEN} />
-          </div>
-          <div className="text-center sm:text-left">
-            <p className="text-[10px] tracking-[0.3em] uppercase" style={{ color: GOLD }}>For verification only</p>
-            <h3 className="text-lg font-semibold mt-1" style={{ color: GREEN }}>Scan to open this page</h3>
-            <p className="text-xs text-gray-500 mt-1 break-all">{SHOWCASE_URL}</p>
-            <p className="text-xs text-gray-500 mt-1">Opens a separate public greeting page (no login, no live data from the app).</p>
-            <button
-              onClick={() => {
-                const c = document.getElementById("showcase-qr") as HTMLCanvasElement | null;
-                if (!c) return;
-                const a = document.createElement("a");
-                a.href = c.toDataURL("image/png");
-                a.download = "Arcadia Showcase QR.png";
-                document.body.appendChild(a); a.click(); a.remove();
-              }}
-              className="mt-3 px-4 py-2 rounded-full text-white text-xs" style={{ background: GREEN }}>
-              ⬇ Download QR image
-            </button>
-          </div>
-        </div>
-      </section>
+      <ShowcaseQrCard id="arcadia" name="Praneeth Arcadia Premium" url="https://arcadiapremium.duckdns.org/arcadia/" color={GREEN} />
 
       {/* ── Deewali greeting ── */}
       <section className="relative overflow-hidden text-center px-5 pt-10 pb-14" style={{ background: `radial-gradient(ellipse 80% 70% at 50% 0%, #24563D 0%, ${GREEN} 55%, #0D261A 100%)` }}>
