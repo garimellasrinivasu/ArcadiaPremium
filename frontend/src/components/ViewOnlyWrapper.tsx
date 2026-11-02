@@ -24,6 +24,7 @@ const PATH_TO_PAGE_KEY: Record<string, string> = {
   "/activities/land-converter": "LAND_CONVERTER",
   "/activities/ground-level-work": "GROUND_LEVEL_WORK",
   "/activities/pay-slips": "PAY_SLIPS",
+  "/activities/deewali-invitation": "DIWALI_INVITES",
   "/admin/approval-chains": "APPROVAL_CHAINS",
   "/admin/projects": "PROJECTS",
   "/admin/capitol-fund": "CAPITOL_FUND",

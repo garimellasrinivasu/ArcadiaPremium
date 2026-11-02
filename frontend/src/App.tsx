@@ -79,6 +79,7 @@ import MastriLeaderAdminPage from "./pages/MastriLeaderAdminPage";
 import NotificationConfigPage from "./pages/NotificationConfigPage";
 import ClusterInchargeAdminPage from "./pages/ClusterInchargeAdminPage";
 import TodoTaskPage from "./pages/TodoTaskPage";
+import DiwaliInvitationPage from "./pages/DiwaliInvitationPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -137,6 +138,7 @@ export default function App() {
         <Route path="activities/ground-level-work" element={<GroundLevelWorkPage />} />
         <Route path="activities/pay-slips" element={<PaySlipPage />} />
         <Route path="activities/todo-tasks" element={<TodoTaskPage />} />
+        <Route path="activities/deewali-invitation" element={<DiwaliInvitationPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />
