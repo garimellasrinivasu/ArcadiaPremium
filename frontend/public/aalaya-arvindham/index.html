@@ -67,6 +67,10 @@
     ul.feat li { display: flex; gap: 12px; margin-top: 12px; }
     ul.feat li::before { content: ""; width: 6px; height: 6px; margin-top: 7px; flex-shrink: 0; background: var(--saffron); transform: rotate(45deg); }
 
+    .why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+    .why div { border: 1px solid var(--line); background: #FAF8F4; border-radius: 12px; padding: 16px; }
+    .why b { display: block; color: var(--navy); font-size: 15px; }
+    .why span { display: block; color: #4B5563; font-size: 13px; line-height: 1.55; margin-top: 6px; }
     .loc { text-align: center; }
     .loc p { color: #374151; font-size: 15px; line-height: 1.6; max-width: 640px; margin: 16px auto 0; }
     .btn { display: inline-block; margin-top: 22px; padding: 12px 24px; border-radius: 999px; color: #fff; text-decoration: none;
@@ -78,7 +82,7 @@
 
     @media (max-width: 720px) {
       .stats { grid-template-columns: repeat(2, 1fr); }
-      .two { grid-template-columns: 1fr; }
+      .two, .why { grid-template-columns: 1fr; }
       .card { padding: 22px 18px; }
       .bar { gap: 8px; font-size: 13px; }
       .bar .l { width: auto; min-width: 72px; }
@@ -119,16 +123,16 @@
     <div class="wrap card intro">
       <img src="/logo-aalaya-arvindham.svg" alt="Aalaya Arvindham" />
       <p class="tagline sans">Crafting Homes · Building Trust</p>
-      <p class="lead">A residential plotted community of <b>430 plots</b> at Didgi, Zaheerabad — set on the 100-ft main road,
-        with wide internal roads and green open spaces.</p>
+      <p class="lead">A <b>mini township</b> based plotted community with an International School, Club House, Hospital and more —
+        <b>430 plots</b> at Didgi, Zaheerabad, near <b>NIMZ</b> (National Investment &amp; Manufacturing Zone).</p>
       <div class="stats">
         <div class="stat"><b>430</b><small class="sans">Plots</small></div>
-        <div class="stat"><b>~29.7</b><small class="sans">Acres</small></div>
+        <div class="stat"><b>30</b><small class="sans">Acres</small></div>
         <div class="stat"><b>150–471</b><small class="sans">Plot size (sq yd)</small></div>
         <div class="stat"><b>3</b><small class="sans">Parks</small></div>
       </div>
       <div class="tags sans">
-        <span>On 100 ft main road</span><span>40 ft &amp; 33 ft internal roads</span><span>Parks &amp; open space</span><span>All four facings</span>
+        <span>Near NIMZ, Zaheerabad</span><span>On NH-65 (Hyderabad–Mumbai)</span><span>DTCP layout · TLP No. 31/2026/H</span><span>East &amp; West facing plots</span>
       </div>
     </div>
   </section>
@@ -148,10 +152,8 @@
       <div class="card">
         <div class="title left"><p class="sans">Pick your direction</p><h2>Plot facings</h2></div>
         <div class="sans" style="margin-top:8px">
-          <div class="bar"><span class="l">North</span><span class="t"><i class="s" style="width:100%"></i></span><span class="n">193 plots</span></div>
-          <div class="bar"><span class="l">East</span><span class="t"><i class="s" style="width:51%"></i></span><span class="n">99 plots</span></div>
-          <div class="bar"><span class="l">West</span><span class="t"><i class="s" style="width:51%"></i></span><span class="n">98 plots</span></div>
-          <div class="bar"><span class="l">South</span><span class="t"><i class="s" style="width:21%"></i></span><span class="n">40 plots</span></div>
+          <div class="bar"><span class="l">East</span><span class="t"><i class="s" style="width:100%"></i></span><span class="n">218 plots</span></div>
+          <div class="bar"><span class="l">West</span><span class="t"><i class="s" style="width:97%"></i></span><span class="n">212 plots</span></div>
         </div>
       </div>
     </div>
@@ -159,22 +161,37 @@
 
   <section class="block">
     <div class="wrap card">
-      <div class="title"><p class="sans">The layout</p><h2>Thoughtfully planned</h2></div>
-      <ul class="feat sans" style="max-width:620px;margin-left:auto;margin-right:auto">
-        <li>430 residential plots across a ~29.7 acre layout</li>
-        <li>Fronting the existing 100-ft wide road between Bidar and Pastapur</li>
-        <li>40-ft and 33-ft wide internal roads throughout</li>
-        <li>Three parks — about 3 acres of open space, including a large central park</li>
-        <li>Plots from 150 to 471 square yards, in North, East, West and South facings</li>
+      <div class="title"><p class="sans">The township</p><h2>Thoughtfully planned</h2></div>
+      <ul class="feat sans" style="max-width:640px;margin-left:auto;margin-right:auto">
+        <li>430 plots across about 30 acres, planned as a gated plotted community</li>
+        <li>Mini township with an International School, Club House, Hospital and more</li>
+        <li>DTCP layout approval process completed (TLP No. 31/2026/H)</li>
+        <li>40-ft and 33-ft wide internal roads, on the existing 100-ft road between Bidar and Pastapur</li>
+        <li>Three parks, plus about 600 acres of forest and agricultural research land next door</li>
+        <li>Plots from 150 to 471 square yards, all East or West facing</li>
       </ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap card">
+      <div class="title"><p class="sans">Why Zaheerabad, why now</p><h2>A growing destination</h2></div>
+      <div class="why sans">
+        <div><b>🏭&nbsp; NIMZ Zaheerabad</b><span>One of India's largest planned manufacturing zones (12,000+ acres), approved as an Industrial Smart City under the National Industrial Corridor programme.</span></div>
+        <div><b>🚜&nbsp; Established industry</b><span>Mahindra &amp; Mahindra's tractor plant and other manufacturers are already here, so jobs and housing demand keep growing.</span></div>
+        <div><b>🛣️&nbsp; On NH-65</b><span>The Hyderabad–Mumbai highway: about 1.5 hours from Hyderabad, close to the ORR and the Patancheru industrial belt.</span></div>
+        <div><b>🔄&nbsp; Regional Ring Road</b><span>The planned RRR in Sangareddy district will bring Zaheerabad closer to Hyderabad's growth.</span></div>
+        <div><b>🚆&nbsp; Rail and air</b><span>Zaheerabad station is on the Vikarabad–Bidar line, and Bidar airport is about 40 km away.</span></div>
+        <div><b>🗺️&nbsp; Three-state gateway</b><span>Where Telangana, Karnataka and Maharashtra meet — a natural trade and logistics hub.</span></div>
+      </div>
     </div>
   </section>
 
   <section class="block">
     <div class="wrap card loc">
       <div class="title"><p class="sans">Where we are</p><h2>Location</h2></div>
-      <p class="sans">Sy. No. 71/P, Didgi Village, Zaheerabad Mandal, Sangareddy District, Telangana</p>
-      <!-- Google Maps button: add once the exact location link is provided -->
+      <p class="sans">Sy. No. 71/P, Didgi Village, Zaheerabad Mandal, Sangareddy District, Telangana · near NIMZ</p>
+      <a class="btn sans" href="https://maps.app.goo.gl/nTACjCvpRPxNvhV9A" target="_blank" rel="noopener noreferrer">📍 Open in Google Maps</a>
     </div>
   </section>
 
