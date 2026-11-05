@@ -73,6 +73,15 @@
     .why span { display: block; color: #4B5563; font-size: 13px; line-height: 1.55; margin-top: 6px; }
     .plan { display: block; margin-top: 24px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
     .plan img { display: block; width: 100%; height: auto; }
+    .viewer { margin-top: 24px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: #fff; }
+    .vbar { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: #FAF8F3; }
+    .vbar button, .vbar a { border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 999px; min-width: 34px; height: 30px;
+      padding: 0 12px; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .vbar button:hover, .vbar a:hover { border-color: var(--saffron); }
+    .vbar span { min-width: 48px; text-align: center; font-size: 13px; color: var(--muted); }
+    .vport { height: min(70vh, 640px); overflow: auto; cursor: grab; background: #fff; }
+    .vport.drag { cursor: grabbing; }
+    .vport img { display: block; margin: 0 auto; max-width: none; user-select: none; }
     .note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 12px; }
     .loc { text-align: center; }
     .loc p { color: #374151; font-size: 15px; line-height: 1.6; max-width: 640px; margin: 16px auto 0; }
@@ -143,8 +152,17 @@
   <section class="block">
     <div class="wrap">
       <div class="title"><p class="sans">The layout</p><h2>Master Plan</h2></div>
-      <a class="plan" href="/aalaya-arvindham/layout.jpg" target="_blank" rel="noopener"><img src="/aalaya-arvindham/layout.jpg" alt="Aalaya Arvindham layout plan" loading="lazy" /></a>
-      <p class="note sans">430 plots · 218 East-facing · 212 West-facing · Tap the layout to open it full size</p>
+      <div class="viewer">
+        <div class="vbar sans">
+          <button type="button" data-z="out" aria-label="Zoom out">−</button>
+          <span id="vzoom">100%</span>
+          <button type="button" data-z="in" aria-label="Zoom in">+</button>
+          <button type="button" data-z="fit">Fit</button>
+          <a href="/aalaya-arvindham/layout.jpg" target="_blank" rel="noopener">Full size ↗</a>
+        </div>
+        <div class="vport" id="vport"><img id="vimg" src="/aalaya-arvindham/layout.jpg" alt="Aalaya Arvindham layout plan" draggable="false" /></div>
+      </div>
+      <p class="note sans">430 plots · 218 East-facing · 212 West-facing · Use + / − to zoom, drag to move around</p>
     </div>
   </section>
 
@@ -201,5 +219,50 @@
     <p class="big">Shubh Deepavali from all of us at Aalaya Arvindham</p>
     <p class="small sans">Aalaya Arvindham · Didgi, Zaheerabad · Telangana</p>
   </footer>
+  <script>
+    // Master plan viewer: fits the plan inside the frame, with zoom in/out and drag to pan
+    (function () {
+      var vp = document.getElementById("vport"), img = document.getElementById("vimg"), label = document.getElementById("vzoom");
+      var fit = 1, scale = 1, fitMode = true;
+      function apply(s, cx, cy) {
+        var w = img.naturalWidth; if (!w) return;
+        cx = cx == null ? vp.clientWidth / 2 : cx; cy = cy == null ? vp.clientHeight / 2 : cy;
+        var fx = (vp.scrollLeft + cx) / (img.offsetWidth || 1), fy = (vp.scrollTop + cy) / (img.offsetHeight || 1);
+        scale = Math.min(Math.max(s, fit), fit * 8);
+        img.style.width = Math.round(w * scale) + "px";
+        vp.scrollLeft = fx * img.offsetWidth - cx; vp.scrollTop = fy * img.offsetHeight - cy;
+        label.textContent = Math.round((scale / fit) * 100) + "%";
+      }
+      function refit() {
+        if (!img.naturalWidth) return;
+        fit = Math.min(vp.clientWidth / img.naturalWidth, vp.clientHeight / img.naturalHeight);
+        if (fitMode) apply(fit); else apply(scale);
+      }
+      img.addEventListener("load", refit); if (img.complete) refit();
+      window.addEventListener("resize", refit);
+      document.querySelectorAll(".vbar button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var z = b.getAttribute("data-z");
+          if (z === "fit") { fitMode = true; apply(fit); return; }
+          fitMode = false; apply(z === "in" ? scale * 1.4 : scale / 1.4);
+        });
+      });
+      vp.addEventListener("wheel", function (e) {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault(); fitMode = false;
+        var r = vp.getBoundingClientRect();
+        apply(e.deltaY < 0 ? scale * 1.15 : scale / 1.15, e.clientX - r.left, e.clientY - r.top);
+      }, { passive: false });
+      var drag = null;
+      vp.addEventListener("pointerdown", function (e) {
+        if (e.pointerType !== "mouse") return;
+        drag = { x: e.clientX, y: e.clientY, l: vp.scrollLeft, t: vp.scrollTop }; vp.classList.add("drag");
+      });
+      window.addEventListener("pointermove", function (e) {
+        if (!drag) return; vp.scrollLeft = drag.l - (e.clientX - drag.x); vp.scrollTop = drag.t - (e.clientY - drag.y);
+      });
+      window.addEventListener("pointerup", function () { drag = null; vp.classList.remove("drag"); });
+    })();
+  </script>
 </body>
 </html>
