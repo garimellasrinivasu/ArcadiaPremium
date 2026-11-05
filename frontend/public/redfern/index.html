@@ -1,0 +1,186 @@
+<!doctype html>
+<!--
+  Standalone Praneeth Redfern Square Deewali greeting page, opened from the QR code.
+  Kept outside the main app on purpose: no login, no app code, no API calls — static content only.
+  Temporary: remove this folder after Deewali.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Praneeth Redfern Square · Happy Deewali</title>
+  <link rel="icon" href="/logo-redfern-square.svg" />
+  <style>
+    :root {
+      --green: #5A1717; --green-dark: #331010; --green-light: #7A2323;
+      --gold: #A5781E; --champagne: #E2BE6A;
+      --page: #F7F5F0; --line: #E6E0D2; --ink: #1F2937; --muted: #6B7280;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--ink); font-family: Georgia, "Times New Roman", serif; }
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    .wrap { max-width: 1024px; margin: 0 auto; }
+    section { padding: 0 20px; }
+
+    .hero { position: relative; text-align: center; padding: 40px 20px 72px; overflow: hidden;
+      background: radial-gradient(ellipse 80% 70% at 50% 0%, var(--green-light) 0%, var(--green) 55%, var(--green-dark) 100%); }
+    .hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--champagne), transparent); }
+    .diyas { display: flex; justify-content: center; align-items: flex-end; gap: 32px; margin-bottom: 16px; }
+    .diyas svg { width: 48px; height: 48px; }
+    .diyas svg.big { width: 72px; height: 72px; }
+    .kicker { letter-spacing: .35em; text-transform: uppercase; font-size: 12px; color: var(--champagne); margin: 0; }
+    .hero h1 { margin: 8px 0 0; font-weight: normal; letter-spacing: .02em; color: #FBF7EE; font-size: clamp(32px, 7vw, 52px); }
+    .rule { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; color: var(--champagne); font-size: 11px; }
+    .rule span { display: block; height: 1px; width: 64px; background: var(--champagne); }
+    .hero p.msg { color: #E9E4D6; font-size: clamp(14px, 2.4vw, 18px); line-height: 1.7; margin: 12px auto 0; max-width: 640px; }
+    .hero p.sig { color: #BFB8A6; font-size: 13px; letter-spacing: .03em; margin-top: 16px; }
+
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+    .intro { margin-top: -40px; position: relative; text-align: center; box-shadow: 0 20px 50px -20px rgba(0,0,0,.25); }
+    .intro img { height: 96px; width: auto; max-width: 100%; }
+    .intro p { font-size: clamp(16px, 2.4vw, 20px); line-height: 1.6; max-width: 640px; margin: 16px auto 0; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+    .stat { border: 1px solid var(--line); background: #FAF8F3; border-radius: 12px; padding: 18px 6px; }
+    .stat b { display: block; font-weight: normal; color: var(--green); font-size: clamp(20px, 3.4vw, 30px); white-space: nowrap; }
+    .stat small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+    .tags span { border: 1px solid #D9C9A3; color: #5C4A22; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+
+    .title { text-align: center; }
+    .title.left { text-align: left; }
+    .title p { letter-spacing: .3em; text-transform: uppercase; font-size: 11px; color: var(--gold); margin: 0; }
+    .title h2 { font-weight: normal; letter-spacing: .02em; color: var(--green); font-size: clamp(24px, 4vw, 30px); margin: 4px 0 0; }
+
+    .block { padding-top: 48px; }
+    a.plan { display: block; }
+    .plan { margin-top: 24px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+    .plan img { display: block; width: 100%; height: auto; }
+    .note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .bar { display: flex; align-items: center; gap: 12px; font-size: 14px; margin-top: 12px; }
+    .bar .l { width: 92px; color: #374151; }
+    .bar .l, .bar .n { flex-shrink: 0; }
+    .bar .t { flex: 1; min-width: 60px; height: 12px; border-radius: 999px; background: #EFEBE2; overflow: hidden; }
+    .bar .t i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--green), #2F6B4C); }
+    .bar .n { width: 70px; text-align: right; color: var(--muted); }
+    ul.feat { list-style: none; padding: 0; margin: 18px 0 0; font-size: 14px; color: #374151; }
+    ul.feat li { display: flex; gap: 12px; margin-top: 12px; }
+    ul.feat li::before { content: ""; width: 6px; height: 6px; margin-top: 7px; flex-shrink: 0; background: var(--gold); transform: rotate(45deg); }
+
+    .loc { text-align: center; }
+    .loc p { color: #374151; font-size: 15px; line-height: 1.6; max-width: 640px; margin: 16px auto 0; }
+    .btn { display: inline-block; margin-top: 22px; padding: 12px 24px; border-radius: 999px; color: #fff; text-decoration: none;
+      background: var(--green); border: 1px solid var(--champagne); font-size: 14px; letter-spacing: .02em; }
+
+    footer { text-align: center; padding: 40px 20px 48px; }
+    footer .big { color: var(--green); font-size: 18px; margin: 12px 0 0; }
+    footer .small { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+
+    @media (max-width: 720px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .two { grid-template-columns: 1fr; }
+      .card { padding: 22px 18px; }
+      .bar { gap: 8px; font-size: 13px; }
+      .bar .l { width: auto; min-width: 72px; }
+      .bar .n { width: auto; }
+      .intro img { height: 92px; }
+      .diyas { gap: 22px; }
+      .diyas svg { width: 40px; height: 40px; }
+      .diyas svg.big { width: 56px; height: 56px; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="flame" cx="50%" cy="70%" r="60%"><stop offset="0%" stop-color="#FFF7C2" /><stop offset="55%" stop-color="#FFC93C" /><stop offset="100%" stop-color="#FF7A00" /></radialGradient>
+      <linearGradient id="bowl" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#E0A35A" /><stop offset="100%" stop-color="#8A4B16" /></linearGradient>
+      <symbol id="diya" viewBox="0 0 64 64">
+        <ellipse cx="32" cy="24" rx="12" ry="18" fill="#FFB300" opacity="0.18" />
+        <path d="M32 8 C38 18 38 26 32 30 C26 26 26 18 32 8 Z" fill="url(#flame)" />
+        <path d="M8 36 Q32 30 56 36 Q50 54 32 54 Q14 54 8 36 Z" fill="url(#bowl)" />
+        <path d="M8 36 Q32 42 56 36" stroke="#5C2E0A" stroke-width="1.5" fill="none" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="hero">
+    <div class="diyas">
+      <svg><use href="#diya" /></svg><svg class="big"><use href="#diya" /></svg><svg><use href="#diya" /></svg>
+    </div>
+    <p class="kicker sans">With warm wishes</p>
+    <h1>Happy Deewali</h1>
+    <div class="rule"><span></span>◆<span></span></div>
+    <p class="msg">May this festival of lights fill your home with joy, prosperity and good health.<br />Thank you for being part of our journey.</p>
+    <p class="sig sans">— Team Praneeth · Venkata Praneeth Developers Pvt. Ltd.</p>
+  </header>
+
+  <section>
+    <div class="wrap card intro">
+      <img src="/logo-redfern-square.svg" alt="Praneeth Redfern Square" />
+      <p>A community of <b>348 premium villas</b> at Maheswaram, Hyderabad — with a clubhouse, over 3 acres of parks and play areas,
+        and wide 40–50 ft roads.</p>
+      <div class="stats">
+        <div class="stat"><b>348</b><small class="sans">Villas</small></div>
+        <div class="stat"><b>195–289</b><small class="sans">Plot size (sq yd)</small></div>
+        <div class="stat"><b>~34</b><small class="sans">Acres</small></div>
+        <div class="stat"><b>3+</b><small class="sans">Acres of parks</small></div>
+      </div>
+      <div class="tags sans">
+        <span>East &amp; West facing villas</span><span>Clubhouse with pool</span><span>Temple</span><span>Next to proposed 150 ft road</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="title"><p class="sans">The layout</p><h2>Master Plan</h2></div>
+      <a class="plan" href="/redfern/layout.jpg" target="_blank" rel="noopener"><img src="/redfern/layout.jpg" alt="Praneeth Redfern Square master plan" loading="lazy" /></a>
+      <p class="note sans">348 villas · 155 East-facing · 193 West-facing · Tap the plan to open it full size</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div class="card">
+        <div class="title left"><p class="sans">Choose your space</p><h2>Villa plot sizes</h2></div>
+        <div class="sans" style="margin-top:8px">
+          <div class="bar"><span class="l">195–201 sq yd</span><span class="t"><i style="width:100%"></i></span><span class="n">120 villas</span></div>
+          <div class="bar"><span class="l">208–233 sq yd</span><span class="t"><i style="width:61%"></i></span><span class="n">73 villas</span></div>
+          <div class="bar"><span class="l">239–260 sq yd</span><span class="t"><i style="width:20%"></i></span><span class="n">24 villas</span></div>
+          <div class="bar"><span class="l">267–274 sq yd</span><span class="t"><i style="width:84%"></i></span><span class="n">101 villas</span></div>
+          <div class="bar"><span class="l">285–289 sq yd</span><span class="t"><i style="width:25%"></i></span><span class="n">30 villas</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="title left"><p class="sans">Your home</p><h2>Thoughtfully planned</h2></div>
+        <ul class="feat sans">
+          <li>348 independent villas across about 34 acres</li>
+          <li>Plots from 195 to 289 square yards, East and West facing</li>
+          <li>Clubhouse with swimming pool and badminton court</li>
+          <li>Temple and well within the community</li>
+          <li>50-ft main road and 40-ft internal roads</li>
+          <li>Over 3 acres of parks and children's play areas</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap card loc">
+      <div class="title"><p class="sans">Where we are</p><h2>Location</h2></div>
+      <p class="sans">Maheswaram, Hyderabad, Telangana</p>
+      <a class="btn sans" href="https://maps.app.goo.gl/UDC5oxbH6ScTsJtV9" target="_blank" rel="noopener noreferrer">📍 Open in Google Maps</a>
+    </div>
+  </section>
+
+  <footer>
+    <svg width="40" height="40"><use href="#diya" /></svg>
+    <p class="big">Shubh Deepavali from all of us at Praneeth</p>
+    <p class="small sans">Venkata Praneeth Developers Pvt. Ltd. · Praneeth Redfern Square · Hyderabad</p>
+  </footer>
+</body>
+</html>

@@ -6,6 +6,7 @@ import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { KALPAVRUKSHA_PLOTS, KALPAVRUKSHA_PRANEETH_SHARE } from "../data/kalpavrukshaPlots";
 import type { PlotDef } from "../data/kalpavrukshaPlots";
 import { ARAVINDHAM_PLOTS, ARAVINDHAM_PRANEETH_SHARE } from "../data/aravindhamPlots";
+import { REDFERN_PLOTS, REDFERN_PRANEETH_SHARE } from "../data/redfernPlots";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 
@@ -275,8 +276,11 @@ export function isArcadia(name: string): boolean {
 export function isAravindham(name: string): boolean {
   return name.toLowerCase().includes("arvindham");
 }
+export function isRedfern(name: string): boolean {
+  return name.toLowerCase().replace(/\s+/g, "").includes("redfern");
+}
 export function hasMasterPlan(projectName: string): boolean {
-  return isArcadia(projectName) || isKalpavruksha(projectName) || isAravindham(projectName);
+  return isArcadia(projectName) || isKalpavruksha(projectName) || isAravindham(projectName) || isRedfern(projectName);
 }
 /** Returns "Plot" for Aravindham, "Villa" for other projects */
 export function plotLabel(projectName: string): string {
@@ -393,19 +397,25 @@ export default function MasterPlanPage() {
   // Derive active data based on selected project
   const activePlots = isAravindham(selectedProject)
     ? ARAVINDHAM_PLOTS
-    : isKalpavruksha(selectedProject)
-      ? KALPAVRUKSHA_PLOTS
-      : ARCADIA_PLOTS;
+    : isRedfern(selectedProject)
+      ? REDFERN_PLOTS
+      : isKalpavruksha(selectedProject)
+        ? KALPAVRUKSHA_PLOTS
+        : ARCADIA_PLOTS;
   const activeShare = isAravindham(selectedProject)
     ? ARAVINDHAM_PRANEETH_SHARE
-    : isKalpavruksha(selectedProject)
-      ? KALPAVRUKSHA_PRANEETH_SHARE
-      : ARCADIA_PRANEETH_SHARE;
+    : isRedfern(selectedProject)
+      ? REDFERN_PRANEETH_SHARE
+      : isKalpavruksha(selectedProject)
+        ? KALPAVRUKSHA_PRANEETH_SHARE
+        : ARCADIA_PRANEETH_SHARE;
   const activeImage = isAravindham(selectedProject)
     ? "/aravindham_masterplan.png"
-    : isKalpavruksha(selectedProject)
-      ? "/kalpavruksha_masterplan.png"
-      : "/masterplan_colored.png";
+    : isRedfern(selectedProject)
+      ? "/redfern_masterplan.png"
+      : isKalpavruksha(selectedProject)
+        ? "/kalpavruksha_masterplan.png"
+        : "/masterplan_colored.png";
 
   function getVillaCategory(villaNum: number): VillaCategory {
     if (activeShare.has(villaNum)) return "praneeth";

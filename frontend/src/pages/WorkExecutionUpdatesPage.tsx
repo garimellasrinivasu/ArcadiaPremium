@@ -10,11 +10,13 @@ import {
   isKalpavruksha,
   isArcadia,
   isAravindham,
+  isRedfern,
   hasMasterPlan,
 } from "./MasterPlanPage";
 import { KALPAVRUKSHA_PLOTS } from "../data/kalpavrukshaPlots";
 import type { PlotDef } from "../data/kalpavrukshaPlots";
 import { ARAVINDHAM_PLOTS } from "../data/aravindhamPlots";
+import { REDFERN_PLOTS } from "../data/redfernPlots";
 import { clusterInchargeService, type ClusterInchargeDto } from "../services/clusterInchargeService";
 import { authService } from "../services/authService";
 import ScheduleImportExport from "../components/ScheduleImportExport";
@@ -33,15 +35,19 @@ export default function WorkExecutionUpdatesPage() {
 
   const activePlots = isAravindham(selectedProject)
     ? ARAVINDHAM_PLOTS
-    : isKalpavruksha(selectedProject)
-      ? KALPAVRUKSHA_PLOTS
-      : ARCADIA_PLOTS;
+    : isRedfern(selectedProject)
+      ? REDFERN_PLOTS
+      : isKalpavruksha(selectedProject)
+        ? KALPAVRUKSHA_PLOTS
+        : ARCADIA_PLOTS;
 
   const activeImage = isAravindham(selectedProject)
     ? "/aravindham_masterplan.png"
-    : isKalpavruksha(selectedProject)
-      ? "/kalpavruksha_masterplan.png"
-      : "/masterplan_colored.png";
+    : isRedfern(selectedProject)
+      ? "/redfern_masterplan.png"
+      : isKalpavruksha(selectedProject)
+        ? "/kalpavruksha_masterplan.png"
+        : "/masterplan_colored.png";
 
   const projectHasMasterPlan = hasMasterPlan(selectedProject);
 
