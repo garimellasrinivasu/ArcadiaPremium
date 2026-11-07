@@ -1,6 +1,7 @@
 package com.arcadia.premium.config;
 
 import com.arcadia.premium.security.JwtAuthFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,6 +46,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/documents/public/**").permitAll()
                 .requestMatchers("/api/detect/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/showcase-visits/track").permitAll()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

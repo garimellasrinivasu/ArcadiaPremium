@@ -244,5 +244,17 @@
       window.addEventListener("pointerup", function () { drag = null; vp.classList.remove("drag"); });
     })();
   </script>
+  <script>
+    /* Anonymous visit count (no name, phone or IP kept). Not counted when shown inside the Arcadia app. */
+    (function () {
+      if (window.top !== window) return;
+      try {
+        var k = 'showcase-visitor', id = localStorage.getItem(k);
+        if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)); localStorage.setItem(k, id); }
+        fetch('/api/showcase-visits/track', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page: 'arcadia', visitorId: id, referrer: document.referrer }) }).catch(function () {});
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>

@@ -81,6 +81,7 @@ import ClusterInchargeAdminPage from "./pages/ClusterInchargeAdminPage";
 import TodoTaskPage from "./pages/TodoTaskPage";
 import DiwaliInvitationPage from "./pages/DiwaliInvitationPage";
 import StaticShowcasePage from "./pages/StaticShowcasePage";
+import ShowcaseVisitorsPage from "./pages/ShowcaseVisitorsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -143,6 +144,7 @@ export default function App() {
         <Route path="activities/arcadia-showcase" element={<StaticShowcasePage key="arcadia" slug="arcadia" name="Praneeth Arcadia Premium" color="#163B2A" />} />
         <Route path="activities/redfern-showcase" element={<StaticShowcasePage key="redfern" slug="redfern" name="Praneeth Redfern Square" color="#5A1717" />} />
         <Route path="activities/aalaya-showcase" element={<StaticShowcasePage key="aalaya" slug="aalaya-arvindham" name="Aalaya Arvindham" color="#17252F" />} />
+        <Route path="activities/showcase-visitors" element={<ShowcaseVisitorsPage />} />
         <Route path="admin/approval-chains" element={<ApprovalChainAdminPage />} />
         <Route path="admin/projects" element={<ProjectManagementPage />} />
         <Route path="admin/capitol-fund" element={<CapitolFundPage />} />

@@ -56,6 +56,7 @@ const menuSections: MenuSection[] = [
       { label: "Arcadia Showcase (Deewali)", path: "/activities/arcadia-showcase", pageKey: "DIWALI_INVITES" },
       { label: "Redfern Showcase (Deewali)", path: "/activities/redfern-showcase", pageKey: "DIWALI_INVITES" },
       { label: "Aalaya Showcase (Deewali)", path: "/activities/aalaya-showcase", pageKey: "DIWALI_INVITES" },
+      { label: "Showcase Visitors (Deewali)", path: "/activities/showcase-visitors", pageKey: "DIWALI_INVITES" },
     ],
   },
   {

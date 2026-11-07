@@ -99,6 +99,7 @@ export default function DiwaliInvitationPage() {
   const counts = {
     total: rows.filter((r) => r.status !== "CANCELLED").length,
     delivered: rows.filter((r) => r.status === "DELIVERED").length,
+    deliveredQty: rows.filter((r) => r.status === "DELIVERED").reduce((n, r) => n + (r.quantity || 0), 0),
     inTransit: rows.filter((r) => r.status === "DISPATCHED" || r.status === "PACKED").length,
     planned: rows.filter((r) => r.status === "PLANNED").length,
     invites: rows.filter((r) => r.invitationSent).length,
@@ -217,8 +218,8 @@ export default function DiwaliInvitationPage() {
       {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between gap-2"><span>{error}</span><button onClick={() => setError("")}>&times;</button></div>}
 
       {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-        {[["Recipients", counts.total, "text-gray-800"], ["Gifts (qty)", counts.gifts, "text-orange-700"], ["VIP boxes", counts.vip, "text-yellow-700"], ["General boxes", counts.general, "text-sky-700"], ["Delivered", counts.delivered, "text-green-700"],
+      <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+        {[["Recipients", counts.total, "text-gray-800"], ["Gifts (qty)", counts.gifts, "text-orange-700"], ["VIP boxes", counts.vip, "text-yellow-700"], ["General boxes", counts.general, "text-sky-700"], ["Delivered", counts.delivered, "text-green-700"], ["Delivered (qty)", counts.deliveredQty, "text-green-700"],
           ["Packed / Dispatched", counts.inTransit, "text-amber-700"], ["Yet to deliver", counts.planned, "text-gray-700"], ["Invitations sent", counts.invites, "text-purple-700"]].map(([l, v, c]) => (
           <div key={l as string} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
             <div className={`text-2xl font-bold ${c}`}>{v as number}</div><div className="text-xs text-gray-500">{l as string}</div>
