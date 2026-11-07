@@ -35,7 +35,7 @@ public class ChecklistService {
     public static final Set<String> STATUSES = Set.of("NOT_STARTED", "IN_PROGRESS", "COMPLETED", "NOT_APPLICABLE");
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     private static final long MAX_SIZE = 2L * 1024 * 1024 * 1024; // 2 GB per file
-    private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+    private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ChecklistItemRepository itemRepo;
     private final ChecklistDocumentRepository docRepo;
@@ -550,7 +550,7 @@ public class ChecklistService {
         String th = "style='border:1px solid #ddd;padding:6px 8px;background:#1F4E5F;color:#fff;text-align:left'";
         h.append("<div style='font-family:Arial,sans-serif;font-size:13px;color:#222'>");
         h.append("<h2 style='color:#1F4E5F;margin:0 0 4px'>").append(esc(pageLabel(tracker))).append(" — ").append(esc(project)).append("</h2>");
-        h.append("<p style='color:#666;margin:0 0 12px'>Status as on ").append(LocalDateTime.now(IST).format(DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a"))).append(" IST</p>");
+        h.append("<p style='color:#666;margin:0 0 12px'>Status as on ").append(LocalDateTime.now(IST).format(DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a"))).append(" IST</p>");
         h.append("<table style='border-collapse:collapse;margin-bottom:14px'><tr>");
         for (String[] k : new String[][]{{"Total", "total"}, {"Completed", "completed"}, {"In progress", "inProgress"}, {"Not started", "notStarted"}, {"Overdue", "overdue"}, {"Due in 7 days", "dueThisWeek"}, {"% complete", "percentComplete"}}) {
             h.append("<td style='border:1px solid #ddd;padding:8px 12px;text-align:center'><div style='font-size:20px;font-weight:bold;color:")

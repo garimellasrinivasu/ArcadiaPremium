@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { authService } from "../services/authService";
 import { downloadXlsx, loadSheetJS } from "../utils/sheetjs";
+import { formatDate } from "../utils/date";
 
 interface Gift {
   id: number;
@@ -44,7 +45,7 @@ const CATEGORIES: Record<string, string> = {
 const MODES: Record<string, string> = { HAND: "Hand delivery", COURIER: "Courier" };
 const BOXES: Record<string, string> = { VIP: "VIP box", GENERAL: "General box" };
 const EMPTY: Draft = { recipientName: "", status: "PLANNED", quantity: 1, deliveryMode: "HAND", category: "CUSTOMER", boxType: "GENERAL", invitationSent: false };
-const fmt = (d?: string) => d ? new Date(`${d.slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }) : "";
+const fmt = (d?: string) => formatDate(d?.slice(0, 10));
 const errOf = (e: any) => e?.response?.data?.error || e?.message || "Something went wrong";
 
 /** Excel columns (export and import use the same headings). */
@@ -161,7 +162,7 @@ export default function DiwaliInvitationPage() {
       if (k === "boxType") return [h, r.boxType === "VIP" ? "VIP" : "General"];
       if (k === "status") return [h, STATUSES[r.status]?.label || r.status];
       if (k === "invitationSent") return [h, r.invitationSent ? "Yes" : "No"];
-      if (k === "plannedDate" || k === "deliveredOn") return [h, v ? String(v).split("-").reverse().join("-") : ""];
+      if (k === "plannedDate" || k === "deliveredOn") return [h, formatDate(String(v ?? ""))];
       return [h, v ?? ""];
     }))));
     } catch (e) { setError(errOf(e)); }

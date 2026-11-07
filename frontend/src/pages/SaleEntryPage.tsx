@@ -4,6 +4,7 @@ import { saleService } from "../services/saleService";
 import { projectService } from "../services/projectService";
 import { authService } from "../services/authService";
 import type { SaleEntry, CreateSaleEntryRequest, PaymentEntry, AddPaymentRequest, User } from "../types/user";
+import { formatDate } from "../utils/date";
 const SALE_INITIATION_OPTIONS = ["SPG", "Praneeth", "SPG-Praneeth"];
 const TYPE_OPTIONS = ["OTP", "General", "OTP-General"];
 const PERSONAL_COMPANY = ["Personal", "Company"];
@@ -800,7 +801,7 @@ export default function SaleEntryPage() {
               ) : entries.map((entry) => (
                 <tr key={entry.id} className="border-b hover:bg-gray-50 transition">
                   <td className="px-3 py-3 text-gray-700">{entry.serialNo}</td>
-                  <td className="px-3 py-3 text-gray-700">{entry.bookingDate}</td>
+                  <td className="px-3 py-3 text-gray-700">{formatDate(entry.bookingDate)}</td>
                   <td className="px-3 py-3 text-gray-600 text-xs">{entry.project || "—"}</td>
                   <td className="px-3 py-3 text-gray-500 font-medium">{entry.tokenNumber || "—"}</td>
                   <td className="px-3 py-3 text-gray-800 font-medium">{entry.customerName}</td>
@@ -896,7 +897,7 @@ export default function SaleEntryPage() {
                     {viewEntry.payments.map((p, i) => (
                       <tr key={p.id} className="border-b border-green-100">
                         <td className="py-1">{i + 1}</td>
-                        <td className="py-1">{p.paymentDate}</td>
+                        <td className="py-1">{formatDate(p.paymentDate)}</td>
                         <td className="py-1">{p.paymentMode || "—"}</td>
                         <td className="py-1 text-right font-medium text-green-700">{formatCurrency(p.amount)}</td>
                         <td className="py-1 text-gray-500">{p.referenceNumber || "—"}</td>
@@ -989,7 +990,7 @@ export default function SaleEntryPage() {
                           /* Normal display row */
                           <tr key={p.id} className="border-b hover:bg-gray-50">
                             <td className="px-2 py-1.5">{i + 1}</td>
-                            <td className="px-2 py-1.5">{p.paymentDate}</td>
+                            <td className="px-2 py-1.5">{formatDate(p.paymentDate)}</td>
                             <td className="px-2 py-1.5">{p.paymentMode || "—"}</td>
                             <td className="px-2 py-1.5 text-right font-medium text-green-700">{formatCurrency(p.amount)}</td>
                             <td className="px-2 py-1.5 text-gray-500">{p.referenceNumber || "—"}</td>
@@ -999,7 +1000,7 @@ export default function SaleEntryPage() {
                                 <div className="flex justify-center gap-1">
                                   <button onClick={() => startEditPayment(p)} title="Edit Payment"
                                     className="px-1.5 py-0.5 text-[10px] bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100">Edit</button>
-                                  <button onClick={() => setDeleteConfirm({ type: "payment", saleId: paymentModal!.id, paymentId: p.id, label: `Payment of ${formatCurrency(p.amount)} on ${p.paymentDate}` })}
+                                  <button onClick={() => setDeleteConfirm({ type: "payment", saleId: paymentModal!.id, paymentId: p.id, label: `Payment of ${formatCurrency(p.amount)} on ${formatDate(p.paymentDate)}` })}
                                     title="Delete Payment"
                                     className="px-1.5 py-0.5 text-[10px] bg-red-50 text-red-600 rounded hover:bg-red-100">Del</button>
                                 </div>

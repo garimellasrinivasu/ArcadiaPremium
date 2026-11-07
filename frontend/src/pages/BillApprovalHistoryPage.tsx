@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { subcontractingReportService } from "../services/subcontractingReportService";
 import api from "../services/api";
+import { formatDate as displayDate, formatDateTime as displayDateTime } from "../utils/date";
 
 interface ContractorOption { id: number; name: string; }
 
@@ -18,10 +19,10 @@ const formatCurrency = (val: number) =>
   "₹" + (val ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const formatDate = (val?: string) =>
-  val ? new Date(val).toLocaleDateString("en-IN") : "—";
+  displayDate(val, "—");
 
 const formatDateTime = (val?: string) =>
-  val ? new Date(val).toLocaleString("en-IN") : "—";
+  displayDateTime(val, "—");
 
 export default function BillApprovalHistoryPage() {
   const [contractors, setContractors] = useState<ContractorOption[]>([]);

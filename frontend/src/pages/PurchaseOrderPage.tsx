@@ -9,6 +9,7 @@ import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
 import { indentService } from "../services/indentService";
 import type { MaterialIndentDto } from "../services/indentService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "CANCELLED"] as const;
 
@@ -209,13 +210,13 @@ export default function PurchaseOrderPage() {
         </style>
       </head><body>
         <h1>PURCHASE ORDER</h1>
-        <p class="subtitle">${po.poNumber || ''} | Date: ${po.poDate || ''}</p>
+        <p class="subtitle">${po.poNumber || ''} | Date: ${formatDate(po.poDate)}</p>
         <div class="info-grid">
           <div class="info-box">
             <h3>Order Details</h3>
             <div class="info-row"><span class="label">PO Number:</span><span class="value">${po.poNumber || ''}</span></div>
-            <div class="info-row"><span class="label">PO Date:</span><span class="value">${po.poDate || ''}</span></div>
-            <div class="info-row"><span class="label">Delivery Date:</span><span class="value">${po.deliveryDate || '—'}</span></div>
+            <div class="info-row"><span class="label">PO Date:</span><span class="value">${formatDate(po.poDate)}</span></div>
+            <div class="info-row"><span class="label">Delivery Date:</span><span class="value">${formatDate(po.deliveryDate, "—")}</span></div>
             <div class="info-row"><span class="label">Project:</span><span class="value">${po.projectName || '—'}</span></div>
             <div class="info-row"><span class="label">Status:</span><span class="value">${po.status || ''}</span></div>
           </div>
@@ -312,7 +313,7 @@ export default function PurchaseOrderPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">PO Date</p>
-                  <p className="text-sm text-gray-700">{po.poDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(po.poDate)}</p>
                 </div>
                 <div className="w-24">
                   <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_COLORS[po.status] || "bg-gray-100 text-gray-700"}`}>{po.status}</span>
@@ -326,7 +327,7 @@ export default function PurchaseOrderPage() {
               {expandedId === po.id && (
                 <div className="border-t border-gray-100 px-5 py-4 bg-gray-50">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                    <div><span className="text-gray-400 text-xs">Delivery Date</span><p className="font-semibold">{po.deliveryDate || "—"}</p></div>
+                    <div><span className="text-gray-400 text-xs">Delivery Date</span><p className="font-semibold">{formatDate(po.deliveryDate, "—")}</p></div>
                     <div><span className="text-gray-400 text-xs">Advance %</span><p className="font-semibold">{po.advancePercent ?? "—"}</p></div>
                     <div><span className="text-gray-400 text-xs">Total Amount</span><p className="font-semibold">{fmt(Number(po.totalAmount || 0))}</p></div>
                     <div><span className="text-gray-400 text-xs">Tax Amount</span><p className="font-semibold">{fmt(Number(po.taxAmount || 0))}</p></div>

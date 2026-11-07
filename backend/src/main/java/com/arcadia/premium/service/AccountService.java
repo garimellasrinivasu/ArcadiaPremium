@@ -653,7 +653,7 @@ public class AccountService {
     }
 
     private String formatPeriodLabel(String periodType, LocalDate start, LocalDate end) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM dd");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM");
         DateTimeFormatter fmtMonth = DateTimeFormatter.ofPattern("MMM yyyy");
         if ("MONTHLY".equalsIgnoreCase(periodType)) {
             return start.format(fmtMonth);

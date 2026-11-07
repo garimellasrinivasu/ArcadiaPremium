@@ -9,6 +9,7 @@ import { contractorService } from "../services/contractorService";
 import type { ContractorDto } from "../services/contractorService";
 import { activityMasterService } from "../services/activityService";
 import type { ActivityMasterDto } from "../services/activityService";
+import { formatDate, formatDateTime } from "../utils/date";
 import _api from "../services/api"; void _api;
 
 const STATUS_LIST = ["All", "DRAFT", "ISSUED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
@@ -387,7 +388,7 @@ export default function WorkOrderPage() {
                     </div>
                     <div className="w-28">
                       <p className="text-xs text-gray-400">WO Date</p>
-                      <p className="text-sm text-gray-700">{wo.woDate}</p>
+                      <p className="text-sm text-gray-700">{formatDate(wo.woDate)}</p>
                     </div>
                     <div className="w-24">
                       <span
@@ -416,11 +417,11 @@ export default function WorkOrderPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                         <div>
                           <span className="text-gray-400 text-xs">Start Date</span>
-                          <p className="font-semibold">{wo.startDate || "—"}</p>
+                          <p className="font-semibold">{formatDate(wo.startDate, "—")}</p>
                         </div>
                         <div>
                           <span className="text-gray-400 text-xs">End Date</span>
-                          <p className="font-semibold">{wo.endDate || "—"}</p>
+                          <p className="font-semibold">{formatDate(wo.endDate, "—")}</p>
                         </div>
                         <div>
                           <span className="text-gray-400 text-xs">Contract Type</span>
@@ -464,7 +465,7 @@ export default function WorkOrderPage() {
                         </div>
                         <div>
                           <span className="text-gray-400 text-xs">Created At</span>
-                          <p className="font-semibold">{wo.createdAt || "—"}</p>
+                          <p className="font-semibold">{formatDateTime(wo.createdAt, "—")}</p>
                         </div>
                       </div>
 

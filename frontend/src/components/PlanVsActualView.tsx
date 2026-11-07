@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { villaConstructionService, type PlanReport, type PlanRow, type WorkPlanMailConfig } from "../services/villaConstructionService";
 import { downloadXlsx } from "../utils/sheetjs";
+import { formatDate, formatDateTime, formatDayMonth, formatWeekdayDate } from "../utils/date";
 
 type Period = "day" | "week" | "month";
 
 const IST = "Asia/Kolkata";
 const todayIST = () => new Date().toLocaleDateString("en-CA", { timeZone: IST });
 const addDays = (ymd: string, n: number) => { const d = new Date(`${ymd}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-const fmt = (ymd?: string) => ymd ? new Date(`${ymd}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }) : "—";
-const fmtShort = (ymd: string) => new Date(`${ymd}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short" });
+const fmt = (ymd?: string) => formatDate(ymd, "—");
+const fmtShort = (ymd: string) => formatDayMonth(ymd);
 
 /** First and last day of the day / week (Mon–Sun) / month containing `anchor`. */
 function range(period: Period, anchor: string): [string, string] {
@@ -30,7 +31,7 @@ function step(period: Period, anchor: string, dir: 1 | -1): string {
   return d.toISOString().slice(0, 10);
 }
 function periodTitle(period: Period, from: string, to: string) {
-  if (period === "day") return new Date(`${from}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "long", day: "2-digit", month: "short", year: "numeric" });
+  if (period === "day") return formatWeekdayDate(from, "", "long");
   if (period === "week") return `Week ${fmtShort(from)} – ${fmt(to)}`;
   return new Date(`${from}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", month: "long", year: "numeric" });
 }
@@ -294,7 +295,7 @@ function PlanMailSettings({ projectName }: { projectName: string }) {
         <button onClick={() => void send("weekly")} disabled={!!busy} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">{busy === "weekly" ? "Sending…" : "Send weekly now"}</button>
         {msg && <span className="text-xs text-gray-700">{msg}</span>}
       </div>
-      {cfg.lastSentAt && <p className="text-[11px] text-gray-500">Last sent {new Date(cfg.lastSentAt).toLocaleString("en-IN")} — {cfg.lastSendResult}</p>}
+      {cfg.lastSentAt && <p className="text-[11px] text-gray-500">Last sent {formatDateTime(cfg.lastSentAt)} — {cfg.lastSendResult}</p>}
       {preview !== null && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>

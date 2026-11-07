@@ -5,6 +5,7 @@ import type { PartnerInvestmentDto, CreatePartnerInvestmentRequest } from "../se
 import type { User } from "../types/user";
 import api from "../services/api";
 import { getLogoByName } from "../utils/projectLogo";
+import { formatDate as displayDate } from "../utils/date";
 
 /** Project-specific branding for printed documents */
 function getProjectBranding(projectName: string) {
@@ -44,7 +45,7 @@ function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 }
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return displayDate(d);
 }
 function toISODate(d: Date) { return d.toISOString().slice(0, 10); }
 
@@ -593,7 +594,7 @@ function PrintableDocument({ entry, onClose }: { entry: PartnerInvestmentDto; on
 
           {/* Footer */}
           <div style={{ marginTop: "20px", textAlign: "center", fontSize: "8px", color: "#6b7280", letterSpacing: "0.4px", borderTop: "0.5px solid #c9a961", paddingTop: "6px" }}>
-            <strong style={{ color: "#0a2540" }}>{entry.projectName}</strong> &mdash; Partner Investment Management System &middot; Generated on {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
+            <strong style={{ color: "#0a2540" }}>{entry.projectName}</strong> &mdash; Partner Investment Management System &middot; Generated on {displayDate(new Date())}
           </div>
         </div>
       </div>

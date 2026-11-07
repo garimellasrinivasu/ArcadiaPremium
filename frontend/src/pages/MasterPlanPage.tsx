@@ -9,6 +9,8 @@ import { ARAVINDHAM_PLOTS, ARAVINDHAM_PRANEETH_SHARE } from "../data/aravindhamP
 import { REDFERN_PLOTS, REDFERN_PRANEETH_SHARE } from "../data/redfernPlots";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
+import { getProjectByName, useHeaderProjectSync } from "../utils/projectLogo";
+import { formatDate, formatDateTime } from "../utils/date";
 
 // Praneeth Share villas (Yellow in the master plan)
 const ARCADIA_PRANEETH_SHARE = new Set([
@@ -393,6 +395,11 @@ export default function MasterPlanPage() {
   // Project selection state
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("");
+  const chooseProject = useHeaderProjectSync(projects.map((p) => p.name), selectedProject, (name) => {
+    setSelectedProject(name);
+    setZoom(1);
+  });
+  const projectLogo = getProjectByName(selectedProject)?.logo;
 
   // Derive active data based on selected project
   const activePlots = isAravindham(selectedProject)
@@ -844,9 +851,7 @@ export default function MasterPlanPage() {
     // blocked_at is saved in server time (UTC); show it in IST
     const fmtDate = (iso?: string) =>
       iso
-        ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-          })
+        ? formatDateTime(new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`))
         : "";
     const plotByVilla = new Map(activePlots.map((p) => [p.villa, p]));
     const blocked = Array.from(blockedVillas.values()).sort((a, b) => a.villaNumber - b.villaNumber);
@@ -886,7 +891,7 @@ export default function MasterPlanPage() {
       </tr>`;
     });
 
-    const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const now = formatDateTime(new Date());
     const title = `${selectedProject} - Blocked ${pLabel}s`;
     const html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -1005,16 +1010,14 @@ export default function MasterPlanPage() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {projectLogo && <img src={projectLogo} alt={selectedProject} className="h-10 sm:h-12 w-auto object-contain shrink-0" />}
           <h1 className="text-lg sm:text-2xl font-bold text-arcadia-800">
             Master Plan &mdash; {selectedProject}
           </h1>
           {/* Project selector dropdown */}
           <select
             value={selectedProject}
-            onChange={(e) => {
-              setSelectedProject(e.target.value);
-              setZoom(1);
-            }}
+            onChange={(e) => chooseProject(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium bg-white shadow-sm focus:ring-2 focus:ring-arcadia-400 focus:border-arcadia-400 outline-none cursor-pointer"
           >
             {/* Always show Arcadia and Kalpavruksha even if API hasn't loaded yet */}
@@ -1416,7 +1419,7 @@ export default function MasterPlanPage() {
                   {info.notes && <div className="text-gray-500 italic mt-1">{info.notes}</div>}
                   {info.blockedAt && (
                     <div className="text-xs text-gray-400 mt-1">
-                      Blocked on {new Date(info.blockedAt).toLocaleDateString("en-IN")}
+                      Blocked on {formatDate(info.blockedAt)}
                       {info.blockedBy ? ` by ${info.blockedBy}` : ""}
                     </div>
                   )}

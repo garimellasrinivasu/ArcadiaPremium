@@ -5,6 +5,7 @@ import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
+import { formatDate } from "../utils/date";
 
 interface LineItem {
   materialId: number;
@@ -167,7 +168,7 @@ export default function MaterialIssuePage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.issueDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.issueDate)}</p>
                 </div>
                 <div className="w-36">
                   <p className="text-xs text-gray-400">Issued To</p>

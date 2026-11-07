@@ -7,6 +7,7 @@ import {
   type CreateEmployeeRequest,
   type CreatePaySlipRequest,
 } from "../services/paySlipService";
+import { formatDate as displayDate } from "../utils/date";
 
 /* ─────────── number → Indian words helper ─────────── */
 function numberToIndianWords(n: number): string {
@@ -679,10 +680,10 @@ interface PaySlipData {
 
 function buildPaySlipHtml(data: PaySlipData): string {
   const doj = data.dateOfJoining
-    ? new Date(data.dateOfJoining).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    ? displayDate(data.dateOfJoining)
     : "";
   const pd = data.paidDate
-    ? new Date(data.paidDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    ? displayDate(data.paidDate)
     : "";
 
   return `<!DOCTYPE html>

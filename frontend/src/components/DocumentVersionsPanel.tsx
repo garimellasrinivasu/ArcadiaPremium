@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { documentService, type DocumentDto, type DocumentVersionDto } from "../services/documentService";
+import { formatDateTime } from "../utils/date";
 
 export const fmtIST = (iso?: string | null) =>
   iso
-    ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-      })
+    ? formatDateTime(new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`))
     : "—";
 const fmtSize = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 

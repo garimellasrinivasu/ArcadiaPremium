@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { executionTaskService, dailyExecutionUpdateService } from "../services/executionService";
 import type { ExecutionTaskDto, DailyExecutionUpdateDto } from "../services/executionService";
 import api from "../services/api";
+import { formatDate } from "../utils/date";
 
 interface ProjectOption {
   id: number;
@@ -303,7 +304,7 @@ export default function DailyExecutionUpdatePage() {
                               <tr key={h.id}>
                                 <td className="px-3 py-2 text-gray-700">
                                   {h.updateDate
-                                    ? new Date(h.updateDate).toLocaleDateString()
+                                    ? formatDate(h.updateDate)
                                     : "—"}
                                 </td>
                                 <td className="px-3 py-2 text-gray-600">

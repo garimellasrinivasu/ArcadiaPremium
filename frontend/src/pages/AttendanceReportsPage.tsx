@@ -4,6 +4,7 @@ import {
   attendanceReportService,
   type AttendanceReportDto,
 } from "../services/attendanceReportService";
+import { formatDate, formatDateTime, formatWeekdayDate } from "../utils/date";
 
 type ReportView = "site" | "date" | "detail";
 
@@ -315,9 +316,7 @@ function DateSummaryTable({ data }: { data: AttendanceReportDto }) {
               <tr key={i} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                 <td className="px-4 py-3 font-medium">
-                  {new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", {
-                    weekday: "short", day: "2-digit", month: "short", year: "numeric"
-                  })}
+                  {formatWeekdayDate(d.date)}
                 </td>
                 <td className="px-4 py-3 text-right">{d.siteCount}</td>
                 <td className="px-4 py-3 text-right">{d.totalRecords}</td>
@@ -385,7 +384,7 @@ function DetailTable({ data }: { data: AttendanceReportDto }) {
                     <button
                       onClick={() => {
                         setModalImage(r.imageBase64);
-                        setModalTitle(`${r.siteName} - ${new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`);
+                        setModalTitle(`${r.siteName} - ${formatDate(r.attendanceDate)}`);
                       }}
                       className="inline-block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-arcadia-400 transition cursor-pointer shadow-sm hover:shadow-md"
                       title="Click to enlarge"
@@ -401,14 +400,10 @@ function DetailTable({ data }: { data: AttendanceReportDto }) {
                   )}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  {new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", {
-                    day: "2-digit", month: "short", year: "numeric"
-                  })}
+                  {formatDate(r.attendanceDate)}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                  {r.capturedAt ? new Date(r.capturedAt).toLocaleString("en-IN", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
-                  }) : "-"}
+                  {r.capturedAt ? formatDateTime(r.capturedAt) : "-"}
                 </td>
                 <td className="px-3 py-2.5">{r.siteName}</td>
                 <td className="px-3 py-2.5">{r.submittedByName}</td>

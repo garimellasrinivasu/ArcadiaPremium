@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class InvoiceBookService {
 
     private static final Logger log = LoggerFactory.getLogger(InvoiceBookService.class);
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final InvoiceBookEntryRepository repo;
 
@@ -514,7 +514,7 @@ public class InvoiceBookService {
                 Cell c8 = row.createCell(8); c8.setCellValue(e.getEntryMode() != null ? e.getEntryMode() : "MANUAL"); c8.setCellStyle(dataStyle);
                 Cell c9 = row.createCell(9); c9.setCellValue(e.getCreatedBy() != null ? e.getCreatedBy() : ""); c9.setCellStyle(dataStyle);
                 Cell c10 = row.createCell(10);
-                c10.setCellValue(e.getCreatedAt() != null ? e.getCreatedAt().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm")) : "");
+                c10.setCellValue(e.getCreatedAt() != null ? e.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")) : "");
                 c10.setCellStyle(dataStyle);
             }
 

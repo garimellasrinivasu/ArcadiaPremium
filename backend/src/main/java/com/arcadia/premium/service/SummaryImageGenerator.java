@@ -654,8 +654,8 @@ public class SummaryImageGenerator {
         // ============================================================
         // HEADER: Title and date range
         // ============================================================
-        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
-        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a");
+        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a");
         String todayStr = LocalDate.now().format(dateFmt);
         String sinceStr = since.format(timeFmt);
 

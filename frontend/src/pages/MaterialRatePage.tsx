@@ -10,6 +10,7 @@ import type {
 } from "../services/materialService";
 import { vendorService } from "../services/vendorService";
 import type { VendorDto } from "../services/vendorService";
+import { formatDate } from "../utils/date";
 
 const TAX_TYPES = ["CGST", "SGST", "IGST"] as const;
 
@@ -281,7 +282,7 @@ export default function MaterialRatePage() {
                         {r.rate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-4 py-3 text-center text-gray-600">
-                        {r.rateDate}
+                        {formatDate(r.rateDate)}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-600">
                         {r.taxPercent != null ? `${r.taxPercent}%` : "—"}

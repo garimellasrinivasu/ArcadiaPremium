@@ -5,6 +5,7 @@ import { vendorService } from "../services/vendorService";
 import type { VendorDto } from "../services/vendorService";
 import { purchaseOrderService } from "../services/purchaseOrderService";
 import type { PurchaseOrderDto } from "../services/purchaseOrderService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] as const;
 
@@ -153,7 +154,7 @@ export default function POPaymentCertificatePage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.paymentDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.paymentDate)}</p>
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Mode</p>
@@ -173,7 +174,7 @@ export default function POPaymentCertificatePage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                     {r.bankName && <div><span className="text-gray-400 text-xs">Bank</span><p className="font-semibold">{r.bankName}</p></div>}
                     {r.chequeNo && <div><span className="text-gray-400 text-xs">Cheque No</span><p className="font-semibold">{r.chequeNo}</p></div>}
-                    {r.chequeDate && <div><span className="text-gray-400 text-xs">Cheque Date</span><p className="font-semibold">{r.chequeDate}</p></div>}
+                    {r.chequeDate && <div><span className="text-gray-400 text-xs">Cheque Date</span><p className="font-semibold">{formatDate(r.chequeDate)}</p></div>}
                     <div><span className="text-gray-400 text-xs">Created By</span><p className="font-semibold">{r.createdBy || "—"}</p></div>
                   </div>
                   {r.remarks && <p className="text-xs text-gray-500 mb-3">Remarks: {r.remarks}</p>}

@@ -5,6 +5,7 @@ import { purchaseOrderService } from "../services/purchaseOrderService";
 import type { PurchaseOrderDto } from "../services/purchaseOrderService";
 import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
+import { formatDate } from "../utils/date";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
@@ -175,7 +176,7 @@ export default function MRNPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.mrnDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.mrnDate)}</p>
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Source</p>

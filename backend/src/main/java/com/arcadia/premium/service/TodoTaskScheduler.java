@@ -34,7 +34,7 @@ import java.util.List;
 public class TodoTaskScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(TodoTaskScheduler.class);
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     // Image table colors (fully qualified to avoid clash with org.apache.poi.ss.usermodel.Color)
     private static final java.awt.Color DARK_BLUE = new java.awt.Color(0, 0, 128);
@@ -109,7 +109,7 @@ public class TodoTaskScheduler {
                 buildOverdueFlags(allTasks, today)
         );
 
-        String fileName = "TaskReport_" + today.format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + ".xlsx";
+        String fileName = "TaskReport_" + today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ".xlsx";
         String whatsAppMsg = buildWhatsAppDailySummary(todaysTasks, allTasks, today);
 
         // Send to configured recipients
@@ -177,7 +177,7 @@ public class TodoTaskScheduler {
                 buildPendingOverdueFlags(pendingTasks)
         );
 
-        String fileName = "WeeklySummary_" + today.format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + ".xlsx";
+        String fileName = "WeeklySummary_" + today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ".xlsx";
         String whatsAppMsg = buildWhatsAppWeeklySummary(completedTasks, pendingTasks, weekStart, today);
 
         List<NotificationConfig> emailRecipients = notificationConfigRepo.findByConfigTypeAndActive("EMAIL", true);

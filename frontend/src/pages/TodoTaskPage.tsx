@@ -7,6 +7,7 @@ import type { ProjectDto } from "../services/projectService";
 import { userService } from "../services/userService";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
+import { formatDate, formatDateTime } from "../utils/date";
 
 const CATEGORIES = ["CONSTRUCTION", "LEGAL", "FINANCE", "ADMIN"];
 const PRIORITIES = ["HIGH", "MEDIUM", "LOW"];
@@ -392,20 +393,20 @@ export default function TodoTaskPage() {
                   {task.description && <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</p>}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
                     {task.project && <span>Project: <strong>{task.project}</strong></span>}
-                    <span>Target: <strong className={task.daysRemaining !== undefined && task.daysRemaining < 0 ? "text-red-600" : ""}>{task.targetDate}</strong></span>
+                    <span>Target: <strong className={task.daysRemaining !== undefined && task.daysRemaining < 0 ? "text-red-600" : ""}>{formatDate(task.targetDate)}</strong></span>
                     {task.daysRemaining !== undefined && task.status !== "COMPLETED" && (
                       <span className={task.daysRemaining < 0 ? "text-red-600 font-medium" : task.daysRemaining === 0 ? "text-orange-600 font-medium" : "text-green-600"}>
                         {task.daysRemaining < 0 ? `${Math.abs(task.daysRemaining)}d overdue` : task.daysRemaining === 0 ? "Due today" : `${task.daysRemaining}d remaining`}
                       </span>
                     )}
-                    {task.actualCompletionDate && <span>Completed: <strong className="text-green-600">{task.actualCompletionDate}</strong></span>}
+                    {task.actualCompletionDate && <span>Completed: <strong className="text-green-600">{formatDate(task.actualCompletionDate)}</strong></span>}
                     <span>Assigned to: <strong>{task.assignedToName || task.assignedTo}</strong></span>
                     <span>By: <strong>{task.assignedByName || task.assignedBy}</strong></span>
                   </div>
                   {task.dailyUpdate && (
                     <div className="mt-2 bg-blue-50 rounded p-2 text-xs text-blue-800">
                       <strong>Latest Update:</strong> {task.dailyUpdate}
-                      {task.dailyUpdateAt && <span className="text-blue-500 ml-1">({new Date(task.dailyUpdateAt).toLocaleString()})</span>}
+                      {task.dailyUpdateAt && <span className="text-blue-500 ml-1">({formatDateTime(task.dailyUpdateAt)})</span>}
                     </div>
                   )}
                   {task.remarks && <p className="text-xs text-gray-400 mt-1 italic">Remarks: {task.remarks}</p>}

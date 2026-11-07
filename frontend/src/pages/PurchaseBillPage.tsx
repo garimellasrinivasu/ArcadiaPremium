@@ -7,6 +7,7 @@ import { vendorService } from "../services/vendorService";
 import type { VendorDto } from "../services/vendorService";
 import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] as const;
 
@@ -221,7 +222,7 @@ export default function PurchaseBillPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Bill Date</p>
-                  <p className="text-sm text-gray-700">{r.billDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.billDate)}</p>
                 </div>
                 <div className="w-24">
                   <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700"}`}>{r.status}</span>

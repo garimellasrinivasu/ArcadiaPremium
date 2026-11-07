@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { subcontractingReportService } from "../services/subcontractingReportService";
 import api from "../services/api";
+import { formatDate } from "../utils/date";
 
 interface ProjectOption { id: number; name: string; }
 interface ContractorOption { id: number; name: string; }
@@ -138,7 +139,7 @@ export default function WorkOrderReportsPage() {
                   <td className="px-4 py-3 text-gray-700">{r.projectName || "—"}</td>
                   <td className="px-4 py-3 text-gray-700">{r.contractorName || "—"}</td>
                   <td className="px-4 py-3 text-gray-700">
-                    {r.woDate ? new Date(r.woDate).toLocaleDateString("en-IN") : "—"}
+                    {r.woDate ? formatDate(r.woDate) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700"}`}>

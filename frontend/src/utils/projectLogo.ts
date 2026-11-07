@@ -5,7 +5,8 @@
  * to get the matching logo. Otherwise, use the global ProjectContext.
  */
 
-import { PROJECTS, type ProjectInfo } from "../contexts/ProjectContext";
+import { useEffect } from "react";
+import { PROJECTS, useProject, type ProjectInfo } from "../contexts/ProjectContext";
 
 /** Map of project key → logo path for quick lookup */
 const LOGO_MAP: Record<string, string> = {};
@@ -50,3 +51,24 @@ export function getLogoByName(name: string): string {
  * All available project keys for iteration.
  */
 export const PROJECT_KEYS = PROJECTS.map((p) => p.key);
+
+/**
+ * Keeps a page's own project dropdown in step with the project logos in the header:
+ * clicking a header logo switches the page, and choosing in the dropdown highlights the header logo.
+ * Returns the function to call when the dropdown changes.
+ */
+export function useHeaderProjectSync(names: string[], current: string, setCurrent: (name: string) => void) {
+  const { selectedProject, setSelectedProject } = useProject();
+
+  useEffect(() => {
+    const match = names.find((n) => getProjectByName(n)?.key === selectedProject.key);
+    if (match && match !== current) setCurrent(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject.key, names.join("|")]);
+
+  return (name: string) => {
+    setCurrent(name);
+    const proj = getProjectByName(name);
+    if (proj && proj.key !== selectedProject.key) setSelectedProject(proj);
+  };
+}

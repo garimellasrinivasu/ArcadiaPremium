@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { executionTemplateService, executionTaskService } from "../services/executionService";
 import type { ExecutionTemplateDto, ExecutionTaskDto } from "../services/executionService";
 import api from "../services/api";
+import { formatDate } from "../utils/date";
 
 type Tab = "templates" | "tasks";
 
@@ -517,7 +518,7 @@ export default function ProjectExecutionTemplatePage() {
                       <td className="px-4 py-3 text-gray-600">{tpl.tasks?.length ?? 0} task(s)</td>
                       <td className="px-4 py-3 text-gray-600">{tpl.createdBy}</td>
                       <td className="px-4 py-3 text-gray-500">
-                        {tpl.createdAt ? new Date(tpl.createdAt).toLocaleDateString() : "—"}
+                        {tpl.createdAt ? formatDate(tpl.createdAt) : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
@@ -698,7 +699,7 @@ export default function ProjectExecutionTemplatePage() {
                                 <span className="text-gray-500">Start Date:</span>{" "}
                                 <span className="font-medium text-gray-800">
                                   {task.startDate
-                                    ? new Date(task.startDate).toLocaleDateString()
+                                    ? formatDate(task.startDate)
                                     : "—"}
                                 </span>
                               </div>
@@ -706,7 +707,7 @@ export default function ProjectExecutionTemplatePage() {
                                 <span className="text-gray-500">Completion Date:</span>{" "}
                                 <span className="font-medium text-gray-800">
                                   {task.completedDate
-                                    ? new Date(task.completedDate).toLocaleDateString()
+                                    ? formatDate(task.completedDate)
                                     : "—"}
                                 </span>
                               </div>

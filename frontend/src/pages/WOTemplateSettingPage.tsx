@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { woTemplateService } from "../services/woTemplateService";
 import type { WOTemplateDto } from "../services/woTemplateService";
+import { formatDate } from "../utils/date";
 
 const CONTRACT_TYPES = [
   "Built-Up Area Including All Resources",
@@ -271,7 +272,7 @@ export default function WOTemplateSettingPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Created At</span>
-                      <p className="font-semibold">{t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN") : "—"}</p>
+                      <p className="font-semibold">{t.createdAt ? formatDate(t.createdAt) : "—"}</p>
                     </div>
                   </div>
                   {t.description && (

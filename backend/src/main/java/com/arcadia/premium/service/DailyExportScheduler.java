@@ -50,8 +50,8 @@ public class DailyExportScheduler {
 
         try {
             byte[] excelBytes = generateDailyWorkbook();
-            String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
-            String filename = "DailyExport_" + todayStr + ".xlsx";
+            String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String filename = "DailyExport_" + todayStr.replace("/", "-") + ".xlsx";
             String subject = "ArcadiaPremium - Daily Export Report - " + todayStr;
             String body = "Dear Team,\n\n" +
                     "Please find attached the daily export report for " + todayStr + ".\n\n" +
@@ -113,7 +113,7 @@ public class DailyExportScheduler {
         }
 
         int rowIdx = 1;
-        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (Project project : projects) {
             try {

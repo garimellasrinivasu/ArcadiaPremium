@@ -1400,7 +1400,7 @@
     const grandTotal = netBeforeTax + taxTotal;
 
     const today = new Date();
-    const dateStr = today.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    const dateStr = today.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }); // DD/MM/YYYY
     const quoteRef = cfg.refPrefix + '/' + (today.getFullYear().toString().slice(-2)) +
                      String(today.getMonth()+1).padStart(2,'0') +
                      String(today.getDate()).padStart(2,'0') + '/' +

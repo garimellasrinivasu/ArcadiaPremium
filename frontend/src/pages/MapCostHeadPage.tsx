@@ -5,6 +5,7 @@ import { jobService } from "../services/jobService";
 import type { JobDto } from "../services/jobService";
 import { activityMasterService } from "../services/activityService";
 import type { ActivityMasterDto } from "../services/activityService";
+import { formatDate } from "../utils/date";
 
 interface FormState {
   jobId: number | "";
@@ -252,7 +253,7 @@ export default function MapCostHeadPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Created At</span>
-                      <p className="font-semibold">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}</p>
+                      <p className="font-semibold">{item.createdAt ? formatDate(item.createdAt) : "—"}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">

@@ -7,6 +7,7 @@ import {
   type CreateGroundLevelWorkRequest,
 } from "../services/groundLevelWorkService";
 import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
+import { formatDate } from "../utils/date";
 
 const VEHICLE_TYPES = ["HITACHI", "TIPPER"];
 
@@ -298,11 +299,11 @@ export default function GroundLevelWorkPage() {
           </tr>
           <tr>
             <td class="label">Start Date</td>
-            <td class="value">${entry.startDate}</td>
+            <td class="value">${formatDate(entry.startDate)}</td>
           </tr>
           <tr>
             <td class="label">End Date</td>
-            <td class="value">${entry.endDate}</td>
+            <td class="value">${formatDate(entry.endDate)}</td>
           </tr>
           <tr>
             <td class="label">Number of Days</td>
@@ -474,7 +475,7 @@ export default function GroundLevelWorkPage() {
         <td style="padding:8px 12px;border:1px solid #d1d5db;">
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${e.vehicleType === "HITACHI" ? "#ffedd5" : "#e0e7ff"};color:${e.vehicleType === "HITACHI" ? "#9a3412" : "#3730a3"};">${e.vehicleType}</span>
         </td>
-        <td style="padding:8px 12px;border:1px solid #d1d5db;white-space:nowrap;">${e.startDate} &rarr; ${e.endDate}</td>
+        <td style="padding:8px 12px;border:1px solid #d1d5db;white-space:nowrap;">${formatDate(e.startDate)} &rarr; ${formatDate(e.endDate)}</td>
         <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:center;">${formatBillMonth(e.billMonth)}</td>
         <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:right;">${e.numberOfDays}</td>
         <td style="padding:8px 12px;border:1px solid #d1d5db;text-align:right;font-weight:500;">${e.totalWorkingDays}</td>
@@ -1006,7 +1007,7 @@ export default function GroundLevelWorkPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                      {entry.startDate} &rarr; {entry.endDate}
+                      {formatDate(entry.startDate)} &rarr; {formatDate(entry.endDate)}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{formatBillMonth(entry.billMonth)}</td>
                     <td className="px-4 py-3 text-right">{entry.numberOfDays}</td>

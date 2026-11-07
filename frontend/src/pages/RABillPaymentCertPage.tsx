@@ -8,6 +8,7 @@ import { contractorService } from "../services/contractorService";
 import type { ContractorDto } from "../services/contractorService";
 import { workOrderService } from "../services/jobService";
 import type { WorkOrderDto } from "../services/jobService";
+import { formatDate } from "../utils/date";
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
@@ -177,7 +178,7 @@ export default function RABillPaymentCertPage() {
                     <td className="px-4 py-3 font-semibold text-gray-800">{pay.certificateNo}</td>
                     <td className="px-4 py-3 text-gray-700">{pay.contractorName || "—"}</td>
                     <td className="px-4 py-3 text-gray-700">{pay.woNumber || "—"}</td>
-                    <td className="px-4 py-3 text-gray-700">{pay.paymentDate}</td>
+                    <td className="px-4 py-3 text-gray-700">{formatDate(pay.paymentDate)}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-indigo-50 text-indigo-700">
                         {MODE_LABELS[pay.paymentMode] || pay.paymentMode}

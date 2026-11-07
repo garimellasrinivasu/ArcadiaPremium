@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { rateAnalysisService } from "../services/rateAnalysisService";
 import type { RateAnalysisDto, CreateRateAnalysisRequest } from "../services/rateAnalysisService";
 import api from "../services/api";
+import { formatDate } from "../utils/date";
 
 // ── Constants ─────────────────────────────────────────────────────────
 
@@ -345,7 +346,7 @@ function TableRow({ r, expanded, onToggle, onSubmit, onApprove, onReject, onDele
           </span>
         </td>
         <td className="px-4 py-3 text-gray-600">{r.createdBy}</td>
-        <td className="px-4 py-3 text-gray-500">{new Date(r.createdAt).toLocaleDateString("en-IN")}</td>
+        <td className="px-4 py-3 text-gray-500">{formatDate(r.createdAt)}</td>
         <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
           <div className="flex justify-center gap-1.5 flex-wrap">
             {r.status === "DRAFT" && (

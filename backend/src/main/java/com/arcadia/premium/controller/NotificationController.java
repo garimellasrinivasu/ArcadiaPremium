@@ -91,7 +91,7 @@ public class NotificationController {
     public ResponseEntity<byte[]> downloadExcel(@RequestParam String projectName) {
         byte[] excel = reportService.generateExcel(projectName);
         String fileName = "WorkExecution_" + projectName.replaceAll("\\s+", "_") + "_"
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + ".xlsx";
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ".xlsx";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -107,7 +107,7 @@ public class NotificationController {
     public ResponseEntity<byte[]> downloadVillaStatusExcel(@RequestParam String projectName) {
         byte[] excel = reportService.generateVillaWiseExcel(projectName);
         String fileName = "VillaWise_Status_" + projectName.replaceAll("\\s+", "_") + "_"
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + ".xlsx";
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ".xlsx";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -118,7 +118,7 @@ public class NotificationController {
     public ResponseEntity<byte[]> downloadSummaryImage(@RequestParam String projectName) {
         byte[] image = summaryImageGenerator.generateSummaryImage(projectName);
         String fileName = "WorkExecution_Summary_" + projectName.replaceAll("\\s+", "_") + "_"
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + ".png";
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ".png";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                 .contentType(MediaType.IMAGE_PNG)

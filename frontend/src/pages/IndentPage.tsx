@@ -7,6 +7,7 @@ import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
 import { requisitionService } from "../services/requisitionService";
 import type { MaterialRequisitionDto } from "../services/requisitionService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] as const;
 
@@ -209,7 +210,7 @@ export default function IndentPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.indentDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.indentDate)}</p>
                 </div>
                 <div className="w-36">
                   <p className="text-xs text-gray-400">Type</p>

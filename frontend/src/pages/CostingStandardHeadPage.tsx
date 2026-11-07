@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { costingStandardHeadService } from "../services/costingService";
 import type { CostingStandardHeadDto } from "../services/costingService";
+import { formatDate } from "../utils/date";
 
 const CATEGORIES = ["ALL", "MATERIAL", "LABOUR", "OVERHEAD", "OTHER"] as const;
 
@@ -243,7 +244,7 @@ export default function CostingStandardHeadPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Created At</span>
-                      <p className="font-semibold">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}</p>
+                      <p className="font-semibold">{item.createdAt ? formatDate(item.createdAt) : "—"}</p>
                     </div>
                   </div>
                   {item.description && (

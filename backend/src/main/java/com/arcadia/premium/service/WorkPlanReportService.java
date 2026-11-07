@@ -35,8 +35,8 @@ public class WorkPlanReportService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkPlanReportService.class);
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
-    private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
-    private static final DateTimeFormatter DS = DateTimeFormatter.ofPattern("dd-MMM");
+    private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DS = DateTimeFormatter.ofPattern("dd/MM");
 
     public static final List<String> PHASES = List.of("EXCAVATION", "PCC", "FOOTINGS", "NECK_COLUMNS", "BACK_FILLING_COMPACTION",
             "PLINTH_BEAM", "COLUMNS", "GROUND_FLOOR_SLAB", "FIRST_FLOOR_COLUMNS", "FIRST_FLOOR_SLAB", "SECOND_FLOOR_COLUMNS", "SECOND_FLOOR_SLAB");
@@ -302,7 +302,7 @@ public class WorkPlanReportService {
     }
 
     private static String heading(MailData m) {
-        return m.weekly() ? "Week of " + m.planFrom().format(DS) + " to " + m.planTo().format(D) : m.today().format(DateTimeFormatter.ofPattern("EEEE, dd-MMM-yyyy"));
+        return m.weekly() ? "Week of " + m.planFrom().format(DS) + " to " + m.planTo().format(D) : m.today().format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy"));
     }
 
     private static String prevHeading(MailData m) {
@@ -336,7 +336,7 @@ public class WorkPlanReportService {
                 new TableImageRenderer.Card((m.weekly() ? "Last week" : "Yesterday") + ": extra", String.valueOf(ps.get("extra")), purple),
                 new TableImageRenderer.Card("Achieved", ps.get("percent") + "%", navy));
         return TableImageRenderer.render((m.weekly() ? "Weekly" : "Daily") + " work plan — " + projectName, heading(m), cards, sections,
-                "Arcadia Premium · Work Execution · generated " + LocalDateTime.now(IST).format(DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a")) + " IST");
+                "Arcadia Premium · Work Execution · generated " + LocalDateTime.now(IST).format(DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")) + " IST");
     }
 
     private static TableImageRenderer.Section workSection(String title, java.awt.Color colour, List<Map<String, Object>> rowsIn, boolean showDate,

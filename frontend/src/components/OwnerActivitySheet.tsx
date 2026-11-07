@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { ChecklistItemDto, ChecklistStatus } from "../services/checklistService";
+import { formatDate } from "../utils/date";
 
 /* html2canvas from cdnjs, loaded only when an image is saved */
 async function loadHtml2Canvas(): Promise<any> {
@@ -21,7 +22,7 @@ const STATUS: Record<ChecklistStatus, { label: string; color: string; bg: string
   COMPLETED: { label: "Completed", color: "#166534", bg: "#dcfce7" },
   NOT_APPLICABLE: { label: "Not applicable", color: "#64748b", bg: "#f1f5f9" },
 };
-const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" });
+const fmt = (d: string) => formatDate(d);
 const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
 export const UNASSIGNED = "Unassigned";
 

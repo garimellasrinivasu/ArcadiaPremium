@@ -10,6 +10,7 @@ import { activityMasterService } from "../services/activityService";
 import type { ActivityMasterDto } from "../services/activityService";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
+import { formatDate } from "../utils/date";
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
@@ -304,7 +305,7 @@ export default function MeasurementBookPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{mb.mbDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(mb.mbDate)}</p>
                 </div>
                 <div className="w-24">
                   <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_COLORS[mb.status] || "bg-gray-100 text-gray-700"}`}>

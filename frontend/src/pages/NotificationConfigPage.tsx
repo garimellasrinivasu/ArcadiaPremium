@@ -8,6 +8,7 @@ import type {
 } from "../services/notificationConfigService";
 import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
+import { formatDateTime } from "../utils/date";
 
 type Tab = "config" | "send" | "test";
 
@@ -512,7 +513,7 @@ export default function NotificationConfigPage() {
             <div className="p-4 border rounded">
               <h3 className="font-semibold mb-2">Send Results</h3>
               <p className="text-sm text-gray-600 mb-2">
-                Sent at: {new Date(sendResult.sentAt).toLocaleString()}
+                Sent at: {formatDateTime(sendResult.sentAt)}
               </p>
               <table className="w-full border text-sm">
                 <thead className="bg-gray-100">
@@ -626,7 +627,7 @@ export default function NotificationConfigPage() {
                 </p>
                 <p>
                   <strong>Time:</strong>{" "}
-                  {new Date(testResult.timestamp).toLocaleString()}
+                  {formatDateTime(testResult.timestamp)}
                 </p>
                 {testResult.success && testResult.message && (
                   <p className="text-green-700 mt-2">{testResult.message}</p>

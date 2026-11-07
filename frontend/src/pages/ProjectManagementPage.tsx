@@ -4,6 +4,7 @@ import {
   type ProjectDto,
   type CreateProjectRequest,
 } from "../services/projectService";
+import { formatDate } from "../utils/date";
 
 export default function ProjectManagementPage() {
   const [projects, setProjects] = useState<ProjectDto[]>([]);
@@ -213,11 +214,7 @@ export default function ProjectManagementPage() {
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                    {new Date(p.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatDate(p.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-gray-500">{p.description || "-"}</td>
 

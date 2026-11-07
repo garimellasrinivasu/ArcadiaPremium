@@ -8,6 +8,7 @@ import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] as const;
 
@@ -209,11 +210,11 @@ export default function RequisitionPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.requisitionDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.requisitionDate)}</p>
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Required</p>
-                  <p className="text-sm text-gray-700">{r.requiredDate || "—"}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.requiredDate, "—")}</p>
                 </div>
                 <div className="w-20">
                   <p className="text-xs text-gray-400">Items</p>

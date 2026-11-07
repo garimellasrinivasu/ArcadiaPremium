@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useProject } from "../contexts/ProjectContext";
 import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { invoiceBookService, type InvoiceBookEntryDto } from "../services/invoiceBookService";
+import { formatDate as displayDate } from "../utils/date";
 
 /* ═══════════════════════════════════════════
    HELPERS
@@ -16,12 +17,7 @@ function formatCurrency(n: number): string {
 }
 
 function formatDate(d: string): string {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return displayDate(d);
 }
 
 function toISODate(d: Date): string {

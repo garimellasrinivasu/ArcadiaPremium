@@ -9,6 +9,7 @@ import { useIsViewOnly } from "../components/ViewOnlyWrapper";
 const ExcelEditor = lazy(() => import("../components/ExcelEditor"));
 const WordEditor = lazy(() => import("../components/WordEditor"));
 import type { User } from "../types/user";
+import { formatDateTime } from "../utils/date";
 
 /* ─── helpers ─── */
 function formatFileSize(bytes: number): string {
@@ -27,10 +28,7 @@ function fileIcon(contentType: string): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 /* ─── Breadcrumb path item ─── */

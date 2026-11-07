@@ -111,7 +111,7 @@ public class WorkExecutionReportService {
         Map<String, List<VillaConstructionStatus>> byPhase = allStatuses.stream()
                 .collect(Collectors.groupingBy(VillaConstructionStatus::getPhase));
 
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             // Summary sheet
@@ -265,7 +265,7 @@ public class WorkExecutionReportService {
      */
     public byte[] generateVillaWiseExcel(String projectName) {
         List<VillaConstructionStatus> allStatuses = repository.findByProjectName(projectName);
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         // Build lookup: villaNumber -> phase -> completed (both activities done)
         Map<Integer, Map<String, Boolean>> villaPhaseMap = new HashMap<>();

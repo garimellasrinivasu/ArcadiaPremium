@@ -4,7 +4,7 @@ export interface ProjectInfo {
   key: string;
   name: string;
   shortName: string;
-  logo: string; // path to SVG in /public
+  logo: string; // path to the logo image in /public
 }
 
 export const PROJECTS: ProjectInfo[] = [
@@ -18,13 +18,13 @@ export const PROJECTS: ProjectInfo[] = [
     key: "REDFERN_SQUARE",
     name: "Praneeth Redfern Square",
     shortName: "Redfern Square",
-    logo: "/logo-redfern-square.svg",
+    logo: "/logo-redfern-square.webp",
   },
   {
     key: "AALAYA_ARVINDHAM",
     name: "Aalaya Arvindham",
     shortName: "Aalaya Arvindham",
-    logo: "/logo-aalaya-arvindham.svg",
+    logo: "/logo-aravindham.webp",
   },
 ];
 

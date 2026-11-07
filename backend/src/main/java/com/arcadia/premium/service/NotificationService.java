@@ -186,12 +186,12 @@ public class NotificationService {
      * Send Work Execution Summary to all configured WhatsApp + Email recipients for a project
      */
     public Map<String, Object> sendSummary(String projectName) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String dateStr = LocalDate.now().format(fmt);
 
         // Generate villa-wise status Excel
         byte[] villaWiseExcel = null;
-        String villaWiseFileName = "VillaWise_Status_" + projectName.replaceAll("\\s+", "_") + "_" + dateStr + ".xlsx";
+        String villaWiseFileName = "VillaWise_Status_" + projectName.replaceAll("\\s+", "_") + "_" + dateStr.replace("/", "-") + ".xlsx";
         try {
             villaWiseExcel = reportService.generateVillaWiseExcel(projectName);
             log.info("Villa-wise Excel generated: {} bytes", villaWiseExcel != null ? villaWiseExcel.length : 0);
@@ -459,7 +459,7 @@ public class NotificationService {
                 "<p><strong>From:</strong> " + fromAddress + "</p>" +
                 "<p><strong>To:</strong> " + toAddress + "</p>" +
                 "<p><strong>Sent at:</strong> " + java.time.LocalDateTime.now().format(
-                    DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a")) + "</p>" +
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")) + "</p>" +
                 "<hr style='border: 1px solid #eee;'/>" +
                 "<p style='color: #666; font-size: 12px;'>If you received this email, " +
                 "the SMTP configuration is working correctly.</p>" +

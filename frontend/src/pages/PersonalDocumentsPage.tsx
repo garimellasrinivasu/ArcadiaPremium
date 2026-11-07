@@ -4,6 +4,7 @@ import {
   PersonalDocumentDto,
   DOCUMENT_CATEGORIES,
 } from "../services/personalDocumentService";
+import { formatDate as displayDate } from "../utils/date";
 
 export default function PersonalDocumentsPage() {
   const [docs, setDocs] = useState<PersonalDocumentDto[]>([]);
@@ -133,11 +134,7 @@ export default function PersonalDocumentsPage() {
 
   const formatDate = (d: string) => {
     try {
-      return new Date(d).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+      return displayDate(d, d);
     } catch {
       return d;
     }

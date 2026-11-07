@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { saleQuoteService } from "../services/saleQuoteService";
 import type { SaleQuoteDto, CreateSaleQuoteRequest } from "../services/saleQuoteService";
+import { formatDate } from "../utils/date";
 
 type Tab = "calculator" | "saved";
 type FilterPeriod = "today" | "week" | "month" | "year" | "custom" | "all";
@@ -242,7 +243,7 @@ export default function SaleQuotePage() {
                     </div>
                     <div className="w-24 text-right">
                       <p className="text-xs text-gray-400">Date</p>
-                      <p className="text-sm text-gray-600">{q.quoteDate}</p>
+                      <p className="text-sm text-gray-600">{formatDate(q.quoteDate)}</p>
                     </div>
                     <span className={`text-xs font-bold transition-transform ${expandedId === q.id ? "rotate-90" : ""}`}>
                       &#9654;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
+import { formatDateTime, formatWeekdayDate } from "../utils/date";
 
 interface PageStats { page: string; visits: number; visitors: number; today: number; devices: Record<string, number> }
 interface Summary {
@@ -14,8 +15,8 @@ const PAGES: { key: string; name: string; color: string }[] = [
   { key: "aalaya-arvindham", name: "Aalaya Arvindham", color: "#17252F" },
 ];
 const nameOf = (k: string) => PAGES.find((p) => p.key === k)?.name || k;
-const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short" });
-const fmtTime = (t: string) => new Date(t).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const fmtDay = (d: string) => formatWeekdayDate(d);
+const fmtTime = (t: string) => formatDateTime(t);
 const errOf = (e: any) => e?.response?.data?.error || e?.message || "Something went wrong";
 
 /** Anonymous visitor counts for the public Deewali showcase pages opened from the QR codes. */

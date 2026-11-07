@@ -21,6 +21,8 @@ import { clusterInchargeService, type ClusterInchargeDto } from "../services/clu
 import { authService } from "../services/authService";
 import ScheduleImportExport from "../components/ScheduleImportExport";
 import PlanVsActualView from "../components/PlanVsActualView";
+import { getProjectByName, useHeaderProjectSync } from "../utils/projectLogo";
+import { formatDate, formatDateTime, formatWeekdayDate } from "../utils/date";
 
 type WETab = "construction" | "summary" | "daily" | "plan";
 
@@ -31,6 +33,12 @@ export default function WorkExecutionUpdatesPage() {
   const [activePhase, setActivePhase] = useState(CONSTRUCTION_PHASES[0].key);
   const [isAdmin, setIsAdmin] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const chooseProject = useHeaderProjectSync(projects.map((p) => p.name), selectedProject, (name) => {
+    setSelectedProject(name);
+    setActiveTab("construction");
+    setActivePhase(CONSTRUCTION_PHASES[0].key);
+  });
+  const projectLogo = getProjectByName(selectedProject)?.logo;
   useEffect(() => { authService.getCurrentUser().then((u) => setIsAdmin(u.role?.name === "ADMIN")).catch(() => {}); }, []);
 
   const activePlots = isAravindham(selectedProject)
@@ -66,20 +74,19 @@ export default function WorkExecutionUpdatesPage() {
     <div className="space-y-3 sm:space-y-4">
       {/* Header with project selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h1 className="text-lg sm:text-xl font-bold text-gray-800">
-          Work Execution Updates &mdash; {selectedProject}
-        </h1>
+        <div className="flex items-center gap-3">
+          {projectLogo && <img src={projectLogo} alt={selectedProject} className="h-10 sm:h-12 w-auto object-contain shrink-0" />}
+          <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+            Work Execution Updates &mdash; {selectedProject}
+          </h1>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
         {projectHasMasterPlan && isArcadia(selectedProject) && (
           <ScheduleImportExport projectName={selectedProject} plots={activePlots} isAdmin={isAdmin} onImported={() => setReloadKey((k) => k + 1)} />
         )}
         <select
           value={selectedProject}
-          onChange={(e) => {
-            setSelectedProject(e.target.value);
-            setActiveTab("construction");
-            setActivePhase(CONSTRUCTION_PHASES[0].key);
-          }}
+          onChange={(e) => chooseProject(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-amber-500"
         >
           {projects.map((p) => (
@@ -388,7 +395,7 @@ function ConstructionMapView({
                   {isSingle ? (
                     <div
                       onClick={() => openModal(plot, 1)}
-                      title={`Villa ${plot.villa} - ${phaseInfo.activity1}: ${a1 ? "Done" : "Not Done"}${!a1 && status?.plannedTargetDate ? ` · Planned ${status.plannedTargetDate.split("-").reverse().join("-")}${notUpdated ? " (not updated)" : ""}` : ""} (Click to edit)`}
+                      title={`Villa ${plot.villa} - ${phaseInfo.activity1}: ${a1 ? "Done" : "Not Done"}${!a1 && status?.plannedTargetDate ? ` · Planned ${formatDate(status.plannedTargetDate)}${notUpdated ? " (not updated)" : ""}` : ""} (Click to edit)`}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -577,10 +584,7 @@ function ConstructionMapView({
                             <td className="px-2 py-1 text-green-600 font-medium">{log.newIncharge || "—"}</td>
                             <td className="px-2 py-1 text-gray-600">{log.changedBy}</td>
                             <td className="px-2 py-1 text-gray-500">
-                              {new Date(log.changedAt).toLocaleDateString("en-IN", {
-                                day: "2-digit", month: "short", year: "numeric",
-                                hour: "2-digit", minute: "2-digit",
-                              })}
+                              {formatDateTime(log.changedAt)}
                             </td>
                           </tr>
                         ))}
@@ -978,7 +982,7 @@ function shiftDate(ymd: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 function formatDay(ymd: string): string {
-  return new Date(`${ymd}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+  return formatWeekdayDate(ymd);
 }
 
 /**

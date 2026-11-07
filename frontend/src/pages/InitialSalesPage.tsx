@@ -3,6 +3,7 @@ import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { initialSalesService } from "../services/initialSalesService";
 import type { InitialSaleDto, CreateInitialSaleRequest } from "../services/initialSalesService";
 import { useProject, PROJECTS } from "../contexts/ProjectContext";
+import { formatDate as displayDate } from "../utils/date";
 
 /* ═══════════════════════════════════════════
    CONSTANTS & HELPERS
@@ -38,7 +39,7 @@ function formatINR(n: number) {
 function formatDate(iso: string) {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    return displayDate(iso, iso);
   } catch {
     return iso;
   }
@@ -481,7 +482,7 @@ export default function InitialSalesPage() {
 </style></head>
 <body>
   <h1>${activeProject.name} - Initial Sales Quote</h1>
-  <h3>Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</h3>
+  <h3>Date: ${displayDate(new Date())}</h3>
   <table>
     <thead><tr><th>S.No</th><th>Details</th><th>Data/Input</th><th>Old Value</th><th>New Value</th></tr></thead>
     <tbody>${rows}</tbody>
@@ -591,7 +592,7 @@ export default function InitialSalesPage() {
       </style>
     </head><body>
       <h1 style="color:#0275c7;margin-bottom:4px;font-size:20px;">${activeProject.name} - Initial Sales Quote</h1>
-      <h3 style="color:#555;margin-top:0;font-size:14px;">Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</h3>
+      <h3 style="color:#555;margin-top:0;font-size:14px;">Date: ${displayDate(new Date())}</h3>
       <table>
         <thead><tr><th>S.No</th><th>Details</th><th>Data/Input</th><th>Old Value</th><th>New Value</th></tr></thead>
         <tbody>${rows}</tbody>

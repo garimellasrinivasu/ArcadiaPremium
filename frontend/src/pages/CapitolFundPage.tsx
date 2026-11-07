@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { formatDate } from "../utils/date";
 
 /* ─── Helpers ─── */
 function formatCurrency(amount: number): string {
@@ -198,9 +199,7 @@ export default function CapitolFundPage() {
     }, 200);
   }
 
-  const todayStr = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
-  });
+  const todayStr = formatDate(new Date());
 
   const periodLabel = parseInt(periodMonths) >= 12
     ? `${Math.floor(parseInt(periodMonths) / 12)} year${Math.floor(parseInt(periodMonths) / 12) > 1 ? "s" : ""}${parseInt(periodMonths) % 12 > 0 ? ` ${parseInt(periodMonths) % 12} mo` : ""}`

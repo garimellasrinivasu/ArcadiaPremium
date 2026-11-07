@@ -16,6 +16,7 @@ import {
   type ChecklistSummary,
   type TrackerType,
 } from "../services/checklistService";
+import { formatDate, formatDateTime } from "../utils/date";
 
 /* ─── Helpers (same look as Project Documents) ─── */
 const STATUS_META: Record<ChecklistStatus, { label: string; pill: string; dot: string }> = {
@@ -26,9 +27,9 @@ const STATUS_META: Record<ChecklistStatus, { label: string; pill: string; dot: s
 };
 const todayIST = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 const fmtDate = (d?: string | null) =>
-  d ? new Date(`${d.slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }) : "—";
+  formatDate(d?.slice(0, 10), "—");
 const fmtDateTime = (d?: string | null) =>
-  d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+  d ? formatDateTime(d) : "—";
 const fmtSize = (n: number) => (n === 0 ? "0 KB" : n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const fileIcon = (type: string, name = "") => {
   const n = name.toLowerCase();

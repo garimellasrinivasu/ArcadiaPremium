@@ -4,6 +4,7 @@ import type { WalkInDto, CreateWalkInRequest, DashboardStats } from "../services
 import { projectService } from "../services/projectService";
 import { authService } from "../services/authService";
 import type { User } from "../types/user";
+import { formatDate } from "../utils/date";
 
 const SOURCE_OPTIONS = [
   "Entrance Board", "Hoarding", "Walk-in", "IVR-MCube-Offline", "PPC",
@@ -755,7 +756,7 @@ export default function WalkInsPage() {
                           <div
                             className="bg-blue-500 rounded-t w-5 transition-all"
                             style={{ height: `${(d.count / maxCount) * 120}px` }}
-                            title={`${d.date}: ${d.count}`}
+                            title={`${formatDate(d.date)}: ${d.count}`}
                           />
                           <span className="text-xs text-gray-400 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
                             {d.date.slice(5)}

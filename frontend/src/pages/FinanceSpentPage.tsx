@@ -5,6 +5,7 @@ import { financeSpentService } from "../services/financeSpentService";
 import type { FinanceSpentDto, CreateFinanceSpentRequest, UserName } from "../services/financeSpentService";
 import type { User } from "../types/user";
 import api from "../services/api";
+import { formatDate as displayDate, formatDateTime as displayDateTime } from "../utils/date";
 
 /* ═══════════════════════════════════════════
    TYPES & HELPERS
@@ -19,13 +20,11 @@ function formatCurrency(n: number) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return displayDate(d);
 }
 
 function formatDateTime(d: string) {
-  const dt = new Date(d);
-  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-    + " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return displayDateTime(d);
 }
 
 function statusBadge(status: string) {

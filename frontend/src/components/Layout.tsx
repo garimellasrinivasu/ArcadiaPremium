@@ -4,6 +4,7 @@ import { authService } from "../services/authService";
 import type { User } from "../types/user";
 import ViewOnlyWrapper from "./ViewOnlyWrapper";
 import { useProject, PROJECTS } from "../contexts/ProjectContext";
+import { formatWeekdayDate } from "../utils/date";
 
 interface MenuItem {
   label: string;
@@ -147,12 +148,7 @@ const menuSections: MenuSection[] = [
 function CurrentDate() {
   return (
     <span className="text-sm text-gray-600">
-      {new Date().toLocaleDateString("en-IN", {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })}
+      {formatWeekdayDate(new Date())}
     </span>
   );
 }

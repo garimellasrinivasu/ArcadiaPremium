@@ -5,6 +5,7 @@ import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { materialMasterService } from "../services/materialService";
 import type { MaterialMasterDto } from "../services/materialService";
+import { formatDate } from "../utils/date";
 
 const STATUS_LIST = ["All", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "COMPLETED"] as const;
 
@@ -185,7 +186,7 @@ export default function StockTransferPage() {
                 </div>
                 <div className="w-28">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{r.transferDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(r.transferDate)}</p>
                 </div>
                 <div className="w-24">
                   <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700"}`}>{r.status}</span>

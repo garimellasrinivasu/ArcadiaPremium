@@ -14,6 +14,7 @@ import { projectService } from "../services/projectService";
 import type { ProjectDto } from "../services/projectService";
 import { measurementBookService } from "../services/measurementBookService";
 import type { MeasurementBookDto } from "../services/measurementBookService";
+import { formatDate } from "../utils/date";
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
@@ -279,7 +280,7 @@ export default function RABillPage() {
                 </div>
                 <div className="w-24">
                   <p className="text-xs text-gray-400">Date</p>
-                  <p className="text-sm text-gray-700">{bill.billDate}</p>
+                  <p className="text-sm text-gray-700">{formatDate(bill.billDate)}</p>
                 </div>
                 <div className="w-28">
                   <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${BILL_TYPE_LABELS[bill.billType] ? "bg-indigo-50 text-indigo-700" : "bg-gray-100 text-gray-600"}`}>

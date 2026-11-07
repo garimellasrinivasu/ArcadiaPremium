@@ -3,6 +3,7 @@ import { useDownloadEnabled } from "../components/ViewOnlyWrapper";
 import { authService } from "../services/authService";
 import { pujaExpensesService } from "../services/pujaExpensesService";
 import type { PujaExpenseDto, CreatePujaExpenseRequest } from "../services/pujaExpensesService";
+import { formatDate } from "../utils/date";
 
 /* ═══════════════════════════════════════════
    CONSTANTS & HELPERS
@@ -67,8 +68,7 @@ function formatINR(n: number) {
 function formatDateDisplay(isoDate: string) {
   if (!isoDate) return "";
   try {
-    const d = new Date(isoDate + "T00:00:00");
-    return d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    return formatDate(isoDate, isoDate);
   } catch {
     return isoDate;
   }

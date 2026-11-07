@@ -19,6 +19,7 @@ import {
 import { projectService, type ProjectDto } from "../services/projectService";
 import { mastriLeaderService, type MastriLeaderDto } from "../services/mastriLeaderService";
 import type { User } from "../types/user";
+import { formatDate, formatDateTime } from "../utils/date";
 
 
 const ROLE_DISPLAY: Record<string, string> = {
@@ -416,7 +417,7 @@ function CaptureTab({
                 <img src={capturedImage} alt="Captured" className="w-full rounded-lg" />
                 {captureDateTime && (
                   <p className="text-xs text-gray-500 text-center">
-                    Captured: {new Date(captureDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+                    Captured: {formatDateTime(captureDateTime, "", true)}
                   </p>
                 )}
                 <div className="flex gap-3 justify-center">
@@ -870,7 +871,7 @@ function AttendanceCard({
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete this attendance record?\n\nSite: ${record.siteName}\nDate: ${record.attendanceDate}\nSubmitted by: ${record.submittedByName}\n\nThis action cannot be undone.`)) return;
+    if (!confirm(`Are you sure you want to delete this attendance record?\n\nSite: ${record.siteName}\nDate: ${formatDate(record.attendanceDate)}\nSubmitted by: ${record.submittedByName}\n\nThis action cannot be undone.`)) return;
     setDeleting(true);
     try {
       await siteAttendanceService.deleteRecord(record.id);
@@ -913,16 +914,16 @@ function AttendanceCard({
             )}
           </div>
           <div className="text-xs text-gray-500 mt-0.5">
-            {record.attendanceDate} &middot; by {record.submittedByName}
+            {formatDate(record.attendanceDate)} &middot; by {record.submittedByName}
           </div>
           {record.captureDateTime && (
             <div className="text-xs text-gray-400 mt-0.5">
-              Captured: {new Date(record.captureDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+              Captured: {formatDateTime(record.captureDateTime)}
             </div>
           )}
           {!record.captureDateTime && record.createdAt && (
             <div className="text-xs text-gray-400 mt-0.5">
-              Submitted: {new Date(record.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+              Submitted: {formatDateTime(record.createdAt)}
             </div>
           )}
           {record.mastriLeaderName && (
@@ -1172,7 +1173,7 @@ function EditAttendanceModal({
         </div>
         <div className="p-5 space-y-4">
           <p className="text-xs text-gray-500">
-            {record.siteName} &middot; {record.attendanceDate}
+            {record.siteName} &middot; {formatDate(record.attendanceDate)}
           </p>
 
           {/* Work Type Toggle */}
@@ -1529,9 +1530,7 @@ function DateSummaryTable({ report }: { report: AttendanceReportDto }) {
             {report.dateSummaries.map((d, i) => (
               <tr key={i} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">
-                  {new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", {
-                    day: "2-digit", month: "short", year: "numeric"
-                  })}
+                  {formatDate(d.date)}
                 </td>
                 <td className="px-4 py-3 text-right">{d.siteCount}</td>
                 <td className="px-4 py-3 text-right">{d.totalRecords}</td>
@@ -1601,7 +1600,7 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
                     <button
                       onClick={() => {
                         setModalImage(r.imageBase64);
-                        setModalTitle(`${r.siteName} - ${new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`);
+                        setModalTitle(`${r.siteName} - ${formatDate(r.attendanceDate)}`);
                       }}
                       className="inline-block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-arcadia-400 transition cursor-pointer shadow-sm hover:shadow-md"
                       title="Click to enlarge"
@@ -1617,14 +1616,10 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
                   )}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  {new Date(r.attendanceDate + "T00:00:00").toLocaleDateString("en-IN", {
-                    day: "2-digit", month: "short", year: "numeric"
-                  })}
+                  {formatDate(r.attendanceDate)}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                  {r.capturedAt ? new Date(r.capturedAt).toLocaleString("en-IN", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
-                  }) : "-"}
+                  {r.capturedAt ? formatDateTime(r.capturedAt) : "-"}
                 </td>
                 <td className="px-3 py-2.5">{r.siteName}</td>
                 <td className="px-3 py-2.5 text-center">
@@ -1637,9 +1632,7 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
                 <td className="px-3 py-2.5">{r.mastriLeaderName || "-"}</td>
                 <td className="px-3 py-2.5">{r.submittedByName}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                  {r.submittedAt ? new Date(r.submittedAt).toLocaleString("en-IN", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
-                  }) : "-"}
+                  {r.submittedAt ? formatDateTime(r.submittedAt) : "-"}
                 </td>
                 <td className="px-3 py-2.5 text-right font-semibold">{r.totalWorkers}</td>
                 <td className="px-3 py-2.5 text-right">{r.maleMastriCount}</td>
@@ -1658,9 +1651,7 @@ function DetailRecordsTable({ report }: { report: AttendanceReportDto }) {
                 <td className="px-3 py-2.5 text-gray-500 max-w-[200px] truncate">{r.remarks || "-"}</td>
                 <td className="px-3 py-2.5">{r.approverName || "-"}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                  {r.approvedAt ? new Date(r.approvedAt).toLocaleString("en-IN", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true
-                  }) : "-"}
+                  {r.approvedAt ? formatDateTime(r.approvedAt) : "-"}
                 </td>
               </tr>
             ))}

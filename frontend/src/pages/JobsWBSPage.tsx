@@ -4,6 +4,7 @@ import type { JobDto, CreateJobRequest } from "../services/jobService";
 import { activityMasterService } from "../services/activityService";
 import type { ActivityMasterDto } from "../services/activityService";
 import api from "../services/api";
+import { formatDate } from "../utils/date";
 
 const STATUS_OPTIONS = ["DRAFT", "ACTIVE", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
 
@@ -481,9 +482,9 @@ export default function JobsWBSPage() {
                   {/* Meta */}
                   <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                     <span>Created by: {job.createdBy}</span>
-                    <span>Created: {new Date(job.createdAt).toLocaleDateString()}</span>
+                    <span>Created: {formatDate(job.createdAt)}</span>
                     {job.updatedAt && (
-                      <span>Updated: {new Date(job.updatedAt).toLocaleDateString()}</span>
+                      <span>Updated: {formatDate(job.updatedAt)}</span>
                     )}
                   </div>
 
