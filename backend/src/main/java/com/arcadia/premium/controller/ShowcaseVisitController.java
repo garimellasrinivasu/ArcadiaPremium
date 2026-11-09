@@ -2,6 +2,8 @@ package com.arcadia.premium.controller;
 
 import com.arcadia.premium.model.ShowcaseVisit;
 import com.arcadia.premium.repository.ShowcaseVisitRepository;
+import com.arcadia.premium.service.ShowcaseLocationService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -28,15 +30,18 @@ public class ShowcaseVisitController {
     private static final String VIEW = "hasRole('ADMIN') or @pageAccess.hasAnyAccess(authentication, 'DIWALI_INVITES')";
 
     private final ShowcaseVisitRepository repo;
+    private final ShowcaseLocationService locations;
 
-    public ShowcaseVisitController(ShowcaseVisitRepository repo) {
+    public ShowcaseVisitController(ShowcaseVisitRepository repo, ShowcaseLocationService locations) {
         this.repo = repo;
+        this.locations = locations;
     }
 
     /** Public: record one visit. A reload by the same device within 30 minutes is not counted again. */
     @PostMapping("/track")
     public ResponseEntity<Void> track(@RequestBody Map<String, Object> body,
-                                      @RequestHeader(value = "User-Agent", required = false) String ua) {
+                                      @RequestHeader(value = "User-Agent", required = false) String ua,
+                                      HttpServletRequest request) {
         String page = String.valueOf(body.getOrDefault("page", ""));
         String visitorId = String.valueOf(body.getOrDefault("visitorId", ""));
         if (!PAGES.contains(page) || !VISITOR_ID.matcher(visitorId).matches() || ua == null || BOT.matcher(ua).find()) {
@@ -53,7 +58,7 @@ public class ShowcaseVisitController {
             v.setVisitorId(visitorId);
             v.setDevice(deviceOf(ua));
             v.setReferrer(referrerHost(String.valueOf(body.getOrDefault("referrer", ""))));
-            repo.save(v);
+            locations.locate(repo.save(v).getId(), clientIp(request));
         }
         return ResponseEntity.noContent().build();
     }
@@ -74,7 +79,13 @@ public class ShowcaseVisitController {
             row.put("visits", vs.size());
             row.put("visitors", vs.stream().map(ShowcaseVisit::getVisitorId).distinct().count());
             row.put("today", vs.stream().filter(v -> v.getVisitedAt().toLocalDate().equals(today)).count());
+            Map<String, Long> places = new LinkedHashMap<>();
+            vs.stream().filter(v -> v.getLocation() != null)
+                    .collect(java.util.stream.Collectors.groupingBy(ShowcaseVisit::getLocation, java.util.stream.Collectors.counting()))
+                    .entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(8)
+                    .forEach(e -> places.put(e.getKey(), e.getValue()));
             row.put("devices", devices);
+            row.put("locations", places);
             pages.add(row);
         }
 
@@ -97,6 +108,7 @@ public class ShowcaseVisitController {
             row.put("page", v.getPage());
             row.put("device", v.getDevice());
             row.put("referrer", v.getReferrer());
+            row.put("location", v.getLocation());
             return row;
         }).toList();
 
@@ -112,6 +124,13 @@ public class ShowcaseVisitController {
         if (ua.contains("Android")) return "Android";
         if (ua.contains("Windows") || ua.contains("Macintosh") || ua.contains("Linux") || ua.contains("CrOS")) return "Desktop";
         return "Other";
+    }
+
+    /** The visitor's address as passed on by the web server; used only for the city lookup, never stored */
+    private static String clientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 
     private static String referrerHost(String ref) {

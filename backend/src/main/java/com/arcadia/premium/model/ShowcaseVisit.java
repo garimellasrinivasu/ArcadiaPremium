@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
-/** One visit to a public Deewali showcase page. Anonymous: no name, phone or IP address is kept. */
+/** One visit to a public Deewali showcase page. Anonymous: no name, phone or IP address is kept, only an approximate city looked up from the address. */
 @Entity
 @Table(name = "showcase_visits", indexes = @Index(name = "idx_showcase_visit_page_time", columnList = "page, visitedAt"))
 public class ShowcaseVisit {
@@ -32,6 +32,10 @@ public class ShowcaseVisit {
     @Column(length = 100)
     private String referrer;
 
+    /** Approximate place, e.g. "Hyderabad, Telangana, India", looked up from the network address (which is not kept) */
+    @Column(length = 120)
+    private String location;
+
     public Long getId() { return id; }
     public String getPage() { return page; }
     public void setPage(String page) { this.page = page; }
@@ -43,4 +47,6 @@ public class ShowcaseVisit {
     public void setDevice(String device) { this.device = device; }
     public String getReferrer() { return referrer; }
     public void setReferrer(String referrer) { this.referrer = referrer; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 }

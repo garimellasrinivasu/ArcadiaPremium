@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 import { formatDateTime, formatWeekdayDate } from "../utils/date";
 
-interface PageStats { page: string; visits: number; visitors: number; today: number; devices: Record<string, number> }
+interface PageStats { page: string; visits: number; visitors: number; today: number; devices: Record<string, number>; locations?: Record<string, number> }
 interface Summary {
   pages: PageStats[];
   daily: ({ date: string } & Record<string, number | string>)[];
-  recent: { visitedAt: string; page: string; device: string; referrer?: string }[];
+  recent: { visitedAt: string; page: string; device: string; referrer?: string; location?: string }[];
 }
 
 const PAGES: { key: string; name: string; color: string }[] = [
@@ -42,7 +42,7 @@ export default function ShowcaseVisitorsPage() {
         <button onClick={() => void load()} className="px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50">↻ Refresh</button>
       </div>
       <p className="text-xs text-gray-500">
-        Visits to the three Deewali greeting pages opened from the QR codes. Visitors are anonymous: no name, phone number or IP address is recorded.
+        Visits to the three Deewali greeting pages opened from the QR codes. Visitors are anonymous: no name, phone number or IP address is recorded. The place is approximate, looked up from the visitor's internet connection, and can show a nearby city or be blank.
         Reloading the page within 30 minutes is not counted again, and views inside this app are not counted.
       </p>
 
@@ -77,6 +77,16 @@ export default function ShowcaseVisitorsPage() {
                       ))}
                       {!p?.visits && <span className="text-xs text-gray-400">No visits yet</span>}
                     </div>
+                    {Object.keys(p?.locations || {}).length > 0 && (
+                      <div>
+                        <div className="text-[11px] font-semibold text-gray-500 mb-1">Top places</div>
+                        <ul className="space-y-0.5 text-xs text-gray-700">
+                          {Object.entries(p?.locations || {}).map(([place, n]) => (
+                            <li key={place} className="flex justify-between gap-2"><span className="truncate">{place}</span><b>{n}</b></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <a href={`/${key}/`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">Open page ↗</a>
                   </div>
                 </div>
@@ -111,18 +121,19 @@ export default function ShowcaseVisitorsPage() {
               <div className="overflow-x-auto max-h-96">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-xs text-gray-500 sticky top-0">
-                    <tr><th className="text-left px-3 py-2">Time</th><th className="text-left px-3 py-2">Page</th><th className="text-left px-3 py-2">Device</th><th className="text-left px-3 py-2">From</th></tr>
+                    <tr><th className="text-left px-3 py-2">Time</th><th className="text-left px-3 py-2">Page</th><th className="text-left px-3 py-2">Place</th><th className="text-left px-3 py-2">Device</th><th className="text-left px-3 py-2">From</th></tr>
                   </thead>
                   <tbody>
                     {data.recent.map((v, i) => (
                       <tr key={i} className="border-t border-gray-100">
                         <td className="px-3 py-1.5 whitespace-nowrap">{fmtTime(v.visitedAt)}</td>
                         <td className="px-3 py-1.5 whitespace-nowrap">{nameOf(v.page)}</td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">{v.location || "—"}</td>
                         <td className="px-3 py-1.5 whitespace-nowrap">{v.device}</td>
                         <td className="px-3 py-1.5 text-gray-500">{v.referrer || "QR / direct link"}</td>
                       </tr>
                     ))}
-                    {!data.recent.length && <tr><td colSpan={4} className="px-3 py-4 text-center text-gray-400 text-xs">No visits yet</td></tr>}
+                    {!data.recent.length && <tr><td colSpan={5} className="px-3 py-4 text-center text-gray-400 text-xs">No visits yet</td></tr>}
                   </tbody>
                 </table>
               </div>
