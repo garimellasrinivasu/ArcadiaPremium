@@ -82,6 +82,7 @@ import TodoTaskPage from "./pages/TodoTaskPage";
 import DiwaliInvitationPage from "./pages/DiwaliInvitationPage";
 import StaticShowcasePage from "./pages/StaticShowcasePage";
 import ShowcaseVisitorsPage from "./pages/ShowcaseVisitorsPage";
+import VietnamTripExpensesPage from "./pages/VietnamTripExpensesPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) {
@@ -140,6 +141,7 @@ export default function App() {
         <Route path="activities/ground-level-work" element={<GroundLevelWorkPage />} />
         <Route path="activities/pay-slips" element={<PaySlipPage />} />
         <Route path="activities/todo-tasks" element={<TodoTaskPage />} />
+        <Route path="activities/vietnam-trip" element={<VietnamTripExpensesPage />} />
         <Route path="activities/deewali-invitation" element={<DiwaliInvitationPage />} />
         <Route path="activities/arcadia-showcase" element={<StaticShowcasePage key="arcadia" slug="arcadia" name="Praneeth Arcadia Premium" color="#163B2A" />} />
         <Route path="activities/redfern-showcase" element={<StaticShowcasePage key="redfern" slug="redfern" name="Praneeth Redfern Square" color="#5A1717" />} />

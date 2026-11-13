@@ -53,6 +53,7 @@ const menuSections: MenuSection[] = [
       { label: "Ground Level Work", path: "/activities/ground-level-work", pageKey: "GROUND_LEVEL_WORK" },
       { label: "Pay Slips", path: "/activities/pay-slips", pageKey: "PAY_SLIPS" },
       { label: "Todo Tasks", path: "/activities/todo-tasks", pageKey: "TODO_TASKS" },
+      { label: "Vietnam Trip Expenses", path: "/activities/vietnam-trip", pageKey: "VIETNAM_TRIP" },
       { label: "Deewali Invitation", path: "/activities/deewali-invitation", pageKey: "DIWALI_INVITES" },
       { label: "Arcadia Showcase (Deewali)", path: "/activities/arcadia-showcase", pageKey: "DIWALI_INVITES" },
       { label: "Redfern Showcase (Deewali)", path: "/activities/redfern-showcase", pageKey: "DIWALI_INVITES" },
@@ -365,6 +366,8 @@ function CollapsibleSection({
   );
 }
 
+const HIDE_PROJECT_LOGOS = ["/activities/vietnam-trip"];
+
 export default function Layout() {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -414,10 +417,10 @@ export default function Layout() {
           <AnalogClock />
         </div>
 
-        {/* Center — Project Logos */}
+        {/* Center — Project Logos (not on personal pages such as the trip expenses) */}
         <div className="flex-shrink-0">
           <div className="flex items-center gap-3 lg:gap-5">
-            {PROJECTS.map((proj) => {
+            {!HIDE_PROJECT_LOGOS.includes(location.pathname) && PROJECTS.map((proj) => {
               const isSelected = selectedProject.key === proj.key;
               return (
                 <button
