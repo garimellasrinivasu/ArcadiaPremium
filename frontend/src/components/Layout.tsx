@@ -420,7 +420,7 @@ export default function Layout() {
         {/* Center — Project Logos (not on personal pages such as the trip expenses) */}
         <div className="flex-shrink-0">
           <div className="flex items-center gap-3 lg:gap-5">
-            {!HIDE_PROJECT_LOGOS.includes(location.pathname) && PROJECTS.map((proj) => {
+            {!HIDE_PROJECT_LOGOS.some((p) => location.pathname.replace(/\/+$/, "").toLowerCase() === p) && PROJECTS.map((proj) => {
               const isSelected = selectedProject.key === proj.key;
               return (
                 <button

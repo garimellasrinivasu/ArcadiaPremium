@@ -25,6 +25,7 @@ public class TripExpense {
     @Column(nullable = false, length = 60)
     private String paidBy;
 
+    /** Optional details, e.g. "Dinner at Ben Thanh" ("" when not given) */
     @Column(nullable = false, length = 200)
     private String description;
 

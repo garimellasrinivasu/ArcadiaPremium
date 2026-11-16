@@ -11,6 +11,8 @@ interface Expense {
 interface Draft {
   id?: number; expenseDate: string; paidBy: string; description: string; category: string;
   amount: string; currency: string; rateToInr: string; sharedWith: string[];
+  /** SHARED: split equally among the ticked friends. FOR_ONE: paid on behalf of one friend, who owes it all to the payer. */
+  mode: "SHARED" | "FOR_ONE"; forPerson: string;
 }
 interface Transfer { from: string; to: string; amount: number }
 
@@ -19,6 +21,8 @@ const CATEGORIES: [string, string][] = [
   ["SIGHTSEEING", "🏞️ Sightseeing"], ["SHOPPING", "🛍️ Shopping"], ["OTHER", "📌 Other"],
 ];
 const catLabel = (c: string) => CATEGORIES.find(([k]) => k === c)?.[1] || c;
+// Not ticked by default in a new expense; tick them when they share it
+const NOT_DEFAULT_SHARED = ["MD Sir", "Narsireddy"];
 const DEFAULT_RATE: Record<string, string> = { INR: "1", VND: "0.0033", USD: "88" };
 const inr = (v: number) => "₹" + Math.round(v).toLocaleString("en-IN");
 const money = (v: number, cur: string) =>
@@ -27,6 +31,8 @@ const money = (v: number, cur: string) =>
 const today = () => new Date().toLocaleDateString("en-CA");
 const errOf = (e: any) => e?.response?.data?.error || e?.message || "Something went wrong";
 const split = (s: string) => s.split("|").filter(Boolean);
+/** Paid for exactly one other friend, who owes the payer the whole amount */
+const isOnBehalf = (e: Expense) => { const p = split(e.sharedWith); return p.length === 1 && p[0] !== e.paidBy; };
 
 /** Each friend's paid amount, share and balance, in paise so the totals always add up exactly. */
 function balancesOf(friends: string[], expenses: Expense[]) {
@@ -100,18 +106,33 @@ export default function VietnamTripExpensesPage() {
 
   const openNew = () => setDraft({
     expenseDate: today(), paidBy: "", description: "", category: "FOOD",
-    amount: "", currency: "VND", rateToInr: lastRate("VND"), sharedWith: [...friends],
+    amount: "", currency: "VND", rateToInr: lastRate("VND"), sharedWith: friends.filter((f) => !NOT_DEFAULT_SHARED.includes(f)),
+    mode: "SHARED", forPerson: "",
   });
-  const openEdit = (e: Expense) => setDraft({
-    id: e.id, expenseDate: e.expenseDate, paidBy: e.paidBy, description: e.description, category: e.category || "OTHER",
-    amount: String(e.amount), currency: e.currency, rateToInr: String(e.rateToInr), sharedWith: split(e.sharedWith),
-  });
+  const openEdit = (e: Expense) => {
+    const people = split(e.sharedWith);
+    const forOne = isOnBehalf(e);
+    setDraft({
+      id: e.id, expenseDate: e.expenseDate, paidBy: e.paidBy, description: e.description, category: e.category || "OTHER",
+      amount: String(e.amount), currency: e.currency, rateToInr: String(e.rateToInr),
+      sharedWith: forOne ? friends.filter((f) => !NOT_DEFAULT_SHARED.includes(f)) : people,
+      mode: forOne ? "FOR_ONE" : "SHARED", forPerson: forOne ? people[0] : "",
+    });
+  };
 
   const save = async () => {
     if (!draft) return;
+    if (draft.mode === "FOR_ONE") {
+      if (!draft.forPerson) { setError("Choose who it was paid for"); return; }
+      if (draft.forPerson === draft.paidBy) { setError("The friend it was paid for must be someone other than the payer"); return; }
+    }
     setSaving(true); setError("");
     try {
-      const body = { ...draft, amount: Number(draft.amount), rateToInr: Number(draft.rateToInr) };
+      const { mode, forPerson, ...rest } = draft;
+      const body = {
+        ...rest, amount: Number(draft.amount), rateToInr: Number(draft.rateToInr),
+        sharedWith: mode === "FOR_ONE" ? [forPerson] : draft.sharedWith,
+      };
       if (draft.id) await api.put(`/trip-expenses/${draft.id}`, body);
       else await api.post("/trip-expenses", body);
       setDraft(null); flash(draft.id ? "Expense updated" : "Expense logged");
@@ -121,7 +142,7 @@ export default function VietnamTripExpensesPage() {
   };
 
   const remove = async (e: Expense) => {
-    if (!confirm(`Delete "${e.description}" (${money(e.amount, e.currency)}) paid by ${e.paidBy}?`)) return;
+    if (!confirm(`Delete ${catLabel(e.category)}${e.description ? ` – ${e.description}` : ""} (${money(e.amount, e.currency)}) paid by ${e.paidBy}?`)) return;
     try { await api.delete(`/trip-expenses/${e.id}`); flash("Expense deleted"); await load(); }
     catch (err) { setError(errOf(err)); }
   };
@@ -219,12 +240,17 @@ export default function VietnamTripExpensesPage() {
                     <tr key={e.id} className="border-t border-gray-100 align-top">
                       <td className="px-3 py-2 whitespace-nowrap">{formatDate(e.expenseDate)}</td>
                       <td className="px-3 py-2 whitespace-nowrap font-medium">{e.paidBy}</td>
-                      <td className="px-3 py-2"><div>{e.description}</div><div className="text-[11px] text-gray-500">{catLabel(e.category)}</div></td>
+                      <td className="px-3 py-2"><div>{catLabel(e.category)}</div>{e.description && <div className="text-[11px] text-gray-500">{e.description}</div>}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">{money(e.amount, e.currency)}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap font-semibold">{inr(e.amountInr)}</td>
                       <td className="px-3 py-2 text-xs text-gray-600">
-                        {people.length === friends.length ? "All" : people.join(", ")}
-                        <div className="text-[11px] text-gray-400">{inr(e.amountInr / (people.length || 1))} each</div>
+                        {isOnBehalf(e) ? (
+                          <><span className="inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">On behalf of {people[0]}</span>
+                            <div className="text-[11px] text-gray-400">{people[0]} owes {e.paidBy} {inr(e.amountInr)}</div></>
+                        ) : (
+                          <>{people.length === friends.length ? "All" : people.join(", ")}
+                            <div className="text-[11px] text-gray-400">{inr(e.amountInr / (people.length || 1))} each</div></>
+                        )}
                       </td>
                       {canEdit && (
                         <td className="px-3 py-2 whitespace-nowrap text-right">
@@ -259,17 +285,20 @@ export default function VietnamTripExpensesPage() {
               </label>
             </div>
 
-            <label className="block text-xs text-gray-600">What was it for
+            <div>
+              <div className="text-xs text-gray-600 mb-1">What was it for</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {CATEGORIES.map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setDraft({ ...d, category: k })}
+                    className={`px-2 py-2 text-sm rounded-lg border ${d.category === k ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300"}`}>{l}</button>
+                ))}
+              </div>
+            </div>
+
+            <label className="block text-xs text-gray-600">Details (optional)
               <input value={d.description} maxLength={200} placeholder="e.g. Dinner at Ben Thanh, Ha Long Bay cruise"
                 onChange={(e) => setDraft({ ...d, description: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm" />
             </label>
-
-            <div className="flex flex-wrap gap-1.5">
-              {CATEGORIES.map(([k, l]) => (
-                <button key={k} type="button" onClick={() => setDraft({ ...d, category: k })}
-                  className={`px-2.5 py-1 text-xs rounded-full border ${d.category === k ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300"}`}>{l}</button>
-              ))}
-            </div>
 
             <div className="grid grid-cols-3 gap-3">
               <label className="col-span-2 text-xs text-gray-600">Amount
@@ -288,6 +317,21 @@ export default function VietnamTripExpensesPage() {
               </label>
             )}
 
+            <div className="grid grid-cols-2 gap-1.5">
+              {([["SHARED", "👥 Shared equally"], ["FOR_ONE", "🙋 Paid on behalf of"]] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setDraft({ ...d, mode: k })}
+                  className={`px-2 py-2 text-sm rounded-lg border ${d.mode === k ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300"}`}>{l}</button>
+              ))}
+            </div>
+
+            {d.mode === "FOR_ONE" ? (
+              <label className="block text-xs text-gray-600">Paid for (this friend pays back the full amount)
+                <select value={d.forPerson} onChange={(e) => setDraft({ ...d, forPerson: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white">
+                  <option value="">— Choose —</option>
+                  {friends.filter((f) => f !== d.paidBy).map((f) => <option key={f}>{f}</option>)}
+                </select>
+              </label>
+            ) : (
             <div>
               <div className="flex items-center text-xs text-gray-600 mb-1">
                 <span className="mr-auto">Shared with ({d.sharedWith.length})</span>
@@ -306,9 +350,13 @@ export default function VietnamTripExpensesPage() {
                 })}
               </div>
             </div>
+            )}
 
             <div className="text-sm bg-gray-50 rounded-lg p-2 text-gray-700">
-              = <b>{inr(draftInr)}</b>{d.sharedWith.length > 0 && <> · <b>{inr(perHead)}</b> each for {d.sharedWith.length}</>}
+              = <b>{inr(draftInr)}</b>
+              {d.mode === "FOR_ONE"
+                ? d.forPerson && d.paidBy && <> · <b>{d.forPerson}</b> owes <b>{d.paidBy}</b> the full {inr(draftInr)}</>
+                : d.sharedWith.length > 0 && <> · <b>{inr(perHead)}</b> each for {d.sharedWith.length}</>}
             </div>
 
             <div className="flex gap-2 justify-end">

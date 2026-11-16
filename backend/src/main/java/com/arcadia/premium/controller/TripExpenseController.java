@@ -20,7 +20,7 @@ public class TripExpenseController {
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     private static final String TRIP = "VIETNAM_2026";
     public static final List<String> FRIENDS = List.of(
-            "MD Sir", "Narsireddy", "Venkat P", "Suresh K", "Prakash N", "Garimella", "Vamshi", "Sridhar", "Murali");
+            "MD Sir", "Narsireddy", "Venkat P", "Suresh K", "Prakash N", "Garimella", "Vamshi", "Sridhar", "Murali", "Khan Saab");
     private static final Set<String> CURRENCIES = Set.of("INR", "VND", "USD");
     private static final Set<String> CATEGORIES = Set.of("FOOD", "STAY", "TRAVEL", "SIGHTSEEING", "SHOPPING", "OTHER");
     private static final String VIEW = "hasRole('ADMIN') or @pageAccess.hasAnyAccess(authentication, 'VIETNAM_TRIP')";
@@ -78,8 +78,8 @@ public class TripExpenseController {
     private static void apply(TripExpense e, Map<String, Object> b) {
         String paidBy = str(b.get("paidBy"));
         if (paidBy == null || !FRIENDS.contains(paidBy)) throw new IllegalArgumentException("Choose who paid");
-        String desc = str(b.get("description"));
-        if (desc == null) throw new IllegalArgumentException("Enter what the amount was for");
+        // Optional details; the category says what it was for. Kept as "" (the column is not null in existing tables)
+        String desc = Optional.ofNullable(str(b.get("description"))).orElse("");
         if (desc.length() > 200) desc = desc.substring(0, 200);
         double amount = num(b.get("amount"));
         if (!(amount > 0)) throw new IllegalArgumentException("Enter an amount greater than 0");
