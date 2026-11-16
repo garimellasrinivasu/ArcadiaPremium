@@ -37,7 +37,7 @@ public class TripExpense {
     @Column(nullable = false)
     private Double amount;
 
-    /** INR, VND or USD */
+    /** INR, VND, THB or USD */
     @Column(nullable = false, length = 3)
     private String currency;
 

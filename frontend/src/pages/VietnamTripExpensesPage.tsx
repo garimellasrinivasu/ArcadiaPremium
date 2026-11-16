@@ -23,7 +23,8 @@ const CATEGORIES: [string, string][] = [
 const catLabel = (c: string) => CATEGORIES.find(([k]) => k === c)?.[1] || c;
 // Not ticked by default in a new expense; tick them when they share it
 const NOT_DEFAULT_SHARED = ["MD Sir", "Narsireddy"];
-const DEFAULT_RATE: Record<string, string> = { INR: "1", VND: "0.0033", USD: "88" };
+// Agreed rates: ₹ for 1 unit (₹1 = 273 VND = 0.36 THB). Every new expense starts from these; change on an entry if needed
+const DEFAULT_RATE: Record<string, string> = { INR: "1", VND: "0.003663", THB: "2.78", USD: "88" };
 const inr = (v: number) => "₹" + Math.round(v).toLocaleString("en-IN");
 const money = (v: number, cur: string) =>
   cur === "INR" ? inr(v) : `${cur} ${v.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -73,6 +74,7 @@ export default function VietnamTripExpensesPage() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [canEdit, setCanEdit] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [showSettlement, setShowSettlement] = useState(false);
@@ -83,6 +85,7 @@ export default function VietnamTripExpensesPage() {
   useEffect(() => {
     authService.getCurrentUser().then((u) => {
       setCanEdit(u.role?.name === "ADMIN" || (u.allowedPages || []).includes("VIETNAM_TRIP"));
+      setIsAdmin(u.role?.name === "ADMIN");
     }).catch(() => {});
   }, []);
 
@@ -101,12 +104,11 @@ export default function VietnamTripExpensesPage() {
   const total = expenses.reduce((s, e) => s + e.amountInr, 0);
   const shown = filter ? expenses.filter((e) => e.paidBy === filter || split(e.sharedWith).includes(filter)) : expenses;
 
-  /** Rate last used for a currency, so the form doesn't need it typed every time */
-  const lastRate = (cur: string) => String(expenses.find((e) => e.currency === cur)?.rateToInr ?? DEFAULT_RATE[cur]);
+  const agreedRate = (cur: string) => DEFAULT_RATE[cur] ?? "1";
 
   const openNew = () => setDraft({
     expenseDate: today(), paidBy: "", description: "", category: "FOOD",
-    amount: "", currency: "VND", rateToInr: lastRate("VND"), sharedWith: friends.filter((f) => !NOT_DEFAULT_SHARED.includes(f)),
+    amount: "", currency: "VND", rateToInr: agreedRate("VND"), sharedWith: friends.filter((f) => !NOT_DEFAULT_SHARED.includes(f)),
     mode: "SHARED", forPerson: "",
   });
   const openEdit = (e: Expense) => {
@@ -139,6 +141,20 @@ export default function VietnamTripExpensesPage() {
       await load();
     } catch (e) { setError(errOf(e)); }
     setSaving(false);
+  };
+
+  // Foreign-currency entries saved at a rate other than the agreed one
+  const offRate = expenses.filter((e) => e.currency !== "INR" && DEFAULT_RATE[e.currency] && Number(DEFAULT_RATE[e.currency]) !== e.rateToInr);
+  const applyAgreedRates = async () => {
+    const curs = [...new Set(offRate.map((e) => e.currency))];
+    const desc = curs.map((c) => `${c} at ₹${DEFAULT_RATE[c]}`).join(", ");
+    const n = offRate.length;
+    if (!confirm(`Recalculate ${n} older entr${n === 1 ? "y" : "ies"} at the agreed rates (${desc})? The rupee amounts and settlement will change.`)) return;
+    try {
+      const rates = Object.fromEntries(curs.map((c) => [c, Number(DEFAULT_RATE[c])]));
+      const r = (await api.post<{ updated: number }>("/trip-expenses/apply-rates", { rates })).data;
+      flash(`${r.updated} entr${r.updated === 1 ? "y" : "ies"} recalculated`); await load();
+    } catch (err) { setError(errOf(err)); }
   };
 
   const remove = async (e: Expense) => {
@@ -174,6 +190,10 @@ export default function VietnamTripExpensesPage() {
     <div className="space-y-4 max-w-6xl">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mr-auto">🇻🇳 Vietnam Trip Expenses</h1>
+        {isAdmin && offRate.length > 0 && (
+          <button onClick={() => void applyAgreedRates()} title="Recalculate older entries at the agreed rates"
+            className="px-3 py-2 text-xs font-semibold rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100">↻ Apply agreed rates ({offRate.length})</button>
+        )}
         {canEdit && <button onClick={openNew} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700">+ Log Expense</button>}
         <button onClick={() => setShowSettlement(true)} disabled={!expenses.length}
           className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">⚖️ Settlement</button>
@@ -305,8 +325,8 @@ export default function VietnamTripExpensesPage() {
                 <input type="number" inputMode="decimal" min="0" value={d.amount} onChange={(e) => setDraft({ ...d, amount: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm" />
               </label>
               <label className="text-xs text-gray-600">Currency
-                <select value={d.currency} onChange={(e) => setDraft({ ...d, currency: e.target.value, rateToInr: lastRate(e.target.value) })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white">
-                  <option value="VND">VND ₫</option><option value="INR">INR ₹</option><option value="USD">USD $</option>
+                <select value={d.currency} onChange={(e) => setDraft({ ...d, currency: e.target.value, rateToInr: agreedRate(e.target.value) })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white">
+                  <option value="VND">VND ₫</option><option value="THB">THB ฿ (Thai Baht)</option><option value="INR">INR ₹</option><option value="USD">USD $</option>
                 </select>
               </label>
             </div>
@@ -314,6 +334,7 @@ export default function VietnamTripExpensesPage() {
               <label className="block text-xs text-gray-600">Rate: ₹ for 1 {d.currency}
                 <input type="number" inputMode="decimal" min="0" step="any" value={d.rateToInr} onChange={(e) => setDraft({ ...d, rateToInr: e.target.value })} className="mt-1 w-full border border-gray-300 rounded-lg px-2 py-2 text-sm" />
                 {d.currency === "VND" && Number(d.rateToInr) > 0 && <span className="text-[11px] text-gray-400">≈ {Math.round(1 / Number(d.rateToInr)).toLocaleString("en-IN")} VND per ₹1</span>}
+                {d.currency === "THB" && Number(d.rateToInr) > 0 && <span className="text-[11px] text-gray-400">≈ {(1 / Number(d.rateToInr)).toFixed(2)} THB per ₹1</span>}
               </label>
             )}
 

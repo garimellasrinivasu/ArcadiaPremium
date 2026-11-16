@@ -5,6 +5,7 @@ import com.arcadia.premium.repository.TripExpenseRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ public class TripExpenseController {
     private static final String TRIP = "VIETNAM_2026";
     public static final List<String> FRIENDS = List.of(
             "MD Sir", "Narsireddy", "Venkat P", "Suresh K", "Prakash N", "Garimella", "Vamshi", "Sridhar", "Murali", "Khan Saab");
-    private static final Set<String> CURRENCIES = Set.of("INR", "VND", "USD");
+    private static final Set<String> CURRENCIES = Set.of("INR", "VND", "THB", "USD");
     private static final Set<String> CATEGORIES = Set.of("FOOD", "STAY", "TRAVEL", "SIGHTSEEING", "SHOPPING", "OTHER");
     private static final String VIEW = "hasRole('ADMIN') or @pageAccess.hasAnyAccess(authentication, 'VIETNAM_TRIP')";
     private static final String EDIT = "hasRole('ADMIN') or @pageAccess.hasAccess(authentication, 'VIETNAM_TRIP')";
@@ -75,6 +76,36 @@ public class TripExpenseController {
         return ResponseEntity.ok(Map.of("message", "Deleted"));
     }
 
+    /** Admin: recalculate every entry in the given currencies at the agreed rupee rates, e.g. {"rates": {"VND": 0.003663}} */
+    @PostMapping("/apply-rates")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> applyRates(@RequestBody Map<String, Object> body, Authentication auth) {
+        if (!(body.get("rates") instanceof Map<?, ?> raw)) return ResponseEntity.badRequest().body(Map.of("error", "No rates given"));
+        Map<String, Double> rates = new HashMap<>();
+        for (Map.Entry<?, ?> r : ((Map<Object, Object>) raw).entrySet()) {
+            String cur = String.valueOf(r.getKey()).toUpperCase();
+            double rate = num(r.getValue());
+            if (!CURRENCIES.contains(cur) || "INR".equals(cur) || !(rate > 0)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid rate for " + cur));
+            }
+            rates.put(cur, rate);
+        }
+        int updated = 0;
+        for (TripExpense e : repo.findByTripOrderByExpenseDateDescIdDesc(TRIP)) {
+            Double rate = rates.get(e.getCurrency());
+            if (rate == null || rate.equals(e.getRateToInr())) continue;
+            e.setRateToInr(rate);
+            e.setAmountInr(Math.round(e.getAmount() * rate * 100.0) / 100.0);
+            e.setUpdatedBy(auth.getName());
+            e.setUpdatedAt(LocalDateTime.now(IST));
+            repo.save(e);
+            updated++;
+        }
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
     private static void apply(TripExpense e, Map<String, Object> b) {
         String paidBy = str(b.get("paidBy"));
         if (paidBy == null || !FRIENDS.contains(paidBy)) throw new IllegalArgumentException("Choose who paid");
@@ -84,7 +115,7 @@ public class TripExpenseController {
         double amount = num(b.get("amount"));
         if (!(amount > 0)) throw new IllegalArgumentException("Enter an amount greater than 0");
         String currency = Optional.ofNullable(str(b.get("currency"))).orElse("INR").toUpperCase();
-        if (!CURRENCIES.contains(currency)) throw new IllegalArgumentException("Currency must be INR, VND or USD");
+        if (!CURRENCIES.contains(currency)) throw new IllegalArgumentException("Currency must be INR, VND, THB or USD");
         double rate = "INR".equals(currency) ? 1 : num(b.get("rateToInr"));
         if (!(rate > 0)) throw new IllegalArgumentException("Enter the rupee rate for " + currency);
         String category = Optional.ofNullable(str(b.get("category"))).orElse("OTHER").toUpperCase();
