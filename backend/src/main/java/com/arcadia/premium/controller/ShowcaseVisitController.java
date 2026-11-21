@@ -24,7 +24,12 @@ import java.util.regex.Pattern;
 public class ShowcaseVisitController {
 
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
+    /** Deewali greeting pages (shown on Showcase Visitors) */
     private static final List<String> PAGES = List.of("arcadia", "redfern", "aalaya-arvindham");
+    /** Every page that may record visits: the Deewali pages and the Trip Memories album */
+    private static final List<String> TRACKED = List.of("arcadia", "redfern", "aalaya-arvindham", "memories");
+    private static final Pattern NAME = Pattern.compile("[\\p{L} .'-]{1,60}");
+    private static final String MEMORIES_VIEW = "hasRole('ADMIN') or @pageAccess.hasAnyAccess(authentication, 'TRIP_MEMORIES')";
     private static final Pattern VISITOR_ID = Pattern.compile("[A-Za-z0-9-]{8,40}");
     private static final Pattern BOT = Pattern.compile("(?i)bot|crawl|spider|slurp|headless|preview|facebookexternalhit|whatsapp");
     private static final String VIEW = "hasRole('ADMIN') or @pageAccess.hasAnyAccess(authentication, 'DIWALI_INVITES')";
@@ -44,7 +49,7 @@ public class ShowcaseVisitController {
                                       HttpServletRequest request) {
         String page = String.valueOf(body.getOrDefault("page", ""));
         String visitorId = String.valueOf(body.getOrDefault("visitorId", ""));
-        if (!PAGES.contains(page) || !VISITOR_ID.matcher(visitorId).matches() || ua == null || BOT.matcher(ua).find()) {
+        if (!TRACKED.contains(page) || !VISITOR_ID.matcher(visitorId).matches() || ua == null || BOT.matcher(ua).find()) {
             return ResponseEntity.noContent().build();
         }
         LocalDateTime now = LocalDateTime.now(IST);
@@ -58,6 +63,8 @@ public class ShowcaseVisitController {
             v.setVisitorId(visitorId);
             v.setDevice(deviceOf(ua));
             v.setReferrer(referrerHost(String.valueOf(body.getOrDefault("referrer", ""))));
+            String name = String.valueOf(body.getOrDefault("name", "")).trim();
+            if (NAME.matcher(name).matches() && TripExpenseController.FRIENDS.contains(name)) v.setVisitorName(name);
             locations.locate(repo.save(v).getId(), clientIp(request));
         }
         return ResponseEntity.noContent().build();
@@ -66,7 +73,7 @@ public class ShowcaseVisitController {
     @GetMapping("/summary")
     @PreAuthorize(VIEW)
     public Map<String, Object> summary() {
-        List<ShowcaseVisit> all = repo.findAllByOrderByVisitedAtDesc();
+        List<ShowcaseVisit> all = repo.findAllByOrderByVisitedAtDesc().stream().filter(v -> PAGES.contains(v.getPage())).toList();
         LocalDate today = LocalDate.now(IST);
 
         List<Map<String, Object>> pages = new ArrayList<>();
@@ -109,6 +116,7 @@ public class ShowcaseVisitController {
             row.put("device", v.getDevice());
             row.put("referrer", v.getReferrer());
             row.put("location", v.getLocation());
+            row.put("name", v.getVisitorName());
             return row;
         }).toList();
 
@@ -116,6 +124,50 @@ public class ShowcaseVisitController {
         out.put("pages", pages);
         out.put("daily", daily);
         out.put("recent", recent);
+        return out;
+    }
+
+    /** Visits to the Trip Memories album, for its admin page */
+    @GetMapping("/memories")
+    @PreAuthorize(MEMORIES_VIEW)
+    public Map<String, Object> memories() {
+        List<ShowcaseVisit> vs = repo.findAllByOrderByVisitedAtDesc().stream().filter(v -> "memories".equals(v.getPage())).toList();
+        LocalDate today = LocalDate.now(IST);
+        Map<String, Long> devices = new TreeMap<>();
+        vs.forEach(v -> devices.merge(v.getDevice(), 1L, Long::sum));
+        Map<String, Long> places = new LinkedHashMap<>();
+        vs.stream().filter(v -> v.getLocation() != null)
+                .collect(java.util.stream.Collectors.groupingBy(ShowcaseVisit::getLocation, java.util.stream.Collectors.counting()))
+                .entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(8)
+                .forEach(e -> places.put(e.getKey(), e.getValue()));
+        // Friends who picked their name on the page: latest visit and number of visits
+        Map<String, Map<String, Object>> people = new LinkedHashMap<>();
+        for (ShowcaseVisit v : vs) {
+            if (v.getVisitorName() == null) continue;
+            Map<String, Object> p = people.computeIfAbsent(v.getVisitorName(), n -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("name", n);
+                m.put("lastVisit", v.getVisitedAt());
+                m.put("visits", 0L);
+                return m;
+            });
+            p.put("visits", (Long) p.get("visits") + 1);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("visits", vs.size());
+        out.put("visitors", vs.stream().map(ShowcaseVisit::getVisitorId).distinct().count());
+        out.put("today", vs.stream().filter(v -> v.getVisitedAt().toLocalDate().equals(today)).count());
+        out.put("devices", devices);
+        out.put("places", places);
+        out.put("people", people.values());
+        out.put("recent", vs.stream().limit(100).map(v -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("visitedAt", v.getVisitedAt());
+            row.put("name", v.getVisitorName());
+            row.put("device", v.getDevice());
+            row.put("location", v.getLocation());
+            return row;
+        }).toList());
         return out;
     }
 

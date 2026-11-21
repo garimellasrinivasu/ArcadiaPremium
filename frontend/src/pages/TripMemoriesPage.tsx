@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "../services/api";
-import { formatWeekdayDate, formatTime } from "../utils/date";
+import { formatWeekdayDate, formatTime, formatDateTime } from "../utils/date";
 
 interface Photo {
   id: number; w?: number; h?: number; capturedAt: string; dateGuessed: boolean; uploadedBy?: string;
@@ -14,6 +14,11 @@ interface Album {
   id: number; slug: string; title: string; subtitle?: string; coverPhotoId?: number; hasPin: boolean;
   startDate?: string | null; endDate?: string | null;
   friends: string[]; days: Record<string, DayMeta>; photos: Photo[];
+}
+interface Visits {
+  visits: number; visitors: number; today: number; devices: Record<string, number>; places: Record<string, number>;
+  people: { name: string; visits: number; lastVisit: string }[];
+  recent: { visitedAt: string; name?: string; device: string; location?: string }[];
 }
 interface AlbumRow { id: number; slug: string; title: string; photos: number; hasPin: boolean }
 
@@ -58,6 +63,12 @@ export default function TripMemoriesPage() {
     } catch (e) { setError(errOf(e)); }
   }, []);
   useEffect(() => { if (albumId) void loadAlbum(albumId); }, [albumId, loadAlbum]);
+
+  const [visits, setVisits] = useState<Visits | null>(null);
+  const loadVisits = useCallback(async () => {
+    try { setVisits((await api.get<Visits>("/showcase-visits/memories")).data); } catch { setVisits(null); }
+  }, []);
+  useEffect(() => { void loadVisits(); }, [loadVisits]);
 
   // Full file name so the link also works on the local dev server, which sends folder addresses to the app
   const link = album ? `${window.location.origin}/memories/index.html?a=${album.slug}` : "";
@@ -151,7 +162,7 @@ export default function TripMemoriesPage() {
     <div className="space-y-4 max-w-6xl">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mr-auto">📸 Trip Memories</h1>
-        {albumId && <button onClick={() => void loadAlbum(albumId)} className="px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50">↻ Refresh</button>}
+        {albumId && <button onClick={() => { void loadAlbum(albumId); void loadVisits(); }} className="px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50">↻ Refresh</button>}
         {albums.length > 1 && (
           <select value={albumId ?? ""} onChange={(e) => setAlbumId(Number(e.target.value))} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white">
             {albums.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
@@ -207,6 +218,68 @@ export default function TripMemoriesPage() {
               </div>
             </div>
           </div>
+
+          {/* Visitors */}
+          {visits && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-gray-800 mr-auto">👀 Visitors</h2>
+                <span className="text-[11px] text-gray-400">Reloads within 30 minutes and previews inside the app aren't counted</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[["Visits", visits.visits], ["Unique visitors", visits.visitors], ["Today", visits.today]].map(([l, v]) => (
+                  <div key={l as string} className="border border-gray-200 rounded-lg p-2 text-center">
+                    <div className="text-xl font-bold text-gray-800">{v as number}</div><div className="text-[11px] text-gray-500">{l as string}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <div className="font-semibold text-gray-600 mb-1">Friends who opened it</div>
+                  {visits.people.length ? (
+                    <ul className="space-y-0.5">
+                      {visits.people.map((p) => (
+                        <li key={p.name} className="flex justify-between gap-2"><span>{p.name} <span className="text-gray-400">· {p.visits}×</span></span><span className="text-gray-400">{formatDateTime(p.lastVisit)}</span></li>
+                      ))}
+                    </ul>
+                  ) : <div className="text-gray-400">Names show once a friend has picked their name on the page (when adding photos).</div>}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-600 mb-1">Top places</div>
+                  {Object.keys(visits.places).length ? (
+                    <ul className="space-y-0.5">{Object.entries(visits.places).map(([pl, n]) => <li key={pl} className="flex justify-between gap-2"><span className="truncate">{pl}</span><b>{n}</b></li>)}</ul>
+                  ) : <div className="text-gray-400">No places yet</div>}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-600 mb-1">Devices</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(visits.devices).map(([d, n]) => <span key={d} className="px-2 py-0.5 rounded-full border border-gray-200 bg-gray-50">{d}: <b>{n}</b></span>)}
+                    {!visits.visits && <span className="text-gray-400">No visits yet</span>}
+                  </div>
+                </div>
+              </div>
+              {visits.recent.length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-blue-700">Latest visits ({visits.recent.length})</summary>
+                  <div className="overflow-x-auto max-h-72 mt-2">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 text-gray-500"><tr><th className="text-left px-2 py-1">Time</th><th className="text-left px-2 py-1">Friend</th><th className="text-left px-2 py-1">Place</th><th className="text-left px-2 py-1">Device</th></tr></thead>
+                      <tbody>
+                        {visits.recent.map((v, i) => (
+                          <tr key={i} className="border-t border-gray-100">
+                            <td className="px-2 py-1 whitespace-nowrap">{formatDateTime(v.visitedAt)}</td>
+                            <td className="px-2 py-1">{v.name || <span className="text-gray-400">—</span>}</td>
+                            <td className="px-2 py-1">{v.location || <span className="text-gray-400">—</span>}</td>
+                            <td className="px-2 py-1 whitespace-nowrap">{v.device}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
 
           {/* Title */}
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">

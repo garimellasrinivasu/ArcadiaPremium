@@ -242,6 +242,7 @@
       album = a; photos = a.photos || [];
       document.title = a.title;
       render();
+      trackVisit();
       // "#upload" at the end of the link opens the Add photos form straight away
       if (location.hash === "#upload" && !up.classList.contains("open")) openUpload();
     }).catch(function () {
@@ -649,6 +650,19 @@
       .catch(function (e) { say(e.message || "Something went wrong", "err"); })
       .then(function () { busy = false; refresh(); });
   };
+
+  // ---------- Visit counter (anonymous; a friend's name only if they chose it here before) ----------
+  var tracked = false;
+  function trackVisit() {
+    if (tracked || window.top !== window) return; // once per page load; previews inside the app don't count
+    tracked = true;
+    try {
+      var k = "showcase-visitor", id = localStorage.getItem(k);
+      if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2); localStorage.setItem(k, id); }
+      fetch("/api/showcase-visits/track", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: "memories", visitorId: id, referrer: document.referrer, name: store("mem-name") || "" }) }).catch(function () {});
+    } catch (e) {}
+  }
 
   // ---------- Select & delete ----------
   var delBg = document.getElementById("del"), delName = document.getElementById("delName"), delPin = document.getElementById("delPin"), delMsg = document.getElementById("delMsg");

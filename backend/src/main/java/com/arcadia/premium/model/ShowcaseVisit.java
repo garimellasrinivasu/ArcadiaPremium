@@ -36,6 +36,10 @@ public class ShowcaseVisit {
     @Column(length = 120)
     private String location;
 
+    /** Name the visitor chose on the page earlier (Trip Memories: when uploading), if any */
+    @Column(length = 60)
+    private String visitorName;
+
     public Long getId() { return id; }
     public String getPage() { return page; }
     public void setPage(String page) { this.page = page; }
@@ -49,4 +53,6 @@ public class ShowcaseVisit {
     public void setReferrer(String referrer) { this.referrer = referrer; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+    public String getVisitorName() { return visitorName; }
+    public void setVisitorName(String visitorName) { this.visitorName = visitorName; }
 }
