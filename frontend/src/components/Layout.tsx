@@ -54,6 +54,7 @@ const menuSections: MenuSection[] = [
       { label: "Pay Slips", path: "/activities/pay-slips", pageKey: "PAY_SLIPS" },
       { label: "Todo Tasks", path: "/activities/todo-tasks", pageKey: "TODO_TASKS" },
       { label: "Vietnam Trip Expenses", path: "/activities/vietnam-trip", pageKey: "VIETNAM_TRIP" },
+      { label: "Trip Memories", path: "/activities/trip-memories", pageKey: "TRIP_MEMORIES" },
       { label: "Deewali Invitation", path: "/activities/deewali-invitation", pageKey: "DIWALI_INVITES" },
       { label: "Arcadia Showcase (Deewali)", path: "/activities/arcadia-showcase", pageKey: "DIWALI_INVITES" },
       { label: "Redfern Showcase (Deewali)", path: "/activities/redfern-showcase", pageKey: "DIWALI_INVITES" },
@@ -366,7 +367,7 @@ function CollapsibleSection({
   );
 }
 
-const HIDE_PROJECT_LOGOS = ["/activities/vietnam-trip"];
+const HIDE_PROJECT_LOGOS = ["/activities/vietnam-trip", "/activities/trip-memories"];
 
 export default function Layout() {
   const location = useLocation();

@@ -67,6 +67,7 @@ const PAGE_SECTIONS: PageSection[] = [
       { key: "PAY_SLIPS", label: "Pay Slips", path: "/activities/pay-slips" },
       { key: "TODO_TASKS", label: "Todo Tasks", path: "/activities/todo-tasks" },
       { key: "VIETNAM_TRIP", label: "Vietnam Trip Expenses", path: "/activities/vietnam-trip" },
+      { key: "TRIP_MEMORIES", label: "Trip Memories", path: "/activities/trip-memories" },
       { key: "DIWALI_INVITES", label: "Deewali Invitation", path: "/activities/deewali-invitation" },
       { key: "PERSONAL_DOCUMENTS", label: "Personal Documents", path: "/personal-documents" },
     ],

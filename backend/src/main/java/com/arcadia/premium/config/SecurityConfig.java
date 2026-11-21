@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/documents/public/**").permitAll()
                 .requestMatchers("/api/detect/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/showcase-visits/track").permitAll()
+                .requestMatchers("/api/trip-memories/public/**").permitAll()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

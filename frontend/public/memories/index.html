@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="referrer" content="no-referrer" />
+<meta name="theme-color" content="#0b1d26" />
+<title>Trip Memories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js"></script>
+<style>
+  :root {
+    --ink: #0b1d26; --ink2: #12303d; --sea: #1f6f78; --sand: #f3e9dc; --gold: #e8b04b; --coral: #ef7b5a;
+    --text: #f5efe6; --muted: #a9bcc2; --card: rgba(255,255,255,.06); --line: rgba(255,255,255,.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--ink); color: var(--text); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .serif { font-family: "Playfair Display", Georgia, serif; }
+  button { font: inherit; cursor: pointer; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+  /* Hero */
+  .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; }
+  .hero .bg { position: absolute; inset: 0; background: linear-gradient(135deg, #12303d, #1f6f78 55%, #ef7b5a); }
+  .hero .bg img { width: 100%; height: 100%; object-fit: cover; animation: kb 26s ease-in-out infinite alternate; }
+  @keyframes kb { from { transform: scale(1.04); } to { transform: scale(1.16) translate(-1.5%, -1.5%); } }
+  .hero .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,29,38,.15) 0%, rgba(11,29,38,.35) 45%, rgba(11,29,38,.96) 100%); }
+  .hero .content { position: relative; width: 100%; padding: 0 0 48px; }
+  .eyebrow { letter-spacing: .28em; text-transform: uppercase; font-size: 12px; color: var(--gold); font-weight: 600; }
+  .hero h1 { font-size: clamp(38px, 11vw, 96px); line-height: .98; margin: 12px 0 12px; font-weight: 800; text-shadow: 0 6px 40px rgba(0,0,0,.35); }
+  .hero p.sub { font-size: clamp(16px, 2.4vw, 20px); color: #e6ddd0; max-width: 680px; margin: 0 0 22px; line-height: 1.5; }
+  .stats { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+  .stats::-webkit-scrollbar { display: none; }
+  .stat { flex: 0 0 auto; background: rgba(255,255,255,.1); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 14px; padding: 9px 13px; min-width: 76px; }
+  .stat b { display: block; font-size: 22px; font-family: "Playfair Display", serif; }
+  .stat small { color: var(--muted); font-size: 12px; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions .btn { justify-content: center; }
+  .actions .btn.gold { grid-column: 1 / -1; padding: 15px 20px; font-size: 16px; }
+  @media (min-width: 640px) { .actions { display: flex; flex-wrap: wrap; } }
+  .btn { border: 0; border-radius: 999px; padding: 13px 20px; font-weight: 600; font-size: 15px; display: inline-flex; gap: 8px; align-items: center; }
+  .btn.gold { background: var(--gold); color: #2a1d05; }
+  .btn.ghost { background: rgba(255,255,255,.12); color: var(--text); border: 1px solid var(--line); }
+  .scroll-hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); color: var(--muted); font-size: 12px; animation: bob 2s infinite; }
+  @keyframes bob { 50% { transform: translate(-50%, 5px); } }
+
+  /* Day navigation */
+  .daynav { position: sticky; top: 0; z-index: 20; background: rgba(11,29,38,.86); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .daynav .wrap { display: flex; gap: 8px; overflow-x: auto; padding-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
+  .daynav .wrap::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 7px 13px; font-size: 13px; white-space: nowrap; }
+  .daychip { flex: 0 0 auto; display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .daychip button { border: 0; background: transparent; color: var(--text); font-size: 13px; white-space: nowrap; }
+  .daychip .go { padding: 8px 10px 8px 13px; }
+  .daychip .play { padding: 0 13px 0 11px; background: var(--gold); color: #2a1d05; font-size: 12px; font-weight: 700; }
+  .chip.on { background: var(--sand); color: var(--ink); border-color: var(--sand); }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 26px 0 0; align-items: center; }
+  .filters span { color: var(--muted); font-size: 13px; margin-right: 4px; }
+  .filters .chip { font-size: 12px; padding: 5px 11px; }
+
+  /* Day sections */
+  .day { padding: 44px 0 8px; scroll-margin-top: 56px; }
+  @media (min-width: 720px) { .day { padding-top: 56px; } }
+  .dayhead { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: end; margin-bottom: 16px; }
+  .playday { margin-top: 10px; border: 0; border-radius: 999px; padding: 9px 15px; font-size: 13.5px; font-weight: 600; background: var(--gold); color: #2a1d05; }
+  .daynum { font-family: "Playfair Display", serif; font-size: clamp(58px, 16vw, 120px); line-height: .8; color: transparent; -webkit-text-stroke: 1.5px var(--gold); font-weight: 800; }
+  .daymeta .when { color: var(--gold); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+  .daymeta h2 { margin: 6px 0 0; font-size: clamp(26px, 4.5vw, 40px); line-height: 1.1; }
+  .daymeta .place { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .story { font-family: "Playfair Display", serif; font-style: italic; font-size: clamp(17px, 2.3vw, 21px); line-height: 1.6; color: #e9e0d3; max-width: 820px; margin: 4px 0 22px; border-left: 3px solid var(--coral); padding-left: 16px; }
+  .emptyday { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border: 1px dashed var(--line); border-radius: 14px; padding: 18px; color: var(--muted); font-size: 14px; }
+  .emptyday .btn { padding: 8px 14px; font-size: 13px; }
+  .featured { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .featured .ph { aspect-ratio: 4 / 3; }
+  .featured .ph img { height: 100%; object-fit: cover; }
+  .grid { columns: 2; column-gap: 6px; }
+  .grid .ph { margin-bottom: 6px; border-radius: 10px; }
+  @media (min-width: 720px) { .grid { columns: 3 220px; } }
+  @media (min-width: 1040px) { .grid { columns: 4 240px; } }
+  .ph { position: relative; break-inside: avoid; margin: 0 0 10px; border-radius: 14px; overflow: hidden; background: var(--ink2); cursor: zoom-in; display: block; width: 100%; border: 0; padding: 0; }
+  .ph img { display: block; width: 100%; height: auto; transition: transform .6s ease, opacity .5s ease; opacity: 0; }
+  .ph img.in { opacity: 1; }
+  @media (hover: hover) { .ph:hover img { transform: scale(1.04); } }
+  .ph .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 8px; font-size: 12.5px; line-height: 1.35; text-align: left; color: #fff; background: linear-gradient(180deg, transparent, rgba(0,0,0,.72)); }
+  .ph .by { display: block; color: #d8cfc2; font-size: 11px; margin-top: 2px; }
+  .empty { text-align: center; padding: 80px 16px; color: var(--muted); }
+  .empty b { display: block; font-family: "Playfair Display", serif; font-size: 28px; color: var(--text); margin-bottom: 8px; }
+
+  footer { text-align: center; padding: 70px 16px 110px; color: var(--muted); font-size: 13px; }
+  footer .big { font-family: "Playfair Display", serif; font-size: clamp(22px, 4vw, 34px); color: var(--text); margin-bottom: 10px; }
+  .daynav .wrap { padding-left: 12px; padding-right: 12px; }
+  .chip { min-height: 34px; }
+  .fab { opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .fab.show { opacity: 1; pointer-events: auto; }
+  .fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+
+  /* Lightbox */
+  .lb { position: fixed; inset: 0; height: 100dvh; z-index: 50; background: #050c10; display: none; flex-direction: column; }
+  .lb.open { display: flex; }
+  .lb .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; color: var(--muted); font-size: 13px; }
+  .lb .top #lbCount { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb .top button { flex: 0 0 auto; }
+  .lb .top button { background: rgba(255,255,255,.1); border: 0; color: #fff; border-radius: 999px; width: 40px; height: 40px; font-size: 18px; }
+  .lb .stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: pan-y; }
+  .lb .stage img { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+  .lb.play .stage img { animation: kb2 5s ease-in-out both; }
+  .lb .stage video { max-width: 100%; max-height: 100%; background: #000; }
+  .lb #lbLive { position: absolute; inset: 0; margin: auto; background: transparent; }
+  .livebtn { position: absolute; left: 12px; top: 8px; z-index: 2; border: 0; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; letter-spacing: .08em; background: rgba(255,255,255,.16); color: #fff; }
+  .badge { position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; letter-spacing: .03em; }
+  .badge.live { background: rgba(255,255,255,.82); color: #1d2a30; letter-spacing: .1em; }
+  .liveclip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .liveclip.on { opacity: 1; }
+  @keyframes kb2 { from { transform: scale(1); opacity: .2; } 12% { opacity: 1; } to { transform: scale(1.08); } }
+  .lb .nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.1); border: 0; color: #fff; width: 46px; height: 46px; border-radius: 999px; font-size: 22px; }
+  .lb .prev { left: 10px; } .lb .next { right: 10px; }
+  @media (hover: none) { .lb .nav { display: none; } }
+  .lb .info { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); text-align: center; }
+  .lb .info .c { font-family: "Playfair Display", serif; font-size: 18px; line-height: 1.4; }
+  .lb .info .m { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+
+  /* Upload sheet */
+  .sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; }
+  .sheet-bg.open { display: flex; }
+  @media (min-width: 640px) { .sheet-bg { align-items: center; } }
+  .sheet { background: #f8f3ec; color: #1d2a30; width: 100%; max-width: 480px; border-radius: 22px 22px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); max-height: 92vh; overflow-y: auto; }
+  @media (min-width: 640px) { .sheet { border-radius: 22px; } }
+  .sheet h3 { margin: 0 0 4px; font-size: 24px; }
+  .sheet p.note { margin: 0 0 16px; color: #5b6a70; font-size: 13.5px; line-height: 1.5; }
+  .sheet label { display: block; font-size: 13px; font-weight: 600; color: #3d4b51; margin: 12px 0 6px; }
+  .sheet select, .sheet input[type=text], .sheet input[type=password], .sheet input[inputmode] { width: 100%; padding: 12px; border: 1px solid #d6ccbf; border-radius: 12px; font-size: 16px; background: #fff; color: #1d2a30; }
+  .pick { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #c9b9a4; border-radius: 16px; padding: 22px; text-align: center; color: #5b6a70; background: #fffaf3; margin-top: 14px; font-size: 15px; }
+  .pick b { color: #1d2a30; }
+  .bar { height: 8px; background: #e6dccf; border-radius: 99px; overflow: hidden; margin-top: 14px; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--sea), var(--gold)); transition: width .3s; }
+  .msg { font-size: 13.5px; margin-top: 10px; line-height: 1.5; }
+  .msg.err { color: #b3261e; } .msg.ok { color: #1b6e3a; }
+  .row { display: flex; gap: 10px; margin-top: 18px; }
+  .row .btn { flex: 1; justify-content: center; }
+  .btn.dark { background: var(--ink); color: #fff; }
+  .btn.light { background: #ebe2d6; color: #1d2a30; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .ph.sel { outline: 3px solid var(--gold); outline-offset: -3px; }
+  .ph .tick { position: absolute; top: 8px; right: 8px; z-index: 3; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; font-size: 14px; color: #2a1d05; }
+  body.selecting .ph .tick { display: flex; }
+  body.selecting .ph { cursor: pointer; }
+  body.selecting .ph:hover img { transform: none; }
+  .ph.sel .tick { background: var(--gold); border-color: var(--gold); }
+  body.selecting .fab { display: none; }
+  .selbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(11,29,38,.96); border-top: 1px solid var(--line); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: none; align-items: center; gap: 10px; }
+  body.selecting .selbar { display: flex; }
+  .selbar b { margin-right: auto; font-weight: 600; }
+  .btn.red { background: #c2410c; color: #fff; }
+  .notfound { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="lb" id="lb" aria-modal="true" role="dialog">
+  <div class="top"><span id="lbCount"></span><span style="display:flex;gap:8px"><button id="lbPlay" title="Slideshow">▶</button><button id="lbClose" title="Close">✕</button></span></div>
+  <div class="stage" id="lbStage"><button class="nav prev" id="lbPrev" aria-label="Previous">‹</button><img id="lbImg" alt="" /><video id="lbVid" controls playsinline preload="metadata" hidden></video><video id="lbLive" muted playsinline hidden></video><button class="livebtn" id="lbLiveBtn" hidden>◉ LIVE</button><button class="nav next" id="lbNext" aria-label="Next">›</button></div>
+  <div class="info"><div class="c" id="lbCap"></div><div class="m" id="lbMeta"></div></div>
+</div>
+
+<div class="selbar" id="selbar"><b id="selCount">Tap photos to select</b><button class="btn ghost" id="selCancel">Cancel</button><button class="btn red" id="selDelete" disabled>🗑 Delete</button></div>
+
+<div class="sheet-bg" id="del">
+  <div class="sheet">
+    <h3 class="serif" id="delTitle">Delete</h3>
+    <p class="note">They'll be removed from the page for everyone. If something is deleted by mistake, the organiser can bring it back.</p>
+    <label for="delName">Your name</label>
+    <select id="delName"><option value="">— Choose —</option></select>
+    <label for="delPin">PIN (from the WhatsApp group)</label>
+    <input id="delPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" />
+    <div class="msg" id="delMsg"></div>
+    <div class="row"><button class="btn light" id="delCancel">Cancel</button><button class="btn red" id="delGo">Delete</button></div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="up">
+  <div class="sheet">
+    <h3 class="serif">Add your photos</h3>
+    <p class="note">Pick photos and videos (up to 2 minutes each) from your phone. They're sorted by the day they were taken, so the order doesn't matter. For videos, Wi-Fi is best.</p>
+    <label for="upName">Your name</label>
+    <select id="upName"><option value="">— Choose —</option></select>
+    <label for="upPin">Upload PIN (from the WhatsApp group)</label>
+    <input id="upPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" />
+    <label for="upCap">Caption (optional, for this batch)</label>
+    <input id="upCap" type="text" maxlength="300" placeholder="e.g. Sunset at Patong beach" />
+    <label class="pick" for="upFiles"><span>📷</span><span id="upPicked"><b>Choose photos & videos</b><br/>from your gallery</span></label>
+    <input id="upFiles" type="file" accept="image/*,video/*" multiple hidden />
+    <div class="bar" id="upBar" hidden><i></i></div>
+    <div class="msg" id="upMsg"></div>
+    <div class="row"><button class="btn light" id="upCancel">Close</button><button class="btn dark" id="upGo" disabled>Upload</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var slug = new URLSearchParams(location.search).get("a") || "";
+  var API = "/api/trip-memories/public/" + encodeURIComponent(slug);
+  var app = document.getElementById("app");
+  var album = null, photos = [], view = [], byFilter = "", idx = 0, timer = null, selecting = false, selected = {};
+  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    for (var k in (attrs || {})) {
+      if (k === "text") e.textContent = attrs[k];
+      else if (k === "class") e.className = attrs[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function src(p, size) { return API + "/photos/" + p.id + "/" + size; }
+  function dayKey(p) { return (p.capturedAt || "").slice(0, 10); }
+  function parts(key) { var a = key.split("-").map(Number); return new Date(Date.UTC(a[0], a[1] - 1, a[2])); }
+  function dmy(key) { var d = parts(key); return DOW[d.getUTCDay()] + ", " + key.slice(8, 10) + "/" + key.slice(5, 7) + "/" + key.slice(0, 4); }
+  function time(p) {
+    var t = (p.capturedAt || "").slice(11, 16); if (!t) return "";
+    var h = +t.slice(0, 2), m = t.slice(3, 5); return ((h % 12) || 12) + ":" + m + (h < 12 ? " am" : " pm");
+  }
+  function lazy(img, url) {
+    img.loading = "lazy"; img.decoding = "async";
+    img.onload = function () { img.classList.add("in"); };
+    img.src = url;
+  }
+
+  function load() {
+    return fetch(API, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("nf");
+      return r.json();
+    }).then(function (a) {
+      album = a; photos = a.photos || [];
+      document.title = a.title;
+      render();
+      // "#upload" at the end of the link opens the Add photos form straight away
+      if (location.hash === "#upload" && !up.classList.contains("open")) openUpload();
+    }).catch(function () {
+      app.innerHTML = "";
+      app.appendChild(el("div", { class: "notfound" }, [el("div", {}, [
+        el("div", { class: "serif", style: "font-size:28px;color:#f5efe6;margin-bottom:8px", text: "This album link isn't valid" }),
+        el("div", { text: "Please check the link you were sent." })])]));
+    });
+  }
+
+  function render() {
+    app.innerHTML = "";
+    // Photos without a capture date go to "More moments" at the end, so they don't create a false day
+    var days = {}, undated = [];
+    photos.forEach(function (p) { if (p.undated) { undated.push(p); return; } var k = dayKey(p); (days[k] = days[k] || []).push(p); });
+    // Trip dates set by the organiser: Day 1 is the start date and every trip day is shown, even without photos
+    var tripDays = [];
+    if (album.startDate && album.endDate) {
+      for (var t = parts(album.startDate); t <= parts(album.endDate); t = new Date(t.getTime() + 86400000)) tripDays.push(t.toISOString().slice(0, 10));
+    }
+    var keys = Object.keys(days).concat(tripDays.filter(function (k) { return !days[k]; })).sort();
+    var first = album.startDate ? parts(album.startDate) : keys.length ? parts(keys[0]) : null;
+    var last = album.endDate && keys.length && album.endDate >= keys[keys.length - 1] ? album.endDate : keys[keys.length - 1];
+    var span = keys.length ? Math.round((parts(last) - first) / 86400000) + 1 : 0;
+    var people = {}; photos.forEach(function (p) { if (p.uploadedBy) people[p.uploadedBy] = 1; });
+
+    // Hero
+    var cover = photos.filter(function (p) { return p.id === album.coverPhotoId; })[0] || photos.filter(function (p) { return p.highlight; })[0] || photos[0];
+    var bg = el("div", { class: "bg" }); if (cover) { var ci = el("img", { alt: "" }); ci.src = src(cover, "full"); bg.appendChild(ci); }
+    var firstKey = album.startDate || keys[0];
+    var range = keys.length ? dmy(firstKey).slice(5) + (last !== firstKey ? "  –  " + dmy(last).slice(5) : "") : "";
+    app.appendChild(el("header", { class: "hero" }, [bg, el("div", { class: "shade" }),
+      el("div", { class: "content" }, [el("div", { class: "wrap" }, [
+        el("div", { class: "eyebrow", text: range || "Our trip" }),
+        el("h1", { class: "serif", text: album.title }),
+        album.subtitle ? el("p", { class: "sub", text: album.subtitle }) : null,
+        el("div", { class: "stats" }, [
+          stat(span, span === 1 ? "Day" : "Days"), stat(photos.filter(function (p) { return p.type !== "VIDEO"; }).length, "Photos"),
+          photos.some(function (p) { return p.type === "VIDEO"; }) ? stat(photos.filter(function (p) { return p.type === "VIDEO"; }).length, "Videos") : null,
+          stat((album.friends || []).length, "Friends"), stat(Object.keys(people).length, "Photographers")]),
+        el("div", { class: "actions" }, [
+          photos.length ? el("button", { class: "btn gold", onclick: function () { openLb(0, true); } }, ["▶", "Play slideshow"]) : null,
+          el("button", { class: "btn ghost", onclick: openUpload }, ["＋", "Add photos"]),
+          photos.length ? el("button", { class: "btn ghost", onclick: startSelect }, ["☑", "Select"]) : null])])]),
+      photos.length ? el("div", { class: "scroll-hint", text: "Scroll for the story ↓" }) : null]));
+
+    if (!photos.length) {
+      app.appendChild(el("div", { class: "empty" }, [el("b", { text: "No photos yet" }), el("div", { text: "Be the first: tap “Add your photos”." })]));
+      return finish();
+    }
+
+    // Day chips
+    var nav = el("div", { class: "wrap" });
+    var dayRanges = {}; // filled while the days are drawn; the chips are added after that
+    app.appendChild(el("nav", { class: "daynav" }, [nav]));
+
+    var main = el("main", { class: "wrap" });
+    // Photographer filter
+    var names = Object.keys(people).sort();
+    if (names.length > 1) {
+      var f = el("div", { class: "filters" }, [el("span", { text: "Captured by" })]);
+      [""].concat(names).forEach(function (n) {
+        f.appendChild(el("button", { class: "chip" + (byFilter === n ? " on" : ""), onclick: function () { byFilter = n; render(); } }, [n || "Everyone"]));
+      });
+      main.appendChild(f);
+    }
+
+    view = [];
+    keys.forEach(function (k) {
+      var list = (days[k] || []).filter(function (p) { return !byFilter || p.uploadedBy === byFilter; });
+      var emptyTripDay = !list.length && !byFilter && tripDays.indexOf(k) >= 0;
+      if (!list.length && !emptyTripDay) return;
+      var meta = (album.days || {})[k] || {};
+      var sec = el("section", { class: "day", id: "d-" + k }, [
+        el("div", { class: "dayhead" }, [el("div", { class: "daynum", text: String(dayNo(k, first)).padStart(2, "0") }),
+          el("div", { class: "daymeta" }, [el("div", { class: "when", text: dmy(k) }),
+            el("h2", { class: "serif", text: meta.title || "Day " + dayNo(k, first) }),
+            meta.place ? el("div", { class: "place", text: "📍 " + meta.place }) : null])]),
+        meta.story ? el("p", { class: "story", text: meta.story }) : null]);
+      if (emptyTripDay) {
+        sec.appendChild(el("div", { class: "emptyday" }, [el("span", { text: "No photos from this day yet." }),
+          el("button", { class: "btn ghost", onclick: openUpload }, ["＋", "Add yours"])]));
+        main.appendChild(sec);
+        return;
+      }
+      var hl = list.filter(function (p) { return p.highlight; }).slice(0, 3);
+      var rest = list.filter(function (p) { return hl.indexOf(p) < 0; });
+      var range = { from: view.length, to: view.length + list.length - 1, label: "Day " + dayNo(k, first) + " · " + dmy(k) };
+      dayRanges[k] = range;
+      sec.querySelector(".daymeta").appendChild(el("button", { class: "playday", onclick: function () { openLb(range.from, true, range); } },
+        ["▶ Play Day " + dayNo(k, first) + " · " + list.length + (list.length === 1 ? " item" : " items")]));
+      if (hl.length) { var fe = el("div", { class: "featured" }); hl.forEach(function (p) { fe.appendChild(tile(p, "full", range)); }); sec.appendChild(fe); }
+      var g = el("div", { class: "grid" }); rest.forEach(function (p) { g.appendChild(tile(p, "thumb", range)); }); sec.appendChild(g);
+      main.appendChild(sec);
+    });
+    var extra = undated.filter(function (p) { return !byFilter || p.uploadedBy === byFilter; });
+    if (extra.length) {
+      var ms = el("section", { class: "day", id: "d-more" }, [
+        el("div", { class: "dayhead" }, [el("div", { class: "daynum", text: "✦" }),
+          el("div", { class: "daymeta" }, [el("div", { class: "when", text: "Along the way" }), el("h2", { class: "serif", text: "More moments" })])])]);
+      var mg = el("div", { class: "grid" }); extra.forEach(function (p) { mg.appendChild(tile(p, "thumb")); }); ms.appendChild(mg);
+      main.appendChild(ms);
+    }
+    // Day chips in the bar that stays at the top: tap the day to jump to it, ▶ to play that day's slideshow
+    keys.forEach(function (k) {
+      var r = dayRanges[k];
+      nav.appendChild(el("div", { class: "daychip" }, [
+        el("button", { class: "go", onclick: function () { document.getElementById("d-" + k).scrollIntoView(); } }, ["Day " + dayNo(k, first) + " · " + k.slice(8, 10) + " " + MON[+k.slice(5, 7) - 1]]),
+        el("button", { class: "play", "aria-label": "Play day " + dayNo(k, first), onclick: function () {
+          if (r) return openLb(r.from, true, r);
+          // No photos from this day yet: say so and show the day, which has an "Add yours" button
+          flashMsg("No photos uploaded for Day " + dayNo(k, first) + " (" + dmy(k) + ") yet");
+          var sec = document.getElementById("d-" + k);
+          if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + window.pageYOffset - 60, behavior: "smooth" });
+        } }, ["▶"])]));
+    });
+    app.appendChild(main);
+    finish();
+  }
+
+  function finish() {
+    app.appendChild(el("footer", {}, [el("div", { class: "big", text: "Friends, memories & a little bit of chaos." }),
+      el("div", { text: "Made with ❤️ for the gang · Share this link only with the group" })]));
+    var fab = el("button", { class: "btn gold fab", onclick: openUpload }, ["＋", "Add photos"]);
+    app.appendChild(fab);
+    // The hero has its own buttons; the floating one appears once the hero is scrolled away
+    var hero = app.querySelector(".hero");
+    if (hero && window.IntersectionObserver) {
+      new IntersectionObserver(function (en) { fab.classList.toggle("show", !en[0].isIntersecting); }, { threshold: 0.15 }).observe(hero);
+    } else fab.classList.add("show");
+  }
+  function stat(n, l) { return el("div", { class: "stat" }, [el("b", { text: String(n) }), el("small", { text: l })]); }
+  function dayNo(k, first) { return Math.round((parts(k) - first) / 86400000) + 1; }
+  function dur(sec) { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+  function tile(p, size, range) {
+    var i = view.length; view.push(p); p._range = range || null;
+    var img = el("img", { alt: p.caption || "" });
+    if (p.w && p.h && size === "thumb") { img.width = p.w; img.height = p.h; }
+    lazy(img, src(p, size));
+    var cap = p.caption ? el("div", { class: "cap" }, [p.caption, el("span", { class: "by", text: "📷 " + (p.uploadedBy || "") })]) : null;
+    var badge = p.type === "VIDEO" ? el("span", { class: "badge", text: "▶ " + dur(p.duration) })
+      : p.live ? el("span", { class: "badge live", text: "◉ LIVE" }) : null;
+    var b = el("button", { class: "ph" + (selected[p.id] ? " sel" : ""), onclick: function () {
+      if (!selecting) return openLb(i, false);
+      if (selected[p.id]) delete selected[p.id]; else selected[p.id] = true;
+      b.classList.toggle("sel", !!selected[p.id]); selUpdate();
+    } }, [img, badge, cap, el("span", { class: "tick", text: "✓" })]);
+    if (p.live) liveHover(b, p);
+    return b;
+  }
+  /** Live Photo: the motion clip plays over the photo while hovered (computer) or pressed (phone) */
+  function liveHover(b, p) {
+    var v = null;
+    function start() {
+      if (selecting) return;
+      if (!v) { v = el("video", { class: "liveclip", muted: "", playsinline: "", preload: "auto" }); v.muted = true; v.src = src(p, "clip"); b.appendChild(v); }
+      v.currentTime = 0; v.classList.add("on"); v.play().catch(function () {});
+    }
+    function stop() { if (v) { v.pause(); v.classList.remove("on"); } }
+    b.addEventListener("mouseenter", start); b.addEventListener("mouseleave", stop);
+    b.addEventListener("touchstart", start, { passive: true }); b.addEventListener("touchend", stop); b.addEventListener("touchcancel", stop);
+  }
+
+  // ---------- Lightbox ----------
+  var lb = document.getElementById("lb"), lbImg = document.getElementById("lbImg");
+  var lbVid = document.getElementById("lbVid"), lbLive = document.getElementById("lbLive"), lbLiveBtn = document.getElementById("lbLiveBtn");
+  var playing = false;
+  var daySpan = null; // { from, to, label } while playing one day
+  function openLb(i, play, range) { idx = i; daySpan = range || null; lb.classList.add("open"); document.body.style.overflow = "hidden"; playing = !!play; show(); }
+  function closeLb() { lb.classList.remove("open"); document.body.style.overflow = ""; setPlay(false); stopMedia(); }
+  function stopMedia() {
+    lbVid.pause(); lbVid.removeAttribute("src"); lbVid.load(); lbVid.hidden = true;
+    lbLive.pause(); lbLive.hidden = true; lbLiveBtn.hidden = true;
+  }
+  function playLive(p) {
+    lbLive.src = src(p, "clip"); lbLive.hidden = false; lbImg.style.visibility = "hidden";
+    lbLive.currentTime = 0; lbLive.play().catch(function () { lbLive.hidden = true; lbImg.style.visibility = ""; });
+  }
+  lbLive.onended = function () { lbLive.hidden = true; lbImg.style.visibility = ""; };
+  lbLiveBtn.onclick = function () { var p = view[idx]; if (p && p.live) playLive(p); };
+  function show() {
+    var p = view[idx]; if (!p) return;
+    stopMedia(); clearTimeout(timer); timer = null;
+    lbImg.style.visibility = "";
+    if (p.type === "VIDEO") {
+      lbImg.hidden = true; lbVid.hidden = false;
+      lbVid.poster = src(p, "full"); lbVid.src = src(p, "clip");
+      lbVid.muted = false; lbVid.play().catch(function () { lbVid.muted = true; lbVid.play().catch(function () {}); });
+    } else {
+      lbImg.hidden = false; lbImg.src = src(p, "full");
+      lbImg.style.animation = "none"; void lbImg.offsetWidth; lbImg.style.animation = "";
+      if (p.live) { lbLiveBtn.hidden = false; playLive(p); }
+    }
+    document.getElementById("lbCount").textContent = daySpan
+      ? daySpan.label + "  ·  " + (idx - daySpan.from + 1) + " / " + (daySpan.to - daySpan.from + 1)
+      : (p._range ? p._range.label.split(" · ")[0] + "  ·  " : "") + (idx + 1) + " / " + view.length;
+    document.getElementById("lbCap").textContent = p.caption || "";
+    document.getElementById("lbMeta").textContent = "📷 " + (p.uploadedBy || "") + (p.undated ? "" : " · " + dmy(dayKey(p)) + (time(p) ? " · " + time(p) : "")) + (p.type === "VIDEO" ? " · 🎬 " + dur(p.duration) : "");
+    var nx = view[idx + 1]; if (nx) { var pre = new Image(); pre.src = src(nx, "full"); }
+    schedule();
+  }
+  /** Slideshow: photos stay 4.5 s; a video plays to the end first */
+  function schedule() {
+    lb.classList.toggle("play", playing);
+    document.getElementById("lbPlay").textContent = playing ? "❚❚" : "▶";
+    clearTimeout(timer); timer = null;
+    if (!playing) return;
+    var p = view[idx];
+    if (p && p.type === "VIDEO") return; // lbVid.onended moves on
+    timer = setTimeout(function () { go(1); }, p && p.live ? 6000 : 4500);
+  }
+  lbVid.onended = function () { if (playing) go(1); };
+  function go(d) {
+    if (!view.length) return;
+    if (daySpan) {
+      var n = daySpan.to - daySpan.from + 1, pos = idx - daySpan.from + d;
+      if (playing && pos >= n) { closeLb(); return; } // a day's slideshow ends after its last item
+      idx = daySpan.from + ((pos % n) + n) % n;
+    } else idx = (idx + d + view.length) % view.length;
+    show();
+  }
+  function setPlay(on) { playing = !!on; schedule(); }
+  document.getElementById("lbClose").onclick = closeLb;
+  document.getElementById("lbPrev").onclick = function () { setPlay(false); go(-1); };
+  document.getElementById("lbNext").onclick = function () { setPlay(false); go(1); };
+  document.getElementById("lbPlay").onclick = function () { setPlay(!playing); if (playing && view[idx] && view[idx].type === "VIDEO" && lbVid.ended) go(1); };
+  document.addEventListener("keydown", function (e) {
+    if (!lb.classList.contains("open")) return;
+    if (e.key === "Escape") closeLb(); else if (e.key === "ArrowRight") go(1); else if (e.key === "ArrowLeft") go(-1); else if (e.key === " " && document.activeElement !== lbVid) { e.preventDefault(); setPlay(!playing); }
+  });
+  var sx = null, sy = null, stage = document.getElementById("lbStage");
+  lbImg.addEventListener("click", function (e) {
+    var r = lbImg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+    if (x < 0.33) { setPlay(false); go(-1); } else if (x > 0.67) { setPlay(false); go(1); }
+  });
+  stage.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  stage.addEventListener("touchend", function (e) {
+    if (sx === null) return; var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) { setPlay(false); go(dx < 0 ? 1 : -1); }
+    else if (dy > 90) closeLb();
+  });
+
+  // ---------- Upload ----------
+  var up = document.getElementById("up"), files = [];
+  var upName = document.getElementById("upName"), upPin = document.getElementById("upPin"), upGo = document.getElementById("upGo");
+  var upMsg = document.getElementById("upMsg"), upBar = document.getElementById("upBar"), busy = false;
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function openUpload() {
+    upName.innerHTML = '<option value="">— Choose —</option>';
+    (album.friends || []).forEach(function (f) { upName.appendChild(el("option", { value: f, text: f })); });
+    upName.value = store("mem-name") || ""; upPin.value = store("mem-pin-" + slug) || "";
+    up.classList.add("open"); refresh();
+  }
+  function refresh() { upGo.disabled = busy || !files.length || !upName.value || !upPin.value; }
+  upName.onchange = refresh; upPin.oninput = refresh;
+  document.getElementById("upCancel").onclick = function () { if (!busy) up.classList.remove("open"); };
+  document.getElementById("upFiles").onchange = function (e) {
+    files = Array.prototype.slice.call(e.target.files || []);
+    document.getElementById("upPicked").innerHTML = files.length ? "<b>" + files.length + " selected</b><br/>tap to change" : "<b>Choose photos & videos</b><br/>from your gallery";
+    upMsg.textContent = ""; upMsg.className = "msg"; refresh();
+  };
+  function say(t, cls) { upMsg.textContent = t; upMsg.className = "msg " + (cls || ""); }
+
+  /** Date and place taken, from the photo's own details */
+  function exifInfo(file) {
+    var out = { at: null, lat: null, lng: null };
+    if (!window.exifr) return Promise.resolve(out);
+    function read(src) {
+      return exifr.parse(src, { tiff: true, exif: true, gps: true, reviveValues: false, translateValues: false }).then(function (x) {
+        x = x || {};
+        var raw = x.DateTimeOriginal || x.CreateDate || x.DateTime;
+        if (typeof raw === "string" && /^\d{4}:\d\d:\d\d \d\d:\d\d/.test(raw)) out.at = raw.slice(0, 10).replace(/:/g, "-") + "T" + raw.slice(11, 19);
+        return exifr.gps(src).then(function (g) { if (g && isFinite(g.latitude) && isFinite(g.longitude)) { out.lat = g.latitude; out.lng = g.longitude; } }, function () {});
+      }, function () {});
+    }
+    return read(file).then(function () {
+      if (out.at) return out;
+      // Newer iPhone HEIC files aren't recognised by the reader; read their Exif block directly
+      return exifBlock(file).then(function (tiff) { return tiff ? read(tiff) : null; }).then(function () { return out; }, function () { return out; });
+    });
+  }
+  /** Finds the standard "Exif" block (Exif\0\0 followed by a TIFF header) inside the file */
+  function exifBlock(file) {
+    return file.slice(0, 16 * 1024 * 1024).arrayBuffer().then(function (ab) {
+      var b = new Uint8Array(ab);
+      for (var i = 0; i < b.length - 10; i++) {
+        if (b[i] === 0x45 && b[i + 1] === 0x78 && b[i + 2] === 0x69 && b[i + 3] === 0x66 && b[i + 4] === 0 && b[i + 5] === 0) {
+          var a = b[i + 6], c = b[i + 7], d = b[i + 8], e = b[i + 9];
+          if ((a === 0x4d && c === 0x4d && d === 0 && e === 0x2a) || (a === 0x49 && c === 0x49 && d === 0x2a && e === 0)) return ab.slice(i + 6);
+        }
+      }
+      return null;
+    });
+  }
+  /** Same photo under another name (e.g. "IMG_1856 2.HEIC") gives the same fingerprint */
+  function contentKey(file) {
+    if (!window.crypto || !crypto.subtle) return Promise.resolve(null);
+    return file.slice(0, 4 * 1024 * 1024).arrayBuffer().then(function (ab) { return crypto.subtle.digest("SHA-256", ab); })
+      .then(function (h) { return "sha:" + Array.prototype.map.call(new Uint8Array(h), function (x) { return x.toString(16).padStart(2, "0"); }).join("").slice(0, 40) + "|" + file.size; }, function () { return null; });
+  }
+  function localStamp(ms) {
+    var d = new Date(ms), z = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + "T" + z(d.getHours()) + ":" + z(d.getMinutes()) + ":" + z(d.getSeconds());
+  }
+  function decode(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { res({ img: img, done: function () { URL.revokeObjectURL(url); } }); };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("This photo format can't be opened here")); };
+      img.src = url;
+    });
+  }
+  function shrink(img, max, q) {
+    var w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, max / Math.max(w, h));
+    var c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return new Promise(function (res) { c.toBlob(function (b) { res({ blob: b, w: c.width, h: c.height }); }, "image/jpeg", q); });
+  }
+  function isVideo(file) { return /^video\//.test(file.type || "") || /\.(mov|mp4|m4v|3gp|webm)$/i.test(file.name || ""); }
+  /** Video length in seconds (null when this browser can't read it; the server checks again) */
+  function videoLength(file) {
+    return new Promise(function (res) {
+      var v = document.createElement("video"), url = URL.createObjectURL(file), t = setTimeout(function () { done(null); }, 8000);
+      function done(x) { clearTimeout(t); URL.revokeObjectURL(url); res(x); }
+      v.preload = "metadata"; v.muted = true;
+      v.onloadedmetadata = function () { done(isFinite(v.duration) ? v.duration : null); };
+      v.onerror = function () { done(null); };
+      v.src = url;
+    });
+  }
+  function post(url, fd, onProgress) {
+    return new Promise(function (res, rej) {
+      var x = new XMLHttpRequest();
+      x.open("POST", url);
+      if (onProgress) x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      x.onload = function () {
+        var j = {}; try { j = JSON.parse(x.responseText || "{}"); } catch (e) {}
+        if (x.status >= 200 && x.status < 300) res(!!j.duplicate);
+        else { var err = new Error(j.error || (x.status === 413 ? "File is too large" : "Upload failed")); err.status = x.status; rej(err); }
+      };
+      x.onerror = function () { rej(new Error("Network problem. Please try again on Wi-Fi.")); };
+      x.send(fd);
+    });
+  }
+  function sendVideo(file, pin, who, caption, onProgress) {
+    return Promise.all([videoLength(file), contentKey(file)]).then(function (r0) {
+      var sec = r0[0], key = r0[1];
+      if (sec != null && sec > 122) throw new Error("longer than 2 minutes (" + Math.round(sec) + " s)");
+      var fd = new FormData();
+      fd.append("pin", pin); fd.append("uploadedBy", who);
+      if (caption) fd.append("caption", caption);
+      fd.append("capturedAt", localStamp(file.lastModified || Date.now()));
+      fd.append("dateGuessed", "true"); // the server reads the real time from the video itself
+      if (sec != null) fd.append("durationSec", sec.toFixed(1));
+      fd.append("fingerprint", key || (file.name || "") + "|" + file.size);
+      fd.append("file", file, file.name || "video.mov");
+      return post(API + "/upload-video", fd, onProgress);
+    });
+  }
+  function sendOne(file, pin, who, caption, onProgress) {
+    if (isVideo(file)) return sendVideo(file, pin, who, caption, onProgress);
+    return Promise.all([exifInfo(file), contentKey(file)]).then(function (r0) {
+      var ex = r0[0], key = r0[1];
+      return decode(file).then(function (d) {
+        return Promise.all([shrink(d.img, 2048, 0.85), shrink(d.img, 640, 0.78)]).then(function (r) {
+          d.done();
+          var fd = new FormData();
+          fd.append("pin", pin); fd.append("uploadedBy", who);
+          if (caption) fd.append("caption", caption);
+          fd.append("capturedAt", ex.at || localStamp(file.lastModified || Date.now()));
+          fd.append("dateGuessed", ex.at ? "false" : "true");
+          if (ex.lat != null) { fd.append("latitude", ex.lat); fd.append("longitude", ex.lng); }
+          fd.append("width", r[0].w); fd.append("height", r[0].h);
+          fd.append("fingerprint", key || (file.name || "") + "|" + file.size + "|" + (ex.at || ""));
+          fd.append("file", r[0].blob, "photo.jpg"); fd.append("thumb", r[1].blob, "thumb.jpg");
+          return post(API + "/upload", fd);
+        });
+      });
+    });
+  }
+  upGo.onclick = function () {
+    var who = upName.value, pin = upPin.value.trim(), caption = document.getElementById("upCap").value.trim();
+    busy = true; refresh(); upBar.hidden = false; say("Checking PIN…");
+    fetch(API + "/check-pin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: pin }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Please try again"); if (!j.ok) throw new Error("Wrong PIN. Please check the PIN shared in the group."); }); })
+      .then(function () {
+        store("mem-name", who); store("mem-pin-" + slug, pin);
+        var done = 0, dup = 0, vids = 0, failed = [], list = files.slice(), bar = upBar.querySelector("i");
+        function next() {
+          if (!list.length) return Promise.resolve();
+          var f = list.shift(), n = done + dup + failed.length + 1, v = isVideo(f);
+          say("Uploading " + n + " of " + files.length + "…");
+          var prog = v ? function (x) { say("Uploading video " + n + " of " + files.length + ": " + Math.round(x * 100) + "% (keep this page open)"); } : null;
+          return sendOne(f, pin, who, caption, prog).then(function (isDup) { if (isDup) dup++; else { done++; if (v) vids++; } }, function (e) {
+            if (e.status === 403 || e.status === 429) throw e; failed.push((f.name || "photo") + ": " + e.message);
+          }).then(function () { bar.style.width = Math.round((done + dup + failed.length) / files.length * 100) + "%"; return next(); });
+        }
+        return Promise.all([next(), next()]).then(function () {
+          say((done ? "🎉 " + done + " added. Thank you!" + (vids ? " Videos appear in a minute or two, once they're ready." : "") : "Nothing new added.") + (dup ? " " + dup + (dup === 1 ? " was" : " were") + " already in the album." : "") + (failed.length ? " Couldn't add " + failed.length + ": " + failed.slice(0, 3).join("; ") : ""), failed.length ? "err" : "ok");
+          files = []; document.getElementById("upFiles").value = "";
+          document.getElementById("upPicked").innerHTML = "<b>Choose more</b><br/>from your gallery";
+          return load();
+        });
+      })
+      .catch(function (e) { say(e.message || "Something went wrong", "err"); })
+      .then(function () { busy = false; refresh(); });
+  };
+
+  // ---------- Select & delete ----------
+  var delBg = document.getElementById("del"), delName = document.getElementById("delName"), delPin = document.getElementById("delPin"), delMsg = document.getElementById("delMsg");
+  function startSelect() { selecting = true; selected = {}; document.body.classList.add("selecting"); render(); selUpdate(); }
+  function endSelect() { selecting = false; selected = {}; document.body.classList.remove("selecting"); render(); }
+  function selUpdate() {
+    var n = Object.keys(selected).length;
+    document.getElementById("selCount").textContent = n ? n + " selected" : "Tap photos to select";
+    document.getElementById("selDelete").disabled = !n;
+  }
+  document.getElementById("selCancel").onclick = endSelect;
+  document.getElementById("selDelete").onclick = function () {
+    var n = Object.keys(selected).length; if (!n) return;
+    document.getElementById("delTitle").textContent = "Delete " + n + (n === 1 ? " item" : " items") + "?";
+    delName.innerHTML = '<option value="">— Choose —</option>';
+    (album.friends || []).forEach(function (f) { delName.appendChild(el("option", { value: f, text: f })); });
+    delName.value = store("mem-name") || ""; delPin.value = store("mem-pin-" + slug) || "";
+    delMsg.textContent = ""; delMsg.className = "msg"; delBg.classList.add("open");
+  };
+  document.getElementById("delCancel").onclick = function () { delBg.classList.remove("open"); };
+  document.getElementById("delGo").onclick = function () {
+    var who = delName.value, pin = delPin.value.trim(), go = this;
+    if (!who) { delMsg.textContent = "Choose your name"; delMsg.className = "msg err"; return; }
+    if (!pin) { delMsg.textContent = "Enter the PIN"; delMsg.className = "msg err"; return; }
+    go.disabled = true; delMsg.textContent = "Deleting…"; delMsg.className = "msg";
+    fetch(API + "/delete", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pin, deletedBy: who, ids: Object.keys(selected).map(Number) }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(r.status === 403 ? "Wrong PIN. Please check the PIN shared in the group." : (j.error || "Could not delete"));
+        return j;
+      }); })
+      .then(function (j) {
+        store("mem-name", who); store("mem-pin-" + slug, pin);
+        delBg.classList.remove("open"); selecting = false; selected = {}; document.body.classList.remove("selecting");
+        return load().then(function () { flashMsg((j.deleted || 0) + " deleted"); });
+      })
+      .catch(function (e) { delMsg.textContent = e.message; delMsg.className = "msg err"; })
+      .then(function () { go.disabled = false; });
+  };
+  function flashMsg(t) {
+    var d = el("div", { text: t, style: "position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%);z-index:70;width:max-content;max-width:calc(100vw - 32px);text-align:center;background:#f8f3ec;color:#1d2a30;padding:11px 18px;border-radius:16px;font-size:14px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.3)" });
+    document.body.appendChild(d); setTimeout(function () { d.remove(); }, 3500);
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

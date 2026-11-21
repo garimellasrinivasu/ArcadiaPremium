@@ -105,6 +105,23 @@ if [ $? -eq 0 ]; then
         fi
     fi
 
+    # Trip memories photos also live on disk: same single mirror copy
+    if docker exec backend test -d /app/data/trip-photos 2>/dev/null; then
+        echo "Copying trip photos..."
+        rm -rf "$BACKUP_DIR/trip-photos.new"
+        if docker cp backend:/app/data/trip-photos "$BACKUP_DIR/trip-photos.new"; then
+            rm -rf "$BACKUP_DIR/trip-photos" && mv "$BACKUP_DIR/trip-photos.new" "$BACKUP_DIR/trip-photos"
+            echo "Trip photos copied: $(du -sh "$BACKUP_DIR/trip-photos" | cut -f1)"
+            if [ "$REMOTE_SYNC_ENABLED" = "true" ] && [ -n "$REMOTE_SERVER" ] && [ -n "$REMOTE_USER" ]; then
+                scp -r -o StrictHostKeyChecking=no "$BACKUP_DIR/trip-photos" "$REMOTE_USER@$REMOTE_SERVER:$REMOTE_DIR/" \
+                    || echo "Warning: Failed to sync trip photos to $REMOTE_SERVER."
+            fi
+        else
+            rm -rf "$BACKUP_DIR/trip-photos.new"
+            send_email_alert "WARNING: Trip photos backup failed" "The nightly copy of the trip memories photos failed. The database backup itself completed."
+        fi
+    fi
+
     # Clean up old backups
     echo "Cleaning up backups older than $RETENTION_DAYS days..."
     find "$BACKUP_DIR" -name "${DB_NAME}_backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete

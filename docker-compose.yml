@@ -30,6 +30,8 @@ services:
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx768m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:ParallelGCThreads=2
       # Checklist page uploads (Sales Preparation / RERA) are stored here, on a named volume
       - CHECKLIST_STORAGE_DIR=/app/data/checklist-files
+      # Trip memories photos, on their own named volume
+      - TRIP_PHOTOS_DIR=/app/data/trip-photos
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/arcadia
       - SPRING_DATASOURCE_USERNAME=dev_user
       - SPRING_DATASOURCE_PASSWORD=dev_password
@@ -52,6 +54,7 @@ services:
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
     volumes:
       - checklist_files:/app/data/checklist-files
+      - trip_photos:/app/data/trip-photos
     ports:
       - "3001:8080"
     networks:
@@ -87,3 +90,4 @@ networks:
 volumes:
   postgres_data:
   checklist_files:
+  trip_photos:
