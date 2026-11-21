@@ -35,6 +35,8 @@ export default function TripMemoriesPage() {
   const [newPin, setNewPin] = useState("");
   const [savingDays, setSavingDays] = useState(false);
   const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [moveDate, setMoveDate] = useState("");
+  const [editingDate, setEditingDate] = useState<number | null>(null);
   const togglePick = (id: number) => setPicked((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 3000); };
@@ -119,14 +121,14 @@ export default function TripMemoriesPage() {
 
   const deleted = (album?.photos || []).filter((p) => p.deletedAt);
 
-  /** hide / show / restore / delete (permanently) for several items */
-  const bulk = async (action: "hide" | "show" | "restore" | "delete", ids: number[]) => {
+  /** hide / show / restore / delete (permanently) / move (to another day) for several items */
+  const bulk = async (action: "hide" | "show" | "restore" | "delete" | "move", ids: number[], date?: string) => {
     if (!album || !ids.length) return;
     if (action === "delete" && !confirm(`Delete ${ids.length} item${ids.length === 1 ? "" : "s"} permanently? This can't be undone.`)) return;
     try {
-      const r = (await api.post<{ count: number }>(`/trip-memories/${album.id}/photos/bulk`, { action, ids })).data;
-      const word = { hide: "hidden", show: "shown", restore: "restored", delete: "deleted permanently" }[action];
-      flash(`${r.count} ${word}`); setPicked(new Set());
+      const r = (await api.post<{ count: number }>(`/trip-memories/${album.id}/photos/bulk`, { action, ids, date })).data;
+      const word = { hide: "hidden", show: "shown", restore: "restored", delete: "deleted permanently", move: `moved to ${date ? formatWeekdayDate(date) : "the new date"}` }[action];
+      flash(`${r.count} ${word}`); setPicked(new Set()); if (action === "move") setMoveDate("");
       await loadAlbum(album.id);
     } catch (e) { setError(errOf(e)); }
   };
@@ -300,14 +302,18 @@ export default function TripMemoriesPage() {
                           <input defaultValue={p.caption || ""} key={`c-${p.id}-${p.caption || ""}`} placeholder="Caption"
                             onBlur={(e) => e.target.value !== (p.caption || "") && void updatePhoto(p, { caption: e.target.value })}
                             className="w-full border border-gray-200 rounded px-1.5 py-1 text-[11px]" />
-                          {p.dateGuessed && (
-                            <input type="datetime-local" defaultValue={p.capturedAt.slice(0, 16)} title="Set when it was taken"
-                              onBlur={(e) => e.target.value && e.target.value !== p.capturedAt.slice(0, 16) && void updatePhoto(p, { capturedAt: e.target.value })}
-                              className="w-full border border-gray-200 rounded px-1 py-0.5 text-[10px]" />
+                          {(p.undated || editingDate === p.id) && (
+                            <input type="datetime-local" defaultValue={p.capturedAt.slice(0, 16)} title="When it was taken" autoFocus={editingDate === p.id}
+                              onBlur={(e) => {
+                                setEditingDate(null);
+                                if (e.target.value && e.target.value !== p.capturedAt.slice(0, 16)) void updatePhoto(p, { capturedAt: e.target.value }).then(() => flash(`Moved to ${formatWeekdayDate(e.target.value)}`));
+                              }}
+                              className="w-full border border-blue-300 rounded px-1 py-0.5 text-[10px]" />
                           )}
                           <div className="flex justify-between text-sm">
                             <button title={p.highlight ? "Remove highlight" : "Highlight (shown large)"} onClick={() => void updatePhoto(p, { highlight: !p.highlight })}>{p.highlight ? "⭐" : "☆"}</button>
                             <button title="Use as cover photo" onClick={() => void saveAlbum({ coverPhotoId: p.id }, "Cover photo set")}>🖼️</button>
+                            <button title="Change date and time" onClick={() => setEditingDate(editingDate === p.id ? null : p.id)}>📅</button>
                             <button title={p.hidden ? "Show on the page" : "Hide from the page"} onClick={() => void updatePhoto(p, { hidden: !p.hidden })}>{p.hidden ? "🙈" : "👁️"}</button>
                             <button title="Delete permanently" onClick={() => void deletePhoto(p)}>🗑️</button>
                           </div>
@@ -326,6 +332,13 @@ export default function TripMemoriesPage() {
                   <b className="text-blue-800">{picked.size} selected</b>
                   <button onClick={() => void bulk("hide", [...picked])} className="px-2.5 py-1 text-xs rounded border border-gray-300">🙈 Hide</button>
                   <button onClick={() => void bulk("show", [...picked])} className="px-2.5 py-1 text-xs rounded border border-gray-300">👁️ Show</button>
+                  <span className="flex items-center gap-1 border border-gray-300 rounded px-1.5 py-0.5">
+                    <span className="text-xs text-gray-600">📅 Move to</span>
+                    <input type="date" value={moveDate} min={album.startDate || undefined} max={album.endDate || undefined}
+                      onChange={(e) => setMoveDate(e.target.value)} className="text-xs border-0 p-0.5" />
+                    <button disabled={!moveDate} onClick={() => void bulk("move", [...picked], moveDate)}
+                      className="px-2 py-0.5 text-xs rounded bg-blue-600 text-white disabled:opacity-40">Move</button>
+                  </span>
                   <button onClick={() => void bulk("delete", [...picked])} className="px-2.5 py-1 text-xs rounded bg-red-600 text-white">🗑 Delete permanently</button>
                   <button onClick={() => setPicked(new Set())} className="px-2 py-1 text-xs text-gray-500">Clear</button>
                 </div>

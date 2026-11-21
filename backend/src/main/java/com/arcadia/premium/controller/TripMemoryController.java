@@ -291,12 +291,24 @@ public class TripMemoryController {
         return ResponseEntity.ok(photoView(photos.save(p), true));
     }
 
-    /** Several at once: action hide, show, restore (from Recently deleted) or delete (permanently) */
+    /**
+     * Several at once: action hide, show, restore (from Recently deleted), delete (permanently)
+     * or move (to another day, given as "date": "yyyy-MM-dd"; each keeps its time of day)
+     */
     @PostMapping("/{id}/photos/bulk")
     @PreAuthorize(MANAGE)
     public ResponseEntity<?> bulk(@PathVariable Long id, @RequestBody Map<String, Object> body) throws IOException {
         String action = String.valueOf(body.get("action"));
-        if (!Set.of("hide", "show", "restore", "delete").contains(action)) return ResponseEntity.badRequest().body(Map.of("error", "Unknown action"));
+        if (!Set.of("hide", "show", "restore", "delete", "move").contains(action)) return ResponseEntity.badRequest().body(Map.of("error", "Unknown action"));
+        java.time.LocalDate moveTo = null;
+        if ("move".equals(action)) {
+            try {
+                moveTo = parseDate(body.get("date"));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            }
+            if (moveTo == null) return ResponseEntity.badRequest().body(Map.of("error", "Choose the date to move to"));
+        }
         int n = 0;
         for (Long pid : ids(body.get("ids"))) {
             TripPhoto p = photos.findById(pid).filter(x -> x.getAlbumId().equals(id)).orElse(null);
@@ -305,6 +317,12 @@ public class TripMemoryController {
                 case "hide" -> { p.setHidden(true); photos.save(p); }
                 case "show" -> { p.setHidden(false); photos.save(p); }
                 case "restore" -> { p.setDeletedAt(null); p.setDeletedBy(null); photos.save(p); }
+                case "move" -> {
+                    java.time.LocalTime t = p.getCapturedAt() == null ? java.time.LocalTime.NOON : p.getCapturedAt().toLocalTime();
+                    p.setCapturedAt(moveTo.atTime(t));
+                    p.setDateGuessed(false);
+                    photos.save(p);
+                }
                 default -> service.delete(p);
             }
             n++;
