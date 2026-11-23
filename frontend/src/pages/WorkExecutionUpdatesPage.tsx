@@ -23,6 +23,7 @@ import ScheduleImportExport from "../components/ScheduleImportExport";
 import PlanVsActualView from "../components/PlanVsActualView";
 import { getProjectByName, useHeaderProjectSync } from "../utils/projectLogo";
 import { formatDate, formatDateTime, formatWeekdayDate } from "../utils/date";
+import { downloadXlsx } from "../utils/sheetjs";
 
 type WETab = "construction" | "summary" | "daily" | "plan";
 
@@ -706,6 +707,7 @@ function ConstructionSummaryView({
   const [allStatuses, setAllStatuses] = useState<VillaConstructionStatusDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"villa" | "cluster">("villa");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -782,6 +784,40 @@ function ConstructionSummaryView({
 
     return { ...cluster, villaCount: clusterPlots.length, clusterDone, clusterTotal, pct, phaseBreakdown };
   });
+
+  const sortedPlots = plots.slice().sort((a, b) => {
+    if (sortBy === "cluster") {
+      const clusterA = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(a.villa));
+      const clusterB = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(b.villa));
+      if (clusterA !== clusterB) return clusterA - clusterB;
+    }
+    return a.villa - b.villa;
+  });
+
+  /** The villa-wise status table as an Excel sheet, in the order shown on screen */
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const rows = sortedPlots.map((plot) => {
+        const clusterIdx = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(plot.villa));
+        const row: Record<string, unknown> = { Villa: plot.villa, Cluster: clusterIdx >= 0 ? `C${clusterIdx + 1}` : "" };
+        CONSTRUCTION_PHASES.forEach((phase) => {
+          const st = statusMap.get(`${plot.villa}-${phase.key}`);
+          row[phase.single ? phase.label : `${phase.label} – ${phase.activity1}`] = st?.activity1Done ? "Done" : "";
+          if (!phase.single) row[`${phase.label} – ${phase.activity2}`] = st?.activity2Done ? "Done" : "";
+        });
+        const done = villaDoneCount(plot.villa);
+        row["Done"] = `${done}/${totalActs}`;
+        row["% Complete"] = Math.round((done / totalActs) * 100);
+        return row;
+      });
+      const day = formatDate(new Date()).replace(/\//g, "-");
+      await downloadXlsx(`Villa-wise Status ${projectName} ${day}.xlsx`, "Villa-wise Status", rows);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create the Excel file");
+    }
+    setExporting(false);
+  };
 
   return (
     <div className="space-y-4">
@@ -875,6 +911,11 @@ function ConstructionSummaryView({
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <span className="font-semibold text-gray-700">Villa-wise Status (1 &ndash; {plots.length})</span>
+          <div className="flex items-center gap-2">
+          <button onClick={() => void exportExcel()} disabled={exporting || !plots.length}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
+            {exporting ? "Preparing…" : "⬇ Download Excel"}
+          </button>
           <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-0.5">
             <button
               onClick={() => setSortBy("villa")}
@@ -888,6 +929,7 @@ function ConstructionSummaryView({
             >
               Sort by Cluster
             </button>
+          </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -916,17 +958,7 @@ function ConstructionSummaryView({
               </tr>
             </thead>
             <tbody>
-              {plots
-                .slice()
-                .sort((a, b) => {
-                  if (sortBy === "cluster") {
-                    const clusterA = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(a.villa));
-                    const clusterB = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(b.villa));
-                    if (clusterA !== clusterB) return clusterA - clusterB;
-                  }
-                  return a.villa - b.villa;
-                })
-                .map((plot) => {
+              {sortedPlots.map((plot) => {
                   const doneCount = villaDoneCount(plot.villa);
                   const isComplete = doneCount === totalActs;
                   const clusterIdx = ARCADIA_CLUSTERS.findIndex((c) => c.villas.includes(plot.villa));
